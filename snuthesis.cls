@@ -642,6 +642,7 @@
 			위 \hfill 원           & \committeestyle{\@snu@committeememberE} \\
 			\fi
 			\end{tabular}
+			\vfill
 		\fi
 	}
 %	\end{minipage}
