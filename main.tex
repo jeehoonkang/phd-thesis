@@ -17,13 +17,13 @@
 %% 필요에 따라 직접 수정 필요
 \ifpdf
 	\input glyphtounicode\pdfgentounicode=1 %type 1 font사용시
-	%\usepackage[pdftex,unicode]{hyperref} % delete me
+	\usepackage[pdftex,unicode]{hyperref} % delete me
 	\usepackage[pdftex]{graphicx}
-	%\usepackage[pdftex,svgnames]{xcolor}
+	\usepackage[pdftex,svgnames]{xcolor}
 \else
-	%\usepackage[dvipdfmx,unicode]{hyperref} % delete me
+	\usepackage[dvipdfmx,unicode]{hyperref} % delete me
 	\usepackage[dvipdfmx]{graphicx}
-	%\usepackage[dvipdfmx,svgnames]{xcolor}
+	\usepackage[dvipdfmx,svgnames]{xcolor}
 \fi
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -103,6 +103,19 @@
 \lipsum[1-3]
 \end{abstract}
 
+\begin{quotation}
+  \emph{The outcomes that matter in research are not numerous publications, best-paper awards,
+    completed PhD theses, keynote invitations, software tools, citations and other measurable signs
+    of progress.  I was after real success, in the sense of changing the way the IT industry
+    develops software. [...] By that standard, the story told in this article is one of glaring,
+    unremitted and probably definitive failure.} \hfill{}---Bertrand Meyer~\cite{bertrand-meyer}\ \phantom{ }
+\end{quotation}
+
+\acknowledgement
+
+TODO: thanks!
+
+
 \tableofcontents
 \listoffigures
 \listoftables
@@ -110,115 +123,43 @@
 \cleardoublepage
 \pagenumbering{arabic}
 
-\chapter{Introduction}
-Introduction.
 
-\texttt{Introduction}
-\textit{hehe}
-\textsl{haha}
+\chapter{Prologue}
+\label{chap:prologue}
 
-\chapter{...}
-...
+\input{introduction}
+\input{background}
 
-\chapter{Conculsion}
-Conculsion.
+\chapter{Integer-Pointer Casts}
+
+\chapter{Relaxed-Memory Concurrency}
+
+\chapter{Separate Compilation}
+
+\chapter{Epilogue}
+\label{chap:epilogue}
+
+\input{conclusion}
+\input{futurework}
+
 
 \appendix
 
-\chapter{My Appendix}
+\chapter{Technical Appendix}
+
 \lipsum[1-3]
 
-\begin{thebibliography}{00}
-\addcontentsline{toc}{chapter}{\bibname}
 
-% 영문저널의 경우
-    \bibitem{ref1} B. Jeon and J. Jeong, ``Blocking artifacts
-    reduction in image compression with block boundary discontiunity
-    criterion,'' {\em IEEE Transactions on Circuits and Systems for
-    Video Tech.}, vol. 8, no.3, pp. 345-357, June 1998.
+\bibliographystyle{abbrv}
+\bibliography{references}
+\end{document}
 
-% 영문학술대회의 경우
-    \bibitem{ref2} W. G. Jeon and Y. S. Cho, ``An equalization
-    technique for OFDM and MC-CDMA in a multipath fading channels,''
-    in {\em Proceedings of IEEE Conference on Acoustics, Speech and
-    Signal Processing}, Munich, Germany, May 1997. pp. 2529-2532.
 
-% 국내저널의 경우
-    \bibitem{ref3} 김남훈, 정영철, ``평탄한 통과대역 특성을 갖는
-    새로운 구조의 광도 파로열 격자 라우터,'' {\em 전자공학회논문지},
-    제35권 D편, 제3호, 56-62쪽, 1998년 3월.
-
-% 국내학술대회의 경우
-    \bibitem{ref4} 윤남국, 김수종, ``무선 센서 네트워크에서의 에너지
-    효율적인 그라디언트 기반 라우팅 기법,'' {\em 한국정보과학회
-    2006년 추계학술대회}, 제12권, 제2호, 2006년 10월. pp.
-    1372-1374.
-
-% 단행본의 경우
-    \bibitem{ref5} C. Mead and L. Conway, {\em Introduction to VLSI
-    Systems}, Addison-Wesley, Boston, 1994.
-
-% URL
-    \bibitem{ref6} The SolarMESH Network,
-    http://owl.mcmater.ca/solarmesh
-
-% Technical Report의 경우
-    \bibitem{ref7} K. E. Elliott and C. M. Greene, ``A local adaptive
-    protocol,'' Argonne National Laboratory, Argonne, France,
-    Technical Report 916-1010-BB, 1997.
-
-% 학위논문의 경우
-    \bibitem{ref8} T. Kim, ``Scheduling and Allocation Problems in
-    High-level Synthesis,'' Ph. D. Dissertation, ECE Department,
-    Univ. of Illinois at U-C, 1993.
-
-% 특허의 경우
-    \bibitem{ref9} Sunghyun Choi, ``Wireless MAC protocol based on a
-    hybrid combination of slot allocation, token passing, and
-    polling for isochronous traffic,'' U.S. Patent No. 6,795,418,
-    September 21, 2004.
-
-% 표준
-    \bibitem{ref10} IEEE Std. 802.11-1999, Part 11: Wireless LAN
-    Medium Access Control (MAC) and Physical Layer (PHY)
-    specifications, Reference number ISO/IEC 8802-11:1999(E), IEEE
-    Std. 802.11, 1999 edition, 1999.
-
-\end{thebibliography}
-
-\keywordalt{서울대학교, 전기공학부, 졸업논문}
+\keywordalt{C, 실행의미, 컴파일러, 정형검증}
 \begin{abstractalt}
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
-서울대학교 전기공학부 졸업논문 예제 파일입니다.
+TODO: 서울대학교 전기공학부 졸업논문 예제 파일입니다.
 \end{abstractalt}
 
-\acknowledgement
-Thanks!
 
 \end{document}
 
