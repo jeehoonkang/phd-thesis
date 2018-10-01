@@ -1,22 +1,38 @@
 \section{Introduction}
 \label{sec:introduction}
 
-\subsection{The Context}
+\subsection{The Context: The C Programming Language}
+
+The C programming language is the \emph{lingua franca} for systems programming, mainly because of
+its \emph{portability} and \emph{control} over low-level hardware.  C is portable in that most of
+the real-world systems support C API and compilers.  C has control over hardware in that its
+programmers can manually instruct hardware what to do.  These advantages have attracted system
+programmers for decades, resulting in a giant ecosystem around the C language itself and language
+tools such as optimizing compilers, linkers, and program verifiers.  While many languages---such as
+C++, D, Objective C, Swift, Rust---have been proposed to be used in building systems instead of
+using C, they have never replaced C completely and even are called ``C-like'' in order to
+acknowledge the influence of C on those languages.
+
+C---like all the other programming languages---serves multiple ``masters'', namely programmers,
+compilers, and hardware.  From programmer's point of view, C should support \emph{reasoning
+  principles} that are powerful enough to reason about real-world C programs and guarantee their
+safety and functional correctness.  On the other hand, C should validate compiler and hardware
+\emph{optimizations} that may vastly accelerate the execution of C programs and are therefore
+actually performed in the real-world compilers and hardware.  What is particularly interesting about
+C is that TODO.
+
+
+\subsection{The Gap: Masters are Conflicting with Each Other}
 
 TODO
 
 
-\subsection{The Gap}
+\subsection{Our Innovation: Formal Semantics and Formal Verification}
 
 TODO
 
 
-\subsection{Our Innovation}
-
-TODO
-
-
-\subsection{Outline}
+\subsection{Organization}
 
 TODO
 
@@ -26,13 +42,24 @@ TODO
 This thesis draws heavily on the work and writing in the following papers:
 
 \begin{itemize}
-\item[\cite{intptrcast}] Jeehoon Kang, Chung-Kil Hur, William Mansky, Dmitri Garbuzov, Steve
-  Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer Casts}.
-  PLDI 2015.
-\item[\cite{sepcomp}] Jeehoon Kang, Yoonseung Kim, Chung-Kil Hur, Derek Dreyer, Viktor Vafeiadis.
-  \emph{Lightweight Verification of Separate Compilation}.  POPL 2016.
-\item[\cite{promising}] Jeehoon Kang, Chung-Kil Hur, Ori Lahav, Viktor Vafeiadis, Derek Dreyer.
-  \emph{A Promising Semantics for Relaxed-Memory Concurrency}.  POPL 2017.
+\item[\cite{intptrcast}] \textbf{Jeehoon Kang}, Chung-Kil Hur, William Mansky, Dmitri Garbuzov,
+  Steve Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer
+    Casts}.  \textbf{PLDI 2015}.
+\item[\cite{promising}] \textbf{Jeehoon Kang}, Chung-Kil Hur, Ori Lahav, Viktor Vafeiadis, Derek
+  Dreyer.  \emph{A Promising Semantics for Relaxed-Memory Concurrency}.  \textbf{POPL 2017}.
+\item[\cite{sepcomp}] \textbf{Jeehoon Kang}, Yoonseung Kim, Chung-Kil Hur, Derek Dreyer, Viktor
+  Vafeiadis.  \emph{Lightweight Verification of Separate Compilation}.  \textbf{POPL 2016}.
+\end{itemize}
+
+TODO
+
+\begin{itemize}
+\item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
+  \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
+\item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
+  Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
+  (*The first three authors contributed equally and are listed alphabetically.)  \emph{Crellvm:
+    Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.
 \end{itemize}
 
 
