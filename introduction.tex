@@ -4,14 +4,40 @@
 \subsection{The Context: The C Programming Language}
 
 The C programming language is the \emph{lingua franca} for systems programming, mainly because of
-its \emph{portability} and \emph{control} over low-level hardware.  C is portable in that most of
-the real-world systems support C API and compilers.  C has control over hardware in that its
-programmers can manually instruct hardware what to do.  These advantages have attracted system
-programmers for decades, resulting in a giant ecosystem around the C language itself and language
-tools such as optimizing compilers, linkers, and program verifiers.  While many languages---such as
-C++, D, Objective C, Swift, Rust---have been proposed to be used in building systems instead of
-using C, they have never replaced C completely and even are called ``C-like'' in order to
-acknowledge the influence of C on those languages.
+its \emph{portability} and \emph{control} over low-level hardware.  C is portable in that C programs
+can be compiled and then executed for various hardware architectures.  At the same time, C has
+control over low-level hardware in that C allows programmers to access relatively low-level hardware
+features such as memory layout and concurrency.  These advantages have attracted system programmers
+for decades, resulting in a giant ecosystem around the C language itself and tools such as
+optimizing compilers, linkers, and program verifiers.
+
+C enjoys portability and control at the same time because it is a balanced abstraction over various
+assembly languages.  If C were exposing too much detail of hardware, then it would have not been
+able to support some assembly languages, losing significant degree of portability; on the other
+hand, if C were exposing too few detail of hardware, then it would have lost precise control over
+them.  While many languages---such as C++, D, Objective C, Swift, Rust---have been proposed to be
+used in building systems instead of using C, they have never replaced C completely and even are
+called ``C-like'' in order to acknowledge the influence of C on those languages.
+
+However, C is not just a thin wrapper around assembly languages because of compiler optimizations.
+Compiler optimizations have been crucial for the performance of systems since the early days, \eg{}
+every system programmer expect a compiler to perform register promotion and allocation
+optmizations~\cite{reg-prom, reg-alloc}, which are very effective and yet quite sophisticated
+compiler optimizations.  Compiler optimizations are becoming more and more important these days
+because system programmers are building bigger systems and vendors are introducing complex features
+in hardware, opening up the potential of compiler optimzations for further performance improvement.
+
+To summarize, C is a programming abstraction that should satisfy the desiderata for three different
+``masters'': portability for programmers, and control for hardware, and optimization for compilers.
+
+
+\subsection{The Gap: Conflicting Desiderata for C}
+
+Unfortunately, these desiderata are sometimes conflicting with each other so that it is
+difficult---if not impossible---to give a good semantics for C.
+
+
+---------
 
 C---like all the other programming languages---serves multiple ``masters'', namely programmers,
 compilers, and hardware.  From programmer's point of view, C should support \emph{reasoning
@@ -20,11 +46,6 @@ safety and functional correctness.  On the other hand, C should validate compile
 \emph{optimizations} that may vastly accelerate the execution of C programs and are therefore
 actually performed in the real-world compilers and hardware.  What is particularly interesting about
 C is that TODO.
-
-
-\subsection{The Gap: Masters are Conflicting with Each Other}
-
-TODO
 
 
 \subsection{Our Innovation: Formal Semantics and Formal Verification}
