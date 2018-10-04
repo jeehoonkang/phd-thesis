@@ -33,8 +33,11 @@
 \usepackage{MinionPro}
 \usepackage{MyriadPro}
 \usepackage[scaled]{beramono}
+\usepackage{cleveref}
 
 \linespread{1.0}
+\renewcommand{\thechapter}{\Roman{chapter}}
+\counterwithout{section}{chapter}
 
 %% \title : 22pt로 나오는 큰 제목
 %% \title* : 16pt로 나오는 작은 제목
@@ -97,13 +100,8 @@
 
 \cleardoublepage
 \pagenumbering{roman}
-% 초록 Abstract
 
-\keyword{C, semantics, compiler, formal verification}
-\begin{abstract}
-  \noindent
-  \include{abstract}
-\end{abstract}
+\input{abstract}
 
 \begin{quotation}
   \emph{The outcomes that matter in research are not numerous publications, best-paper awards,
@@ -113,9 +111,7 @@
     unremitted and probably definitive failure.} \hfill{}---Bertrand Meyer~\cite{bertrand-meyer}\ \phantom{ }
 \end{quotation}
 
-\acknowledgement
-
-TODO
+\input{acknowledgment}
 
 
 \tableofcontents
@@ -135,17 +131,20 @@ TODO
 \input{formal-semantics}
 \input{compiler-verification}
 
-\chapter{Semantics of Integer-Pointer Casts}
+\chapter{Integer-Pointer Casts}
+\label{chap:intptrcast}
 
 TODO
 
 
-\chapter{Semantics of Relaxed-Memory Concurrency}
+\chapter{Relaxed-Memory Concurrency}
+\label{chap:promising}
 
 TODO
 
 
-\chapter{Verification of Separate Compilation}
+\chapter{Separate Compilation}
+\label{chap:sepcomp}
 
 TODO
 
@@ -166,13 +165,8 @@ TODO
 
 \bibliographystyle{abbrv}
 \bibliography{references}
-\end{document}
 
-
-\keywordalt{C, 실행의미, 컴파일러, 정형검증}
-\begin{abstractalt}
-  \include{abstract-kor}
-\end{abstractalt}
+\input{abstract-kor}
 
 
 \end{document}

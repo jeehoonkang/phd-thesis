@@ -3,85 +3,123 @@
 
 \subsection{The Context: The C Programming Language}
 
-The C programming language is the \emph{lingua franca} for systems programming, mainly because of
-its \emph{portability} and \emph{control} over low-level hardware.  C is portable in that C programs
-can be compiled and then executed for various hardware architectures.  At the same time, C has
-control over low-level hardware in that C allows programmers to access relatively low-level hardware
-features such as memory layout and concurrency.  These advantages have attracted system programmers
-for decades, resulting in a giant ecosystem around the C language itself and tools such as
-optimizing compilers, linkers, and program verifiers.
+The C programming language is the \emph{lingua franca} for systems programming, mainly due to its
+two notable advantages: \emph{portability} and \emph{control} over low-level hardware.  C is
+portable in that C programs can be compiled and then executed in most of the existing hardware
+architectures.  At the same time, C has control over low-level hardware in that C allows programmers
+to access relatively low-level hardware features such as memory layout and concurrency.  These
+advantages have attracted system programmers for decades, resulting in a giant ecosystem around the
+C language itself and tools such as optimizing compilers, linkers, and program analyzers.
 
-C enjoys portability and control at the same time because it is a balanced abstraction over various
-assembly languages.  If C were exposing too much detail of hardware, then it would have not been
-able to support some assembly languages, losing significant degree of portability; on the other
-hand, if C were exposing too few detail of hardware, then it would have lost precise control over
-them.  While many languages---such as C++, D, Objective C, Swift, Rust---have been proposed to be
-used in building systems instead of using C, they have never replaced C completely and even are
-called ``C-like'' in order to acknowledge the influence of C on those languages.
+C enjoys portability and control---seemingly conflicting properties---at the same time because it is
+a balanced abstraction over various assembly languages.  If C were exposing too much detail of
+hardware, then it would have not been able to support some assembly languages that mismatch with the
+exposed details, losing a significant degree of portability; on the other hand, if C were exposing
+too little detail of hardware, then it would have lost precise control over them.  The design choice
+of C as an abstraction is so popular that other systems programming languages---such as C++, D,
+Objective C, Swift, Rust---largely follow the design of C and are often called ``C-like''.
 
-However, C is not just a thin wrapper around assembly languages because of compiler optimizations.
-Compiler optimizations have been crucial for the performance of systems since the early days, \eg{}
-every system programmer expect a compiler to perform register promotion and allocation
-optmizations~\cite{reg-prom, reg-alloc}, which are very effective and yet quite sophisticated
-compiler optimizations.  Compiler optimizations are becoming more and more important these days
-because system programmers are building bigger systems and vendors are introducing complex features
-in hardware, opening up the potential of compiler optimzations for further performance improvement.
+Another important aspect of C is the existence of compiler optimizations.  Indeed, compiler
+optimizations have been so crucial for the performance of systems since the early days that every
+system programmer expect a compiler to perform, \eg{} register promotion and register
+allocation~\cite{reg-prom, reg-alloc}, which are very effective and yet quite sophisticated compiler
+optimizations.  Because of compiler optimizations, C is not just a thin wrapper around assembly
+languages; it is rather an abstraction over both assembly languages compiler optimizations.
+Compiler optimizations are becoming more and more important these days because system programmers
+are building bigger systems and hardware vendors are introducing more complex features, opening up
+the potential of compiler optimzations for further performance improvement.
 
-To summarize, C is a programming abstraction that should satisfy the desiderata for three different
-``masters'': portability for programmers, and control for hardware, and optimization for compilers.
+% To summarize, the C programming language is an abstraction that should satisfy the desiderata for
+% three different ``masters'': portability for programmers, control for hardware, and optimization for
+% compilers.
 
-
-\subsection{The Gap: Conflicting Desiderata for C}
-
-Unfortunately, these desiderata are sometimes conflicting with each other so that it is
-difficult---if not impossible---to give a good semantics for C.
-
-
----------
-
-C---like all the other programming languages---serves multiple ``masters'', namely programmers,
-compilers, and hardware.  From programmer's point of view, C should support \emph{reasoning
-  principles} that are powerful enough to reason about real-world C programs and guarantee their
-safety and functional correctness.  On the other hand, C should validate compiler and hardware
-\emph{optimizations} that may vastly accelerate the execution of C programs and are therefore
-actually performed in the real-world compilers and hardware.  What is particularly interesting about
-C is that TODO.
+% C---like all the other programming languages---serves multiple ``masters'', namely programmers,
+% compilers, and hardware.  From programmer's point of view, C should support \emph{reasoning
+%   principles} that are powerful enough to reason about real-world C programs and guarantee their
+% safety and functional correctness.  On the other hand, C should validate compiler and hardware
+% \emph{optimizations} that may vastly accelerate the execution of C programs and are therefore
+% actually performed in the real-world compilers and hardware.  What is particularly interesting about
+% C is that TODO.
 
 
-\subsection{Our Innovation: Formal Semantics and Formal Verification}
+\subsection{The Gap: Which Optimizations are Legal?}
+
+The problem is that these days the mainstream compilers are becoming so aggressive that they are
+performing even subtle optimizations that we cannot justify immediately.  For example, consider the
+following optimization performed by the mainstream compilers such as GCC~\cite{gcc} and
+LLVM~\cite{llvm}:
+
+TODO: constant propagation across unknown function call
+
+\noindent TODO
+
+TODO: evil g
+
+\noindent TODO
+
+Obviously we want compilers to perform the above optimization, because the reasoning we described
+above is ``right'': indeed, \code{g()} \emph{shall} be oblivious to even the existence of \code{x}
+so that a call to \code{g()} shall not modify \code{x} at all.  TODO: \code{g()} is evil (undefined
+behavior).
+
+TODO: description so far is informal at best.
+
+
+\paragraph{Prior Art}
+
+TODO: Formal Semantics and Compiler Verification
+
+TODO: problem: only toy
+
+
+\subsection{Our Innovation: Towards C in Practice}
 
 TODO
+
+TODO: ``towards'': it's not the end.  in some sense, it's just a beginning...  but we dealt very
+important and difficult aspects of C.
 
 
 \subsection{Organization}
 
-TODO
+The rest of \Cref{chap:prologue} provides the technical background that informs the rest of the
+dissertation.  TODO: \Cref{sec:formal-semantics}.  TODO: \Cref{sec:compiler-verification}.
 
-
-\subsection{Previously Published Material}
-
-This thesis draws heavily on the work and writing in the following papers:
+The main body of this dissertation consists of the following chapters, each of which draws heavily
+on the work and writing in a previously published paper:
 
 \begin{itemize}
-\item[\cite{intptrcast}] \textbf{Jeehoon Kang}, Chung-Kil Hur, William Mansky, Dmitri Garbuzov,
+\item \Cref{chap:intptrcast}
+
+  \cite{intptrcast} \textbf{Jeehoon Kang}, Chung-Kil Hur, William Mansky, Dmitri Garbuzov,
   Steve Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer
-    Casts}.  \textbf{PLDI 2015}.
-\item[\cite{promising}] \textbf{Jeehoon Kang}, Chung-Kil Hur, Ori Lahav, Viktor Vafeiadis, Derek
+    Casts}.  \textbf{PLDI 2015}.  
+
+\item \Cref{chap:promising}
+
+  \cite{promising} \textbf{Jeehoon Kang}, Chung-Kil Hur, Ori Lahav, Viktor Vafeiadis, Derek
   Dreyer.  \emph{A Promising Semantics for Relaxed-Memory Concurrency}.  \textbf{POPL 2017}.
-\item[\cite{sepcomp}] \textbf{Jeehoon Kang}, Yoonseung Kim, Chung-Kil Hur, Derek Dreyer, Viktor
+
+\item \Cref{chap:sepcomp}
+
+  \cite{sepcomp} \textbf{Jeehoon Kang}, Yoonseung Kim, Chung-Kil Hur, Derek Dreyer, Viktor
   Vafeiadis.  \emph{Lightweight Verification of Separate Compilation}.  \textbf{POPL 2016}.
 \end{itemize}
 
-TODO
+This dissertation concludes with \Cref{chap:epilogue}, which summarizes the contributions
+(\Cref{sec:conclusion}) and future work (\Cref{sec:futurework}).
 
-\begin{itemize}
-\item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
-  \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
-\item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
-  Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
-  (*The first three authors contributed equally and are listed alphabetically.)  \emph{Crellvm:
-    Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.
-\end{itemize}
+
+% TODO: how to mention these papers?
+%
+% \begin{itemize}
+% \item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
+%   \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
+% \item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
+%   Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
+%   (*The first three authors contributed equally and are listed alphabetically.)  \emph{Crellvm:
+%     Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.
+% \end{itemize}
 
 
 %%% Local Variables:
