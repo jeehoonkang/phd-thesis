@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-pdflatex main
+pdflatex -shell-escape main
 bibtex main
-pdflatex main
+pdflatex -shell-escape main

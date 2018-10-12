@@ -3,31 +3,24 @@
 
 \subsection{The Context: The C Programming Language}
 
+\paragraph{C as a Hardware Abstraction}
+
 The C programming language is the \emph{lingua franca} for systems programming, mainly due to its
-two notable advantages: \emph{portability} and \emph{control} over low-level hardware.  C is
-portable in that C programs can be compiled and then executed in most of the existing hardware
-architectures.  At the same time, C has control over low-level hardware in that C allows programmers
-to access relatively low-level hardware features such as memory layout and concurrency.  These
-advantages have attracted system programmers for decades, resulting in a giant ecosystem around the
-C language itself and tools such as optimizing compilers, linkers, and program analyzers.
+two notable advantages: \emph{portability} and \emph{control} over hardware.  C is portable in that
+C programs can be compiled and then executed in most of the existing hardware.  At the same time, C
+has a precise control over hardware in that C allows programmers to access relatively low-level
+hardware features such as memory layout and concurrency.  These advantages have attracted system
+programmers for decades, resulting in a giant ecosystem around the C language itself and tools such
+as optimizing compilers, linkers, and program analyzers.
 
 C enjoys portability and control---seemingly conflicting properties---at the same time because it is
-a balanced abstraction over various assembly languages.  If C were exposing too much detail of
-hardware, then it would have not been able to support some assembly languages that mismatch with the
-exposed details, losing a significant degree of portability; on the other hand, if C were exposing
-too little detail of hardware, then it would have lost precise control over them.  The design choice
-of C as an abstraction is so popular that other systems programming languages---such as C++, D,
-Objective C, Swift, Rust---largely follow the design of C and are often called ``C-like''.
-
-Another important aspect of C is the existence of compiler optimizations.  Indeed, compiler
-optimizations have been so crucial for the performance of systems since the early days that every
-system programmer expect a compiler to perform, \eg{} register promotion and register
-allocation~\cite{reg-prom, reg-alloc}, which are very effective and yet quite sophisticated compiler
-optimizations.  Because of compiler optimizations, C is not just a thin wrapper around assembly
-languages; it is rather an abstraction over both assembly languages compiler optimizations.
-Compiler optimizations are becoming more and more important these days because system programmers
-are building bigger systems and hardware vendors are introducing more complex features, opening up
-the potential of compiler optimzations for further performance improvement.
+a balanced abstraction over various hardware assembly languages.  If C were exposing too much detail
+of hardware, then it would have not been able to support some assembly languages that mismatch with
+the exposed details, losing a significant degree of portability; on the other hand, if C were
+exposing too little detail of hardware, then it would have lost precise control over them.  The
+design choice of C as an abstraction is so popular that other systems programming languages---such
+as C++, D, Objective C, Swift, Rust---largely follow the design of C and are often called
+``C-like''.
 
 % To summarize, the C programming language is an abstraction that should satisfy the desiderata for
 % three different ``masters'': portability for programmers, control for hardware, and optimization for
@@ -42,34 +35,106 @@ the potential of compiler optimzations for further performance improvement.
 % C is that TODO.
 
 
-\subsection{The Gap: Which Optimizations are Legal?}
+\paragraph{Compiler Optimization}
 
-The problem is that these days the mainstream compilers are becoming so aggressive that they are
-performing even subtle optimizations that we cannot justify immediately.  For example, consider the
-following optimization performed by the mainstream compilers such as GCC~\cite{gcc} and
+However, C is not just a thin wrapper around assembly languages because of compiler optimizations.
+Compiler optimizations have been so crucial for the performance of systems since the early days that
+every system programmer expect a compiler to perform, \eg{} register promotion and register
+allocation~\cite{reg-prom, reg-alloc}, which are very effective and yet quite sophisticated compiler
+optimizations.  Compiler optimizations are becoming more and more important these days because
+recent trends offer potential for compiler optimizations to further improve the performance of
+systems.  Since compiler optimizations are an essential ingredient of the use of C, C should be an
+abstraction not only over just hardware assembly languages but also compiler optimizations.
+
+% system programmers are building bigger systems, which they cannot hand-optimize on their own; and
+% hardware vendors are introducing complex features, which need a special attention for maximal
+% utilization.
+
+
+The problem is that the mainstream compilers are becoming so aggressive in these days that they are
+performing even subtle optimizations that cannot be immediately justified.  For example, consider
+the following optimization actually performed by the mainstream compilers such as GCC~\cite{gcc} and
 LLVM~\cite{llvm}:
 
-TODO: constant propagation across unknown function call
+\[\begin{array}{rcl}
+\begin{minipage}{0.27\textwidth}
+\begin{minted}{c}
+void f() {
+  10: int x = 42;
+  20: g();
+  30: print(x);
+}
+\end{minted}
+\end{minipage}
+&
+\optarrow
+&
+\begin{minipage}{0.4\textwidth}
+\begin{minted}{c}
+void f() {
+  10: int x = 42;
+  20: g();
+  30: print(42); // const. prop.
+}
+\end{minted}
+\end{minipage}
+\end{array}\]
 
-\noindent TODO
+\noindent Suppose \code{g()} is an external function whose body is unknown to the compiler, and
+\code{print($x$)} prints the value of $x$ to the screen.  The function \code{f()} first assigns
+\code{42} to \code{x} (line \code{10}), calls \code{g()} (line \code{20}), and then prints \code{x}
+(line \code{30}).  Mainstream compilers replaces \code{x} with \code{42} at line \code{30},
+effectively propagating the constant \code{42} at line \code{10} to line \code{30}.  Compilers
+perform such a \emph{constant propagation} optimization because the variable \code{x} is accessible
+only within the function \code{f()} so that \code{g()} cannot modify the content of \code{x}.
 
-TODO: evil g
+But what if an adversarial \code{g()} tries to ``guess'' the address of \code{x} as follows?
+%
+\[
+\begin{minipage}{0.8\textwidth}
+\begin{minted}{c}
+void g() {
+  10: int anchor;
+  20: int *guess = &anchor + 10; // guessing &x
+  30: *guess = 666;
+}
+\end{minted}
+\end{minipage}
+\]
+%
+\noindent The function \code{g()} tries to guess the address of \code{x} by exploiting the fact that
+stack usually grows downwards: it first declares a variable \code{anchor}, and guesses that
+\code{&x} is 10 words bigger than \code{&anchor}.  The guess happens to be correct when compiled
+with GCC 8.2.1 in Linux 4.18: indeed, when this \code{g()} is linked with the original \code{f()},
+\code{f()} will print the evil value 666; on the other hand, when this \code{g()} is linked with the
+optimized \code{f()}, \code{f()} will print the propagated value 42 as expected.\footnote{TODO:
+  concretely, \code{gcc -fno-stack-protector assets/example1.c \&\& ./a.out} prints 666, while
+  \code{gcc -fno-stack-protector assets/example1-opt.c \&\& ./a.out} prints 42.}  This example
+invalidates the compiler's assumption that \code{x} is accessible only within the function
+\code{f()}, jeopardizing the soundness of the optimization.
 
-\noindent TODO
+TODO: Undefined behavior to the rescue!
 
 Obviously we want compilers to perform the above optimization, because the reasoning we described
 above is ``right'': indeed, \code{g()} \emph{shall} be oblivious to even the existence of \code{x}
 so that a call to \code{g()} shall not modify \code{x} at all.  TODO: \code{g()} is evil (undefined
 behavior).
 
-TODO: description so far is informal at best.
+What is particularly interesting of C compiler optimizations is that
 
+
+
+\subsection{The Gap: Which Optimizations are Legal?}
+
+
+TODO: description so far is informal at best.
 
 \paragraph{Prior Art}
 
 TODO: Formal Semantics and Compiler Verification
 
 TODO: problem: only toy
+
 
 
 \subsection{Our Innovation: Towards C in Practice}
@@ -125,4 +190,5 @@ This dissertation concludes with \Cref{chap:epilogue}, which summarizes the cont
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
 %%% End:
