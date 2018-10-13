@@ -55,7 +55,7 @@ optimizations.
 % performing even subtle optimizations that cannot be immediately justified.
 
 Some compiler optimizations are so subtle that they cannot be immediately justified.  For example,
-consider the following optimization actually performed by the mainstream compilers such as
+consider the following optimization that is actually performed by the mainstream compilers such as
 GCC~\cite{gcc} and LLVM~\cite{llvm}:
 
 \[\begin{array}{rcl}
@@ -126,8 +126,8 @@ and thus \code{guess} is an invalid address~\cite{c11-6.5.6p8}.  Thus compilers 
 that all the pointers derived from \code{anchor} \emph{shall} point to \code{anchor}, and a failure
 to conform with such an assumption invokes undefined behavior.
 
-What is particularly interesting of C is the widespread use of undefined behavior in the definition
-of language semantics.  The constant propagation example above shows that the low-level control over
+What is particularly interesting about C is the widespread use of undefined behavior in defining
+language semantics.  The constant propagation example above shows that the low-level control over
 memory layout conflicts with a simple compiler optimization, and C resolves the conflict by marking
 adversarial programs as invoking undefined behaviors.  C generally applies this strategy to the
 conflict between control over various low-level details of hardware and various compiler
