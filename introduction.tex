@@ -1,7 +1,7 @@
 \section{Introduction}
 \label{sec:introduction}
 
-\subsection{The Context: The C Programming Language}
+\subsection{The C Programming Language}
 
 \paragraph{C as a Hardware Abstraction}
 
@@ -43,18 +43,20 @@ every system programmer expect a compiler to perform, \eg{} register promotion a
 allocation~\cite{reg-prom, reg-alloc}, which are very effective and yet quite sophisticated compiler
 optimizations.  Compiler optimizations are becoming more and more important these days because
 recent trends offer potential for compiler optimizations to further improve the performance of
-systems.  Since compiler optimizations are an essential ingredient of the use of C, C should be an
-abstraction not only over just hardware assembly languages but also compiler optimizations.
+systems.  Since compiler optimizations are an essential ingredient of the real-world practice of C,
+C should be an abstraction not only over just hardware assembly languages but also over compiler
+optimizations.
 
 % system programmers are building bigger systems, which they cannot hand-optimize on their own; and
 % hardware vendors are introducing complex features, which need a special attention for maximal
 % utilization.
 
+% These days the mainstream compilers are becoming so aggressive in these days that they are
+% performing even subtle optimizations that cannot be immediately justified.
 
-The problem is that the mainstream compilers are becoming so aggressive in these days that they are
-performing even subtle optimizations that cannot be immediately justified.  For example, consider
-the following optimization actually performed by the mainstream compilers such as GCC~\cite{gcc} and
-LLVM~\cite{llvm}:
+Some compiler optimizations are so subtle that they cannot be immediately justified.  For example,
+consider the following optimization actually performed by the mainstream compilers such as
+GCC~\cite{gcc} and LLVM~\cite{llvm}:
 
 \[\begin{array}{rcl}
 \begin{minipage}{0.27\textwidth}
@@ -115,32 +117,41 @@ This example invalidates the compiler's analysis that \code{x} is accessible onl
 function \code{f()}, putting the soundness of the optimization in danger.
 
 In order to rescue the constant propagation and other compiler optimizations, C blames the
-adversarial code by marking it as invoking \emph{undefined behavior}: the function \code{g()} is not
-following the rule of C so that it's behavior is undefined and compilers can do anything it chooses,
-even ``to make demons fly out of your nose''~\cite{nasal-demons}.  Concretely, \code{g()}
-\emph{shall} not access \code{anchor} TODO.
+adversarial code by marking it as invoking \emph{undefined behavior}~\cite{undefined-behavior}: the
+function \code{g()} is not following the rule of C so that compilers can do anything it chooses,
+even ``to make demons fly out of your nose''~\cite{nasal-demons}.  Concretely, \code{g()} invokes
+undefined behavior in the ISO C11~\cite{c11} because the pointer \code{guess} is outside of the
+valid range of the memory allocation of \code{anchor}, from which $\code{guess}$ is derived from,
+and thus \code{guess} is an invalid address~\cite{c11-6.5.6p8}.  Thus compilers may safely assume
+that all the pointers derived from \code{anchor} \emph{shall} point to \code{anchor}, and a failure
+to conform with such an assumption invokes undefined behavior.
 
-What is particularly interesting of C compiler optimizations is that TODO: so many undefined
-behaviors; it's a big part of the language.
+What is particularly interesting of C is the widespread use of undefined behavior in the definition
+of language semantics.  The constant propagation example above shows that the low-level control over
+memory layout conflicts with a simple compiler optimization, and C resolves the conflict by marking
+adversarial programs as invoking undefined behaviors.  C generally applies this strategy to the
+conflict between control over various low-level details of hardware and various compiler
+optimizations implemented in mainstream C compilers, introducing a lot of undefined behaviors in the
+language semantics.  It is worth comparing C with higher-level languages---such as Java, .NET,
+OCaml, Haskell---that do not need undefined behaviors to justify compiler optimizations thanks to
+the lack of control over low-level details of hardware.  For example, since buffer overrun in Java
+throws exceptions, TODO.
 
 
-\paragraph{C as a }
+\subsection{Reckless Development of Undefined Behavior}
 
-
-\subsection{The Gap: Which Optimizations are Legal?}
-
+The problem is that the C programming language is developed in a reckless manner,
 
 TODO: description so far is informal at best.
 
-\paragraph{Prior Art}
 
-TODO: Formal Semantics and Compiler Verification
+\paragraph{Prior Art: Formal Semantics and Compiler Verification}
 
 TODO: problem: only toy
 
 
 
-\subsection{Our Innovation: Towards C in Practice}
+\subsection{My Thesis: Towards C in Practice}
 
 TODO
 
