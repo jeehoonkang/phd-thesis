@@ -13,14 +13,14 @@ hardware features such as memory layout and concurrency.  These advantages have 
 programmers for decades, resulting in a giant ecosystem around the C language itself and tools such
 as optimizing compilers, linkers, and program analyzers.
 
-C enjoys portability and control---seemingly conflicting properties---at the same time because it is
-a balanced abstraction over various hardware assembly languages.  If C were exposing too much detail
-of hardware, then it would have not been able to support some assembly languages that mismatch with
-the exposed details, losing a significant degree of portability; on the other hand, if C were
-exposing too little detail of hardware, then it would have lost precise control over them.  The
-design choice of C as an abstraction is so popular that other systems programming languages---such
-as C++, D, Objective C, Swift, Rust---largely follow the design of C and are often called
-``C-like''.
+C enjoys portability and control---seemingly conflicting properties---at the same time thanks to the
+fact that it is a balanced abstraction over various hardware assembly languages.  If C were exposing
+too much detail of hardware, then it would have not been able to support some assembly languages
+that mismatch with the exposed details, losing a significant degree of portability; on the other
+hand, if C were exposing too little detail of hardware, then it would have lost precise control over
+them.  The design choice of C as a hardware abstraction is so popular that other systems programming
+languages---such as C++, D, Objective C, Swift, Rust---largely follow the design of C and are often
+called ``C-like''.
 
 % To summarize, the C programming language is an abstraction that should satisfy the desiderata for
 % three different ``masters'': portability for programmers, control for hardware, and optimization for
@@ -44,8 +44,8 @@ allocation~\cite{reg-prom, reg-alloc}, which are very effective and yet quite so
 optimizations.  Compiler optimizations are becoming more and more important these days because
 recent trends offer potential for compiler optimizations to further improve the performance of
 systems.  Since compiler optimizations are an essential ingredient of the real-world practice of C,
-C should be an abstraction not only over just hardware assembly languages but also over compiler
-optimizations.
+the language should be an abstraction not only over just hardware assembly languages but also over
+compiler optimizations.
 
 % system programmers are building bigger systems, which they cannot hand-optimize on their own; and
 % hardware vendors are introducing complex features, which need a special attention for maximal
@@ -54,7 +54,7 @@ optimizations.
 % These days the mainstream compilers are becoming so aggressive in these days that they are
 % performing even subtle optimizations that cannot be immediately justified.
 
-Some compiler optimizations are so subtle that they cannot be immediately justified.  For example,
+Some compiler optimizations are so subtle that they cannot be intuitively justified.  For example,
 consider the following optimization that is actually performed by the mainstream compilers such as
 GCC~\cite{gcc} and LLVM~\cite{llvm}:
 
@@ -88,8 +88,8 @@ void f() {
 (line \code{30}).  Mainstream compilers replaces \code{x} with \code{42} at line \code{30},
 effectively propagating the constant \code{42} at line \code{10} to line \code{30}.  Compilers
 perform such a \emph{constant propagation} optimization because they analyze that the variable
-\code{x} is accessible only within the function \code{f()} and thus \code{g()} cannot modify the
-content of \code{x}.
+\code{x} is accessible only within the function \code{f()}, since its address is not leaked to
+elsewhere, and thus \code{g()} cannot modify the content of \code{x}.
 
 But what if an adversarial \code{g()} tries to ``guess'' the address of \code{x} as follows?
 %
@@ -108,37 +108,47 @@ void g() {
 \noindent The function \code{g()} tries to guess the address of \code{x} by exploiting the fact that
 stack usually grows downwards: it first declares a variable \code{anchor}, and guesses that
 \code{\&x} is 10 words bigger than \code{\&anchor}.  The guess happens to be correct when compiled
-with GCC 8.2.1 in Linux 4.18: indeed, when this \code{g()} is linked with the original \code{f()},
-\code{f()} will surprisingly print the evil value 666; on the other hand, when this \code{g()} is
-linked with the optimized \code{f()}, \code{f()} will print the propagated value 42 as
-expected.\footnote{TODO: concretely, \code{gcc -fno-stack-protector assets/example1.c \&\& ./a.out}
-  prints 666, while \code{gcc -fno-stack-protector assets/example1-opt.c \&\& ./a.out} prints 42.}
-This example invalidates the compiler's analysis that \code{x} is accessible only within the
-function \code{f()}, putting the soundness of the optimization in danger.
+with GCC: indeed, when this \code{g()} is linked with the original \code{f()}, \code{f()} will
+surprisingly print the evil value 666; on the other hand, when this \code{g()} is linked with the
+optimized \code{f()}, \code{f()} will print the propagated value 42 as expected.\footnote{We got
+  this result with GCC 8.2.1 and the compile option \code{-fno-stack-protector} in Linux 4.18.} This
+example invalidates the compiler's analysis that \code{x} is accessible only within the function
+\code{f()}, putting the soundness of the optimization in danger.
 
-In order to rescue the constant propagation and other compiler optimizations, C blames the
-adversarial code by marking it as invoking \emph{undefined behavior}~\cite{undefined-behavior}: the
-function \code{g()} is not following the rule of C so that compilers can do anything it chooses,
-even ``to make demons fly out of your nose''~\cite{nasal-demons}.  Concretely, \code{g()} invokes
-undefined behavior in the ISO C11~\cite{c11} because the pointer \code{guess} is outside of the
-valid range of the memory allocation of \code{anchor}, from which $\code{guess}$ is derived from,
-and thus \code{guess} is an invalid address~\cite{c11-6.5.6p8}.  Thus compilers may safely assume
-that all the pointers derived from \code{anchor} \emph{shall} point to \code{anchor}, and a failure
-to conform with such an assumption invokes undefined behavior.
+In order to rescue the constant propagation, C blames the adversarial code by marking it as invoking
+\emph{undefined behavior}~\cite{undefined-behavior}: the function \code{g()} is not following the
+rule of C so that compilers can do anything it chooses, even ``to make demons fly out of your
+nose''~\cite{nasal-demons}.  Concretely, \code{g()} invokes undefined behavior in the ISO
+C11~\cite{c11} because the pointer \code{guess} is outside of the valid range of the memory
+allocation of \code{anchor}, from which $\code{guess}$ is derived from, and thus \code{guess} is an
+invalid address~\cite{c11-6.5.6p8}.  In other words, compilers may safely assume that all the
+pointers derived from \code{anchor} \emph{shall} point to \code{anchor}, because a failure to
+conform with such an assumption invokes undefined behavior.
 
 What is particularly interesting about C is the widespread use of undefined behavior in defining
 language semantics.  The constant propagation example above shows that the low-level control over
 memory layout conflicts with a simple compiler optimization, and C resolves the conflict by marking
-adversarial programs as invoking undefined behaviors.  C generally applies this strategy to the
-conflict between control over various low-level details of hardware and various compiler
-optimizations implemented in mainstream C compilers, introducing a lot of undefined behaviors in the
-language semantics.  It is worth comparing C with higher-level languages---such as Java, .NET,
-OCaml, Haskell---that do not need undefined behaviors to justify compiler optimizations thanks to
-the lack of control over low-level details of hardware.  For example, since buffer overrun in Java
-throws exceptions, TODO.
+adversarial programs as invoking undefined behaviors.  C typically applies this strategy for
+resolving the conflicts between control over various low-level details of hardware and various
+compiler optimizations implemented in mainstream C compilers, introducing a lot of undefined
+behaviors in the language semantics.  It is worth comparing C with higher-level languages---such as
+Java, .NET, OCaml, Haskell---that do not need undefined behaviors to justify compiler optimizations
+thanks to their lack of precise control over low-level details of hardware, \eg{} constant
+propagation is immeidately justified in Haskell, without resorting to undefined behavior, thanks to
+its lack of raw pointer.
 
 
-\subsection{Reckless Development of Undefined Behavior}
+\subsection{The Problem: Reckless Development of Semantics and Compilers}
+
+Unfortunately, nowadays undefined behavior and compiler optimizations are developed in a
+uncontrollable way so that
+
+
+
+
+
+
+
 
 The problem is that the C programming language is developed in a reckless manner,
 
