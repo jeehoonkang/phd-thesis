@@ -134,25 +134,26 @@ compiler optimizations implemented in mainstream C compilers, introducing a lot 
 behaviors in the language semantics.  It is worth comparing C with higher-level languages---such as
 Java, .NET, OCaml, Haskell---that do not need undefined behaviors to justify compiler optimizations
 thanks to their lack of precise control over low-level details of hardware, \eg{} constant
-propagation is immeidately justified in Haskell, without resorting to undefined behavior, thanks to
+propagation is immediately justified in Haskell without resorting to undefined behavior, thanks to
 its lack of raw pointer.
 
 
 \subsection{The Problem: Reckless Development of Semantics and Compilers}
 
-Unfortunately, nowadays undefined behavior and compiler optimizations are developed in a
-uncontrollable way so that
+The problem is that the C language and its compilers have evolved in such an unplanned way that C is
+becoming an esoteric and mystical language with ambiguous and confusing semantics.  Specifically, to
+improve performance and energy consumption of systems, compiler writers have introduced dozens of
+subtle optimizations even though their soundness is justified solely by intuition; in turn, to
+justify those optimizations afterwards, the recent C programming language standards mark more and
+more programs as invoking undefined behavior with a variety of ad-hoc exceptions on top of already
+informal description of the semantics.  Due to these reckless development of C semantics and
+compilers, experienced systems programmers often neglect the ISO C standards and develop their own
+dialect of C~\cite{c-memory-model}.
 
 
+\paragraph{Problem 1: Too Many Undefined Behavior}
 
-
-
-
-
-
-The problem is that the C programming language is developed in a reckless manner,
-
-TODO: description so far is informal at best.
+\paragraph{Problem 2: Conflict between Optimizations}
 
 
 \paragraph{Prior Art: Formal Semantics and Compiler Verification}
