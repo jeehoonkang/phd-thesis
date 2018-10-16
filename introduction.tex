@@ -1,7 +1,7 @@
 \section{Introduction}
 \label{sec:introduction}
 
-\subsection{The C Programming Language}
+\subsection{The Context: The C Programming Language}
 
 \paragraph{C as a Hardware Abstraction}
 
@@ -91,7 +91,7 @@ perform such a \emph{constant propagation} optimization because they analyze tha
 \code{x} is accessible only within the function \code{f()}, since its address is not leaked to
 elsewhere, and thus \code{g()} cannot modify the content of \code{x}.
 
-But what if an adversarial \code{g()} tries to ``guess'' the address of \code{x} as follows?
+But what if an adversarial \code{g()} tries to \emph{guess} the address of \code{x} as follows?
 %
 \[
 \begin{minipage}{0.8\textwidth}
@@ -118,8 +118,8 @@ example invalidates the compiler's analysis that \code{x} is accessible only wit
 In order to rescue the constant propagation, C blames the adversarial code by marking it as invoking
 \emph{undefined behavior}~\cite{undefined-behavior}: the function \code{g()} is not following the
 rule of C so that compilers can do anything it chooses, even ``to make demons fly out of your
-nose''~\cite{nasal-demons}.  Concretely, \code{g()} invokes undefined behavior in the ISO
-C11~\cite{c11} because the pointer \code{guess} is outside of the valid range of the memory
+nose''~\cite{nasal-demons}.  Specifically, \code{g()} invokes undefined behavior in the ISO
+C18~\cite{c18} because the pointer \code{guess} is outside of the valid range of the memory
 allocation of \code{anchor}, from which $\code{guess}$ is derived from, and thus \code{guess} is an
 invalid address~\cite{c11-6.5.6p8}.  In other words, compilers may safely assume that all the
 pointers derived from \code{anchor} \emph{shall} point to \code{anchor}, because a failure to
@@ -128,76 +128,99 @@ conform with such an assumption invokes undefined behavior.
 What is particularly interesting about C is the widespread use of undefined behavior in defining
 language semantics.  The constant propagation example above shows that the low-level control over
 memory layout conflicts with a simple compiler optimization, and C resolves the conflict by marking
-adversarial programs as invoking undefined behaviors.  C typically applies this strategy for
+adversarial programs as invoking undefined behavior.  C typically applies this strategy for
 resolving the conflicts between control over various low-level details of hardware and various
 compiler optimizations implemented in mainstream C compilers, introducing a lot of undefined
-behaviors in the language semantics.  It is worth comparing C with higher-level languages---such as
-Java, .NET, OCaml, Haskell---that do not need undefined behaviors to justify compiler optimizations
-thanks to their lack of precise control over low-level details of hardware, \eg{} constant
-propagation is immediately justified in Haskell without resorting to undefined behavior, thanks to
-its lack of raw pointer.
+behavior instances in the language semantics.  It is worth comparing C with higher-level
+languages---such as Java, .NET, OCaml, Haskell---that do not need undefined behaviors to justify
+compiler optimizations thanks to their lack of precise control over low-level details of hardware,
+\eg{} constant propagation is immediately justified in Haskell without resorting to undefined
+behavior thanks to its lack of raw pointer.
 
 
 \subsection{The Problem: Reckless Development of Semantics and Compilers}
 
-The problem is that the C language and its compilers have evolved in such an unplanned way that C is
-becoming an esoteric and mystical language with ambiguous and confusing semantics.  Specifically, to
-improve performance and energy consumption of systems, compiler writers have introduced dozens of
-subtle optimizations even though their soundness is justified solely by intuition; in turn, to
-justify those optimizations afterwards, the recent C programming language standards mark more and
-more programs as invoking undefined behavior with a variety of ad-hoc exceptions on top of already
-informal description of the semantics.  Due to these reckless development of C semantics and
-compilers, experienced systems programmers often neglect the ISO C standards and develop their own
-dialect of C~\cite{c-memory-model}.
+The problem is that the C language and its compilers have evolved in such an unplanned way that even
+experienced systems programmers disagree on the language semantics and the soundness of various
+compiler optimizations.  In order to improve performance and energy consumption of systems, compiler
+writers have introduced dozens of subtle optimizations even though their soundness is justified
+solely by intuition; in turn, to justify those optimizations afterwards, the recent ISO C standards
+mark more and more programs as invoking undefined behavior with a variety of ad-hoc exceptions,
+making the already informal semantics more ambiguous and confusing.  In order to mitigate the
+problem caused by reckless development of C semantics and compilers, ISO refines the C semantics in
+a series of standards---C89, C99, C11, and C18---but they are still complex and are not widely
+accepted in the systems programming community, \eg{} the Linux community defines its own dialect of
+C that supports much less compiler optimizations and is closer to the assembly language than ISO
+C18.
+
+TODO: explain the problems in more details.  Too many undefined behaviors, conflicts among
+optimizations.  ISO C18 is English prose.
 
 
-\paragraph{Problem 1: Too Many Undefined Behavior}
+\subsection{Prior Art: Formal Semantics and Compiler Verification}
 
-\paragraph{Problem 2: Conflict between Optimizations}
+In order to systematically address the problems caused by the unplanned evolution of C semantics and
+compilers, researchers have proposed to \emph{define the formal semantics} of C and \emph{prove the
+  soundness of compiler optimizations} w.r.t. the formal semantics.  In this research program, we
+describe the C semantics no longer in an informal English prose but in a mathematically clear
+formalization, thereby completely removing the ambiguity of semantics; furthermore, on top of the
+formal semantics, we prove that compiler optimizations preserve the semantics of source program,
+conclusively vindicating them from miscompilation bugs.
 
+TODO: CompCert, Vellvm
 
-\paragraph{Prior Art: Formal Semantics and Compiler Verification}
-
-TODO: problem: only toy
-
-
-
-\subsection{My Thesis: Towards C in Practice}
-
-TODO
-
-TODO: ``towards'': it's not the end.  in some sense, it's just a beginning...  but we dealt very
-important and difficult aspects of C.
+TODO: only toy
 
 
-\subsection{Organization}
+\subsection{Our Contribution: Towards Formalization of C in the Wild}
+
+In this dissertation, propose in several dimensions.
+
+but we dealt very important and difficult aspects of C.
+
+
+TODO: ``towards'': it's not the end.  in some sense, it's just a beginning...
+
+
+
+\paragraph{Organization}
 
 The rest of \Cref{chap:prologue} provides the technical background that informs the rest of the
-dissertation.  TODO: \Cref{sec:formal-semantics}.  TODO: \Cref{sec:compiler-verification}.
+dissertation.  \Cref{sec:background} explains more details of CompCert, based on which the main body
+of this dissertation will be developed.  Specifically, we explain the formal semantics of C,
+assembly languages, and intermediate representations (IR) of CompCert, and how it proves the
+soundness of transformations and optimizations.
 
-The main body of this dissertation consists of the following chapters, each of which draws heavily
-on the work and writing in a previously published paper:
+\paragraph*{}
 
+The following chapters present the main contributions of this dissertation.
+%
 \begin{itemize}
-\item \Cref{chap:intptrcast}
+\item \Cref{chap:intptrcast} proposes a semantics of \textbf{casts between integers and pointers}
+  and, in the presence of the feature, how to verify compiler optimizations.  This chapter draws
+  heavily on the work and writing in the following paper:
 
-  \cite{intptrcast} \textbf{Jeehoon Kang}, Chung-Kil Hur, William Mansky, Dmitri Garbuzov,
-  Steve Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer
-    Casts}.  \textbf{PLDI 2015}.  
+  \cite{intptrcast} \textbf{Jeehoon Kang}, Chung-Kil Hur, William Mansky, Dmitri Garbuzov, Steve
+  Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer Casts}.
+  \textbf{PLDI 2015}.
 
-\item \Cref{chap:promising}
+\item \Cref{chap:promising} proposes a semantics of \textbf{relaxed-memory concurrency} and, in the
+  presence of the feature, how to verify compiler optimizations.  This chapter draws heavily on the
+  work and writing in the following paper:
 
-  \cite{promising} \textbf{Jeehoon Kang}, Chung-Kil Hur, Ori Lahav, Viktor Vafeiadis, Derek
-  Dreyer.  \emph{A Promising Semantics for Relaxed-Memory Concurrency}.  \textbf{POPL 2017}.
+  \cite{promising} \textbf{Jeehoon Kang}, Chung-Kil Hur, Ori Lahav, Viktor Vafeiadis, Derek Dreyer.
+  \emph{A Promising Semantics for Relaxed-Memory Concurrency}.  \textbf{POPL 2017}.
 
-\item \Cref{chap:sepcomp}
+\item \Cref{chap:sepcomp} proposes how to verify compiler in the presence of \emph{separate
+    compilation}.  TODO: lightweight?  This chapter draws heavily on the work and writing in the
+  following paper:
 
   \cite{sepcomp} \textbf{Jeehoon Kang}, Yoonseung Kim, Chung-Kil Hur, Derek Dreyer, Viktor
   Vafeiadis.  \emph{Lightweight Verification of Separate Compilation}.  \textbf{POPL 2016}.
 \end{itemize}
 
-This dissertation concludes with \Cref{chap:epilogue}, which summarizes the contributions
-(\Cref{sec:conclusion}) and future work (\Cref{sec:futurework}).
+This dissertation concludes with \Cref{chap:epilogue}, which summarizes the contributions and their
+impacts (\Cref{sec:conclusion}) and future work (\Cref{sec:futurework}).
 
 
 % TODO: how to mention these papers?

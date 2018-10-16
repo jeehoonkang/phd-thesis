@@ -40,6 +40,8 @@
 \renewcommand{\thechapter}{\Roman{chapter}}
 \counterwithout{section}{chapter}
 
+\hyphenation{Comp-Cert}
+
 %% \title : 22pt로 나오는 큰 제목
 %% \title* : 16pt로 나오는 작은 제목
 \title{Towards \\ Theoretical Understanding of C in Practice: \\ Formal Semantics and Compiler Verification}
@@ -129,10 +131,9 @@
 \label{chap:prologue}
 
 \input{introduction}
-\input{formal-semantics}
-\input{compiler-verification}
+\input{background}
 
-\chapter{Integer-Pointer Casts}
+\chapter{Casts between Integers and Pointers}
 \label{chap:intptrcast}
 
 TODO
@@ -144,7 +145,7 @@ TODO
 TODO
 
 
-\chapter{Separate Compilation}
+\chapter{Lightweight Verification of \\ Separate Compilation}
 \label{chap:sepcomp}
 
 TODO
