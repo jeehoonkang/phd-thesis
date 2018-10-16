@@ -3,7 +3,7 @@
 
 \subsection{The Context: The C Programming Language}
 
-\paragraph{C as a Hardware Abstraction}
+\paragraph{A Hardware Abstraction}
 
 The C programming language is the \emph{lingua franca} for systems programming, mainly due to its
 two notable advantages: \emph{portability} and \emph{control} over hardware.  C is portable in that
@@ -147,7 +147,7 @@ writers have introduced dozens of subtle optimizations even though their soundne
 solely by intuition; in turn, to justify those optimizations afterwards, the recent ISO C standards
 mark more and more programs as invoking undefined behavior with a variety of ad-hoc exceptions,
 making the already informal semantics more ambiguous and confusing.  In order to mitigate the
-problem caused by reckless development of C semantics and compilers, ISO refines the C semantics in
+problem caused by reckless development of C semantics and compilers, ISO revises the C semantics in
 a series of standards---C89, C99, C11, and C18---but they are still complex and are not widely
 accepted in the systems programming community, \eg{} the Linux community defines its own dialect of
 C that supports much less compiler optimizations and is closer to the assembly language than ISO
@@ -157,7 +157,7 @@ TODO: explain the problems in more details.  Too many undefined behaviors, confl
 optimizations.  ISO C18 is English prose.
 
 
-\subsection{Prior Art: Formal Semantics and Compiler Verification}
+\subsection{The Prior Art: Formal Semantics and Compiler Verification}
 
 In order to systematically address the problems caused by the unplanned evolution of C semantics and
 compilers, researchers have proposed to \emph{define the formal semantics} of C and \emph{prove the
@@ -179,50 +179,53 @@ as memory layout, concurrency, virtual memory, supervisor mode, precise manipula
 registers, and interrupts.  Furthermore, CompCert and Vellvm perform only straightforward
 transformations and optimizations that are way less sophisticated than those in mainstream compilers
 such as GCC and LLVM, and support only limited use case of compilers.  Because of these
-simplifications, CompCert and Vellvm are currently suitable only for the niche use case of
-safety-critical systems.
+simplifications, CompCert and Vellvm are currently suitable only for niche use cases such as
+safety-critical embedded systems.
 
 
 \subsection{Our Contribution: Towards Formalization of C in the Wild}
 
-In this dissertation, inheriting the spirit of CompCert and Vellvm, we propose several improvments
-over their their formal semantics and compiler verification techniques.
-
-but we dealt very important and difficult aspects of C.
-
-Goal: next ISO C
-
-without making simplyfing assumptions on
-
-
-TODO: ``towards'': it's not the end.  in some sense, it's just a beginning...
-
-
+Based on the prior work by Xavier Leroy, Steve Zdancewic, and other researchers, we aim to formalize
+the real-world practice of C semantics and compilers in the wild without making such unrealistic
+simplifying assumptions.  As part of this effort, this dissertation propose the formal semantics of
+several low-level features that are the defining characterstics of C and yet are omitted from the
+prior work, and propose verification techniques for real-world compiler use cases.  Specifically, we
+make the following contributions in this dissertation:
 
 %
 \begin{itemize}
-\item \Cref{chap:intptrcast} proposes a semantics of \textbf{casts between integers and pointers}
-  and, in the presence of the feature, how to verify compiler optimizations.  This chapter draws
-  heavily on the work and writing in the following paper:
+\item We propose a formal semantics of \textbf{casts between integers and pointers} and, in the
+  presence of the feature, how to verify existing compiler optimizations.
 
-  \cite{intptrcast} \textbf{Jeehoon Kang}, Chung-Kil Hur, William Mansky, Dmitri Garbuzov, Steve
-  Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer Casts}.
-  \textbf{PLDI 2015}.
+  This chapter draws heavily on the work and writing in the following paper:
 
-\item \Cref{chap:promising} proposes a semantics of \textbf{relaxed-memory concurrency} and, in the
-  presence of the feature, how to verify compiler optimizations.  This chapter draws heavily on the
-  work and writing in the following paper:
+  {\small \cite{intptrcast} \textbf{Jeehoon Kang}, Chung-Kil Hur, William Mansky, Dmitri Garbuzov,
+    Steve Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer
+      Casts}.  \textbf{PLDI 2015}.}
 
-  \cite{promising} \textbf{Jeehoon Kang}, Chung-Kil Hur, Ori Lahav, Viktor Vafeiadis, Derek Dreyer.
-  \emph{A Promising Semantics for Relaxed-Memory Concurrency}.  \textbf{POPL 2017}.
+\item We propose a formal semantics of \textbf{relaxed-memory concurrency} and, in the presence of
+  the feature, how to verify existing compiler optimizations.
 
-\item \Cref{chap:sepcomp} proposes how to verify compiler in the presence of \emph{separate
-    compilation}.  TODO: lightweight?  This chapter draws heavily on the work and writing in the
-  following paper:
+  This chapter draws heavily on the work and writing in the following paper:
 
-  \cite{sepcomp} \textbf{Jeehoon Kang}, Yoonseung Kim, Chung-Kil Hur, Derek Dreyer, Viktor
-  Vafeiadis.  \emph{Lightweight Verification of Separate Compilation}.  \textbf{POPL 2016}.
+  {\small \cite{promising} \textbf{Jeehoon Kang}, Chung-Kil Hur, Ori Lahav, Viktor Vafeiadis, Derek
+    Dreyer.  \emph{A Promising Semantics for Relaxed-Memory Concurrency}.  \textbf{POPL 2017}.}
+
+\item We propose how to verify compiler in the presence of \emph{separate compilation}.  TODO:
+  lightweight?
+
+  This chapter draws heavily on the work and writing in the following paper:
+
+  {\small \cite{sepcomp} \textbf{Jeehoon Kang}, Yoonseung Kim, Chung-Kil Hur, Derek Dreyer, Viktor
+    Vafeiadis.  \emph{Lightweight Verification of Separate Compilation}.  \textbf{POPL 2016}.}
 \end{itemize}
+
+As a next step, we will propose a revision to the ISO C standard and mainstream compilers based on
+the formalized semantics and compiler verification techinques, thereby closing the gap between the
+ISO C standard and the real-world practice of C in the wild.
+
+TODO: ``towards'': it's not the end.  in some sense, it's just a beginning...
+
 
 
 \paragraph{Organization}
