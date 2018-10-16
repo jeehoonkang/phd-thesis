@@ -32,7 +32,7 @@ called ``C-like''.
 % safety and functional correctness.  On the other hand, C should validate compiler and hardware
 % \emph{optimizations} that may vastly accelerate the execution of C programs and are therefore
 % actually performed in the real-world compilers and hardware.  What is particularly interesting about
-% C is that TODO.
+% C is that ...
 
 
 \paragraph{Compiler Optimization}
@@ -163,37 +163,42 @@ In order to systematically address the problems caused by the unplanned evolutio
 compilers, researchers have proposed to \emph{define the formal semantics} of C and \emph{prove the
   soundness of compiler optimizations} w.r.t. the formal semantics.  In this research program, we
 describe the C semantics no longer in an informal English prose but in a mathematically clear
-formalization, thereby completely removing the ambiguity of semantics; furthermore, on top of the
-formal semantics, we prove that compiler optimizations preserve the semantics of source program,
+formalization, thereby completely removing the ambiguity in the semantics; furthermore, on top of
+the formal semantics, we prove that compiler optimizations preserve the semantics of source program,
 conclusively vindicating them from miscompilation bugs.
 
-TODO: CompCert, Vellvm
+A milestone in this research program is the CompCert C compiler~\cite{compcert} by Xavier Leroy and
+his collaborators.  TODO: airplane...  pioneering, ... (say good words)
 
-TODO: only toy
+TODO: Vellvm
+
+However, these projects make big simplifying assumptions on C semantics and compilers, skating over
+the complexity of the real-world practice of C in the wild.  While CompCert and Vellvm support a
+substantial subset of C99 and LLVM IR, respectively, they lack support for low-level features such
+as memory layout, concurrency, virtual memory, supervisor mode, precise manipulation of processor
+registers, and interrupts.  Furthermore, CompCert and Vellvm perform only straightforward
+transformations and optimizations that are way less sophisticated than those in mainstream compilers
+such as GCC and LLVM, and support only limited use case of compilers.  Because of these
+simplifications, CompCert and Vellvm are currently suitable only for the niche use case of
+safety-critical systems.
 
 
 \subsection{Our Contribution: Towards Formalization of C in the Wild}
 
-In this dissertation, propose in several dimensions.
+In this dissertation, inheriting the spirit of CompCert and Vellvm, we propose several improvments
+over their their formal semantics and compiler verification techniques.
 
 but we dealt very important and difficult aspects of C.
+
+Goal: next ISO C
+
+without making simplyfing assumptions on
 
 
 TODO: ``towards'': it's not the end.  in some sense, it's just a beginning...
 
 
 
-\paragraph{Organization}
-
-The rest of \Cref{chap:prologue} provides the technical background that informs the rest of the
-dissertation.  \Cref{sec:background} explains more details of CompCert, based on which the main body
-of this dissertation will be developed.  Specifically, we explain the formal semantics of C,
-assembly languages, and intermediate representations (IR) of CompCert, and how it proves the
-soundness of transformations and optimizations.
-
-\paragraph*{}
-
-The following chapters present the main contributions of this dissertation.
 %
 \begin{itemize}
 \item \Cref{chap:intptrcast} proposes a semantics of \textbf{casts between integers and pointers}
@@ -219,8 +224,19 @@ The following chapters present the main contributions of this dissertation.
   Vafeiadis.  \emph{Lightweight Verification of Separate Compilation}.  \textbf{POPL 2016}.
 \end{itemize}
 
-This dissertation concludes with \Cref{chap:epilogue}, which summarizes the contributions and their
-impacts (\Cref{sec:conclusion}) and future work (\Cref{sec:futurework}).
+
+\paragraph{Organization}
+
+The rest of \Cref{chap:prologue} provides the technical background that informs the rest of the
+dissertation.  \Cref{sec:background} explains more details of CompCert, based on which the main body
+of this dissertation will be developed.  Specifically, we explain the formal semantics of C,
+assembly languages, and intermediate representations (IR) of CompCert, and how it proves the
+soundness of transformations and optimizations.  The following chapters present the main
+contributions of this dissertation, namely the semantics of casts between integers and pointers
+(\Cref{chap:intptrcast}), the semantics of relaxed-memory concurrency (\Cref{chap:promising}), and
+lightweight verification of separate compilation (\Cref{chap:sepcomp}).  This dissertation concludes
+with \Cref{chap:epilogue}, which summarizes our contributions and their impacts
+(\Cref{sec:conclusion}) and future work (\Cref{sec:futurework}).
 
 
 % TODO: how to mention these papers?
