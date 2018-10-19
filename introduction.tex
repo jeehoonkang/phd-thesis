@@ -35,7 +35,7 @@ C and are often called ``C-like''.
 % C is that ...
 
 
-\paragraph{Compiler Optimization}
+\paragraph{Compiler Optimization and Undefined Behavior}
 
 However, C is not just a thin wrapper around assembly languages because of compiler optimizations.
 They have been so crucial for the performance of systems since the early days that every system
@@ -43,8 +43,8 @@ programmer expect a compiler to perform, \eg{} register promotion and register
 allocation~\cite{reg-prom, reg-alloc}, which are very effective and yet quite sophisticated compiler
 optimizations.  Optimizations are becoming more and more important these days because recent trends
 offer potential for them to further improve the performance of systems.  Since they are an essential
-ingredient of the real-world practice of C, the language should be an abstraction not only over just
-hardware assembly languages but also over compiler optimizations.
+ingredient of the real-world practice of C programming, the language should be an abstraction not
+only over just hardware assembly languages but also over compiler optimizations.
 
 % system programmers are building bigger systems, which they cannot hand-optimize on their own; and
 % hardware vendors are introducing complex features, which need a special attention for maximal
@@ -161,10 +161,10 @@ optimizations.  ISO C18 is English prose.
 In order to systematically address the problems caused by the unplanned evolution of C semantics and
 compilers, researchers have proposed to \emph{define the formal semantics} of C and \emph{prove the
   soundness of compiler optimizations} w.r.t. the formal semantics.  In this research agenda, we
-describe the C semantics no longer in an informal English prose (as ISO C18) but in a mathematically
-clear formalization, thereby completely removing the ambiguity in the semantics; furthermore, based
-on the formalized semantics, we prove that compiler optimizations preserve the semantics of source
-program, conclusively vindicating them from miscompilation bugs.
+describe the C semantics no longer in an informal English prose (as ISO C18 does) but in a
+mathematically clear formalization, thereby completely removing the ambiguity in the semantics;
+furthermore, based on the formalized semantics, we prove that compiler optimizations preserve the
+semantics of source program, conclusively vindicating them from miscompilation bugs.
 
 A landmark in this agenda is the CompCert C compiler~\cite{compcert}, which was initiated by Xavier
 Leroy over ten years ago and grows as the first realistic verified compiler.  The CompCert compiler
@@ -179,27 +179,26 @@ on end-to-end verified software~\cite{TODO}, as well as receiving significant in
 avionics industry~\cite{TODO}.
 
 In the same spirit as CompCert, Vellvm~\cite{vellvm} by Steve Zdancewic and his collaborators
-formalizes a significant subset of the LLVM IR and verifies several compiler transformations and
-optimizations performed at the IR level.  What is particularly interesting about Vellvm is its
-formalization of static single assignment (SSA).  Vellvm formalizes a dominance analysis---which
-serves as the basis for SSA form---and verifies an SSA type checker and an SSA-aware register
-promotion algorithm that is simplified from the \code{mem2reg} pass in LLVM.
+formalizes a significant subset of the LLVM IR and verifies interesting compiler transformations and
+optimizations performed at the IR level.  Most notably, Vellvm formalizes the static single
+assignment form (SSA), including a dominance analysis, an SSA type checker, and an SSA-aware
+register promotion algorithm that is simplified from the \code{mem2reg} pass in LLVM.
 
 However, these projects make big simplifying assumptions on C semantics and compilers, skating over
-the complexity of the real-world practice of C in the wild.  While CompCert and Vellvm support a
-significant subset of C99 and LLVM IR, respectively, they lack support for various low-level
+the complexity of the real-world practice of systems programming.  While CompCert and Vellvm support
+a significant subset of C99 and LLVM IR, respectively, they lack support for various low-level
 features that are crucially used in many system programs, such as memory layout, concurrency, and
-processor register manipulation.  Furthermore, CompCert and Vellvm perform only straightforward
-transformations and optimizations that are way less sophisticated than those in mainstream compilers
-such as GCC and LLVM, and support only limited use cases of compilers, \eg{} they did not verify
-linking.  Because of these simplifications, CompCert and Vellvm are currently suitable only for
-niche use cases such as safety-critical embedded systems.
+processor register manipulation.  Furthermore, CompCert and Vellvm only perform quite
+straightforward transformations and optimizations that are way less sophisticated than those in
+mainstream compilers such as GCC and LLVM, and support only limited use cases of compilers, \eg{}
+they did not verify linking.  Because of these simplifications, CompCert and Vellvm are currently
+suitable only for a niche market such as safety-critical embedded systems.
 
 
 \subsection{Our Contribution: Towards Formalization of C in the Wild}
 
-In this dissertation, pursuing the research agenda of the formalization of real-world practice of C
-semantics and compilers in the wild, we lift the prior work's simplifying assumptions in several
+In this dissertation, we carry forward the research agenda for the formalization of real-world
+practice of C semantics and compilers by lifting the prior work's simplifying assumptions in several
 dimensions.  Specifically, we make the following contributions:
 
 % Specifically, we propose the formal semantics of several low-level features that are the defining
@@ -304,12 +303,15 @@ which are the defining characteristics of C and yet are omitted from the prior w
 inherent complexity.  Based on our work, revisions to the ISO C standard and mainstream compilers
 such as GCC and LLVM are being prepared.  Furthermore, we generalize CompCert to support for
 separate compilation use cases---the majority of the real-world use cases for embedded
-software---with a low verification cost.
+software---with a low verification cost.  As a result, we close the gap between the theory and
+practice of systems programming in several dimensions.  As future work, by further pursuing the
+research agenda for the formalization of real-world practice of C semantics and compilers, we aim to
+provide clear, theoretically-informed, and practically-relevant C semantics and compilers that
+system programmers can immediately benefit from.  If successful, our formal semantics will be able
+to replace the C dialects used in Linux and other systems.
 
-As a result, we close the gap between the theory and practice of C in several dimensions.  In the
-future, we will continue to close the gap further by formalizing the semantics of other complex
-low-level features---such as type-based alias analysis, union, inline assembly, GPUs and
-accelerators---and by verifying mainstream compilers.
+% by formalizing the semantics of other complex low-level features---such as type-based alias
+% analysis, union, inline assembly, GPUs and accelerators---and by verifying mainstream compilers.
 
 
 % TODO: how to mention these papers?
@@ -322,6 +324,17 @@ accelerators---and by verifying mainstream compilers.
 %   (*The first three authors contributed equally and are listed alphabetically.)  \emph{Crellvm:
 %     Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.
 % \end{itemize}
+
+
+\paragraph{Organization}
+
+\Cref{sec:background} provides the technical background on CompCert that informs the rest of this
+dissertation.  \Cref{chap:intptrcast} presents a formal semantics of integer-pointer casts,
+\Cref{chap:promising} presents a formal semantics of relaxed-memory concurrency, and
+\Cref{chap:sepcomp} presents lightweight verification techniques for separate compilation.  This
+dissertation concludes with \Cref{chap:epilogue}, which summarizes the contributions and the
+impacts of this dissertation (\Cref{sec:conclusion}) and raises future research questions
+(\Cref{sec:futurework}).
 
 
 %%% Local Variables:
