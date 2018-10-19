@@ -199,9 +199,8 @@ niche use cases such as safety-critical embedded systems.
 \subsection{Our Contribution: Towards Formalization of C in the Wild}
 
 In this dissertation, pursuing the research agenda of the formalization of real-world practice of C
-semantics and compilers in the wild, we aim to make an improvement upon the prior work by lifting
-their simplifying assumptions in several dimensions.  Specifically, we make the following
-contributions in this dissertation:
+semantics and compilers in the wild, we lift the prior work's simplifying assumptions in several
+dimensions.  Specifically, we make the following contributions:
 
 % Specifically, we propose the formal semantics of several low-level features that are the defining
 % characteristics of C and yet are omitted from the prior work.  Furthermore, we propose
@@ -220,7 +219,11 @@ that $(1)$ fully supports operations on the representation of pointers, includin
 operations for pointers that have been cast to integers, $(2)$ validates major compiler
 optimizations on memory accesses, and $(3)$ is simple to understand and program with.
 
-The key novel idea behind our semantics is the notion of concretization: TODO.
+The key novel idea behind our semantics is the notion of concretization: when allocated, a memory
+block is not assigned a concrete address yet; only when it is required by a pointer-to-integer cast,
+the block is lazily assigned a concrete address, \ie{} the block is concretized.
+
+TODO: impact.
 
 % The ISO C standard does not specify the semantics of many valid programs that use non-portable
 % idioms such as integer-pointer casts. Recent efforts at formal definitions and verified
@@ -254,11 +257,14 @@ write in the future, thus enabling other threads to read from that write out of 
 to prevent out-of-thin-air behaviors, a promise step requires a thread-local certification that it
 will be possible to execute the promised write even in the absence of the promise.
 
+TODO: impact.
+
 This chapter draws heavily on the work and writing in the following paper:
 
 \noindent {\small \cite{promising} \textbf{Jeehoon Kang}, Chung-Kil Hur, Ori Lahav, Viktor
   Vafeiadis, Derek Dreyer.  \emph{A Promising Semantics for Relaxed-Memory Concurrency}.
   \textbf{POPL 2017}.}
+
 
 \paragraph{Lightweight Verification of Separate Compilation}
 
@@ -279,7 +285,9 @@ closed-simulation proofs from existing compiler verifications.  We demonstrate t
 these techniques by applying them to CompCert 2.4, converting its verification of whole-program
 compilation into a verification of separate compilation in less than two person-months.  This
 conversion only required a small number of changes to the original proofs, and uncovered two
-compiler bugs along the way.  Our verification techniques are subsequently adopted in CompCert 2.7.
+compiler bugs along the way.
+
+Our verification techniques are subsequently adopted in CompCert 2.7.
 
 This chapter draws heavily on the work and writing in the following paper:
 
@@ -288,13 +296,20 @@ This chapter draws heavily on the work and writing in the following paper:
 
 \paragraph*{}
 
-To establish confidence in our contributions, we have formalized most of our key results in Coq.
+To establish confidence in all our contributions, we have formalized most of our key results in Coq.
+The formalization is available at \url{https://sf.snu.ac.kr/jeehoon.kang/phd-thesis}.
 
-TODO: As a next step, we will propose a revision to the ISO C standard and mainstream compilers
-based on the formalized semantics and compiler verification techniques, thereby closing the gap
-between the ISO C standard and the real-world practice of C in the wild.
+In summary, we propose the formal semantics of integer-pointer casts and relaxed-memory concurrency,
+which are the defining characteristics of C and yet are omitted from the prior work because of their
+inherent complexity.  Based on our work, revisions to the ISO C standard and mainstream compilers
+such as GCC and LLVM are being prepared.  Furthermore, we generalize CompCert to support for
+separate compilation use cases---the majority of the real-world use cases for embedded
+software---with a low verification cost.
 
-TODO: ``towards'': it's not the end.  in some sense, it's just a beginning...
+As a result, we close the gap between the theory and practice of C in several dimensions.  In the
+future, we will continue to close the gap further by formalizing the semantics of other complex
+low-level features---such as type-based alias analysis, union, inline assembly, GPUs and
+accelerators---and by verifying mainstream compilers.
 
 
 % TODO: how to mention these papers?
