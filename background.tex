@@ -1,12 +1,31 @@
 \section{Background: A Brief Tour of CompCert}
 \label{sec:background}
 
-In this section, we first provide the technical background that informs the rest of the
-dissertation.  Specifically, we explain CompCert's formal semantics of C, assembly languages, and
-intermediate representations (IR), and the soundness proof of its transformation and optimization
-passes, based on which we develop the main contributions of this dissertation.
+We begin by briefly reviewing the technical background that informs the rest of the dissertation,
+using CompCert as the learning material.  We first explain CompCert's organization
+(\Cref{sec:background:organization}), and its correctness statement as well as its closed-simulation
+verification method (\Cref{sec:background:correctness}).  To flesh out the details on formal
+semantics and compiler verification, we use constant propagation---one of CompCert's
+optimizations---as a running example.  Specifically, We review the RTL language on which constant
+propagation is performed (\Cref{sec:background:rtl}), how constant propagation works
+(\Cref{sec:background:opt}), and how CompCert verifies it (\Cref{sec:background:verification}).
 
-TODO
+
+\subsection{CompCert's Organization}
+\label{sec:background:organization}
+
+\subsection{CompCert's Correctness}
+\label{sec:background:correctness}
+
+\subsection{CompCert's RTL Language}
+\label{sec:background:rtl}
+
+\subsection{CompCert's Constant Propagation}
+\label{sec:background:opt}
+
+\subsection{CompCert's Verification of Constant Propagation}
+\label{sec:background:verification}
+
 
 
 %%% Local Variables:
