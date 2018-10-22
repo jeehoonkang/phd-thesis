@@ -1,25 +1,20 @@
-\section{Verifying the Other Passes}
+\section{Adapting the Other Passes to Separate Compilation}
 
-In the previous sections, we looked at the specific example of
-constant propagation in detail and explained how we ported CompCert's
-proof of that pass to \sepcomp{}'s Level A and B notions of
-compositional correctness.  In this section, we discuss some details
-of other CompCert passes for which porting to \sepcomp{} required some
-interesting (but still not much) work.
+In the previous section, we looked at the specific example of constant propagation in detail and
+explained how we adapted CompCert's proof of that pass to Level A and B notions of compositional
+correctness.  In this section, we discuss some details of other CompCert passes for which adapting
+to Level A and B correctness required some interesting (but still not much) work.
 
 \begin{figure*}[t]
-\begin{center}
-\includegraphics[scale=.5]{passes.png}
-\end{center}
-\caption{Optimization passes of \sepcomp{} Level A and Level B.}
+\includegraphics[width=\textwidth]{sepcomp-passes.png}
+\caption{Classification of Optimization Passes in CompCert}
 \label{fig:sep-comp-passes}
 \end{figure*}
 
-Figure~\ref{fig:sep-comp-passes} shows which verification technique we
-apply to each optimization pass of CompCert.  For Level A, we apply
-the trivial technique based on commutativity with linking to 13 passes
-and the non-trivial technique to 6 passes.  For Level B, we apply our
-technique to all 6 RTL-to-RTL passes.
+Figure~\ref{fig:sep-comp-passes} shows which verification technique we apply to each optimization
+pass of CompCert.  For Level A, we apply the trivial technique based on commutativity with linking
+to 13 passes and the non-trivial technique to 6 passes.  For Level B, we apply our technique to all
+6 RTL-to-RTL passes.
 
 % % Since the trivial
 % % case of Level A (when passes commute with linking) is, well, trivial,
@@ -123,98 +118,88 @@ technique to all 6 RTL-to-RTL passes.
 %% \end{itemize}
 
 \subsection{RTL-Level Optimizations that Rely on Value Analysis}
-Three RTL-level optimizations rely on the value analysis: constant
-propagation, common subexpression elimination (CSE), and deadcode
-elimination (DCE).  These passes are inter-procedural solely because
-they rely on the value analysis.  Thus, the porting of the proofs of
-CSE and DCE to support compositional correctness proceeded analogously
-to the porting of the constant propagation pass.
+
+Three RTL-level optimizations rely on the value analysis: constant propagation, common subexpression
+elimination (CSE), and deadcode elimination (DCE).  These passes are inter-procedural solely because
+they rely on the value analysis.  Thus, the porting of the proofs of CSE and DCE to support
+compositional correctness proceeded analogously to the porting of the constant propagation pass.
 
 
 \subsection{Selection}
-The selection pass ``recognizes opportunities for using combined
-arithmetic and logical operations and addressing modes offered by the
-target processor.''~\cite{compcert-website}.  The pass is mostly
-intra-procedural, except for the following two transformations on
-function calls.
+
+The selection pass ``recognizes opportunities for using combined arithmetic and logical operations
+and addressing modes offered by the target processor.''~\cite{compcert-website}.  The pass is mostly
+intra-procedural, except for the following two transformations on function calls:
 
 \paragraph{Recognizing Immediate Calls}
-The selection pass transforms an indirect call via a function pointer
-expression, say $e_p$, into an immediate call, if it can determine
-that the expression $e_p$ always evaluates to the pointer to an
-internal function.  The pass uses a simple analysis
-$\texttt{classify\_call}(prg, e_p)$ for determining this.  For separate
-compilation, we proved the monotonicity of the analysis: the result
-$\texttt{classify\_call}(sprg, e_p)$ for a subprogram $sprg \subseteq
-prg$ is sound w.r.t.\ the whole program $prg$.
+The selection pass transforms an indirect call via a function pointer expression, say $e_p$, into an
+immediate call, if it can determine that the expression $e_p$ always evaluates to the pointer to an
+internal function.  The pass uses a simple analysis $\code{classify\_call}(prg, e_p)$ for
+determining this.  For separate compilation, we proved the monotonicity of the analysis: the result
+$\code{classify\_call}(sprg, e_p)$ for a subprogram $sprg \subseteq prg$ is sound w.r.t.\ the whole
+program $prg$.
 
 \paragraph{64-bit Integer Operations into Library Calls}
-The selection pass transforms some 64-bit integer operations into
-calls to library helper functions.  For example, \texttt{(long long)
-  f}, a cast from \texttt{float} to \texttt{long long}, is transformed
-into a call \texttt{\_\_int64\_dtos(f)} to the corresponding helper
-function.  For this transformation to be valid, the pass should ensure
-that the helper function (\eg \texttt{\_\_int64\_dtos}) is
-declared as an external function in the source program's global
-environment.  CompCert has a designated checker
-$\texttt{check\_helpers}(prg)$ to ensure this property.
+The selection pass transforms some 64-bit integer operations into calls to library helper functions.
+For example, \code{(long long) f}, a cast from \code{float} to \code{long long}, is transformed into
+a call \code{\_\_int64\_dtos(f)} to the corresponding helper function.  For this transformation to
+be valid, the pass should ensure that the helper function (\eg \code{\_\_int64\_dtos}) is declared
+as an external function in the source program's global environment.  CompCert has a designated
+checker $\code{check\_helpers}(prg)$ to ensure this property.
 
-For separate compilation, we proved that the checker for helper
-functions is monotone w.r.t. linking: $\texttt{check\_helpers}(prg1)$
-and $\texttt{check\_helpers}(prg2)$ implies
-$\texttt{check\_helpers}(prg1 \circ prg2)$ for all programs $prg1$ and
-$prg2$.  The proof is a little bit involved, as linking reorders
-global declarations, and the corresponding logical blocks for the
+For separate compilation, we proved that the checker for helper functions is monotone
+w.r.t. linking: $\code{check\_helpers}(prg1)$ and $\code{check\_helpers}(prg2)$ implies \\
+$\code{check\_helpers}(prg1 \circ prg2)$ for all programs $prg1$ and $prg2$.  The proof is a little
+bit involved, as linking reorders global declarations, and the corresponding logical blocks for the
 helper functions in the global environments may vary.
 
-% Note that the monotonicity we proved for \texttt{check\_helpers}
+% Note that the monotonicity we proved for \code{check\_helpers}
 % deviates from the general pattern, namely ensuring
-% $\texttt{check\_helpers}(sprg)$ for some $sprg \subseteq prg$.  This
+% $\code{check\_helpers}(sprg)$ for some $sprg \subseteq prg$.  This
 % is because the context $ctx$ of $sprg$, which satisfies
 % $sprg \circ ctx = prg$, may redefine library helper functions as
 % internal functions, and invalidate the properties on helper functions
 % in the whole-program $prg$.
 
 \paragraph{Compiler Bug We Found}
-The original CompCert 2.4 used a function $\texttt{get\_helpers}$
-instead of $\texttt{check\_helpers}$.  We found and reported a
-compiler bug related to $\texttt{get\_helpers}$, which was
+The original CompCert 2.4 used a function $\code{get\_helpers}$
+instead of $\code{check\_helpers}$.  We found and reported a
+compiler bug related to $\code{get\_helpers}$, which was
 subsequently confirmed.
 % \footnote{See the README of the supplementary
   % materials for more details.}
 
 We found the bug in the course of proving monotonicity regarding
-$\texttt{get\_helpers}$. This function is directly implemented in
-OCaml and its property is axiomatized in Coq as follows.
+$\code{get\_helpers}$. This function is directly implemented in
+OCaml and its property is axiomatized in Coq as follows:
 %\newpage
-\begin{verbatim}
+\begin{minted}{coq}
 Axiom get_helpers_correct:
   forall ge hf, get_helpers ge = OK hf ->
   i64_helpers_correct ge hf.
-\end{verbatim}
+\end{minted}
 The problem was that this axiom is not strong enough to prove
 monotonicity, and even worse, not true for the OCaml implementation of
-$\texttt{get\_helpers}$. One of the properties this axiom postulates
-is that helper functions like \texttt{\_\_int64\_dtos} are only
+$\code{get\_helpers}$. One of the properties this axiom postulates
+is that helper functions like \code{\_\_int64\_dtos} are only
 declared but not defined in the source program. However,
-$\texttt{get\_helpers}$ does not check it at compile time!
+$\code{get\_helpers}$ does not check it at compile time!
 
-Here is an example that exposes the bug.
-\begin{verbatim}
+Here is an example that exposes the bug:
+\begin{minted}{c}
 #include <stdio.h>
 long long __i64_dtos(float t) {
   return 3;
 }
 int main() {
-  // expected: 5, actual: 3
-  printf(“%lld\n”, (long long) 5.0f);
+  printf(“%lld\n”, (long long) 5.0f); // expected: 5, actual: 3
   return 0;
 }
-\end{verbatim}
-Here the cast \texttt{(long long) 5.0f} is converted to a call to the
-library helper function \texttt{\_\_i64\_dtos(5.0f)} by the selection
+\end{minted}
+Here the cast \code{(long long) 5.0f} is converted to a call to the
+library helper function \code{\_\_i64\_dtos(5.0f)} by the selection
 pass. However, we successfully hijack the function call by overwriting
-the function \texttt{\_\_i64\_dtos}, which results in printing $3$
+the function \code{\_\_i64\_dtos}, which results in printing $3$
 instead of the correct result $5$.  Now, strictly speaking, due to the
 hijacking of a reserved identifier, this example has undefined
 semantics according to the C99 standard, so CompCert's behavior here
@@ -224,17 +209,17 @@ clearly a bug.
 After we reported this bug, it was fixed in the development branch of
 CompCert (and subsequently CompCert 2.5). In this fix, which we
 backported to CompCert 2.4 using \cd{git-cherry-pick}, the OCaml
-$\texttt{get\_helpers}$ function is replaced by the aforementioned
-$\texttt{check\_helpers}$, which is implemented and verified directly
+$\code{get\_helpers}$ function is replaced by the aforementioned
+$\code{check\_helpers}$, which is implemented and verified directly
 in Coq, thereby avoiding the need for an invalid axiom.
 
 \subsection{Inlining}
 The inlining pass is inherently inter-procedural, as it replaces a
 call to a simple function with the body of the function.  In the pass,
-the selector $\texttt{funenv\_program}(prg)$ chooses internal function
+the selector $\code{funenv\_program}(prg)$ chooses internal function
 definitions of $prg$ that are worth inlining in other functions.  For
 the inlining pass to be valid, the pass should ensure that function
-definitions in $\texttt{funenv\_program}(prg)$ are indeed defined in
+definitions in $\code{funenv\_program}(prg)$ are indeed defined in
 the global environment $\rtlgenv(prg)$.
 
 For separate compilation, we proved that the global environment
@@ -242,7 +227,7 @@ initialization is monotone for function definitions: if a function
 definition, say $fd$, is defined in $\rtlgenv(sprg)$ and $sprg
 \subseteq prg$, then $fd$ is also defined in $\rtlgenv(prg)$.  The
 proof is a little bit involved for the same reason as for
-\texttt{check\_helpers} in the selection pass: linking reorders global
+\code{check\_helpers} in the selection pass: linking reorders global
 declarations and the corresponding logical blocks in the global
 environments.
 
@@ -264,8 +249,8 @@ was straightforward.
 
 %% \subsection{TODOs}
 %% \begin{itemize}
-%% \item explain \texttt{sepcomp\_rel}
-%% \item properties of \texttt{sepcomp\_rel}
+%% \item explain \code{sepcomp\_rel}
+%% \item properties of \code{sepcomp\_rel}
 %% \end{itemize}
 
 
