@@ -1,3 +1,770 @@
+\section{Formal Semantics}
+\label{sec:intptrcast:formal-semantics}
+
+Our quasi-concrete model is simply a hybrid of the fully concrete
+model and the fully logical model. However, there are several issues
+with how to combine the two models to minimize their disadvantages.
+In this section, we introduce the quasi-concrete model and discuss how
+we address the design issues at a high level.  More detailed
+discussions with concrete examples will follow in the subsequent
+sections.  All the optimization examples presented in this
+section are performed by \texttt{clang -O2}.
+
+\subsection{Memory Representation}
+
+Our quasi-concrete model slightly generalizes the logical model to allow
+both concrete blocks (as in the concrete model) and logical blocks (as
+in the logical model). For this, we add one more attribute $p$ to a
+logical block, which is either \emph{undefined} or a concrete address.
+The attribute $p$ indicates whether the block is logical (when $p$ is
+undefined) or it is a concrete block starting at the address $p$ (when
+$p$ is defined).
+\[
+\begin{array}{@{}l@{~}c@{~}l@{}}
+\mathrm{Block} &\defeq&
+\setof{(v, p, n, c) \suchthat
+  p \in \mathtt{int32}\uplus\setofz{\mathrm{undef}} \\
+&&\qquad\qquad\quad~~
+  {}\land v \in \mathtt{bool} 
+  \land n \in \Nat \land c \in \mathrm{Val}^n }
+\end{array}
+\]
+We say that an address $(l,i)$ is concrete when the block $l$ is a
+concrete block starting at an address $p$. 
+%% In this case, the
+%% quasi-concrete model does not distinguish between the address $(l,i)$
+%% and the integer $p+i$ (\ie they are completely identified).
+In this case, the address $(l,i)$ can be cast to the integer $p+i$
+and vice versa (see \S\ref{langsem} for details).
+
+As in the concrete model, the list of allocated (\ie valid) blocks with concrete addresses must be consistent: they should not include 0 or the maximum address, and their ranges should be disjoint. Logical blocks have no such requirement, since they are non-overlapping by construction.
+%\label{model:issues}
+
+In the subsequent sections, we discuss several issues that arose during the design of our quasi-concrete model and justify our solutions to the issues.
+
+\subsection{Combining Logical and Concrete Blocks}
+%\todo{Give a forward reference to related work with the APLAS paper.
+%and say that the work is based on logical model and does not fully support
+%pointer-integer casting (e.g. hash table does not work).
+%}
+
+Our quasi-concrete model is a hybrid model that allows both concrete and
+logical blocks to coexist. Though we allow both, concrete and logical
+blocks still have their own disadvantages: concrete ones do not
+provide exclusive ownership and logical ones do not allow casting to
+integers.
+
+Thus, one may naturally ask why we do not develop a new notion of
+block that has the advantages of both concrete and logical blocks.  Our
+answer is that such a model would not justify other important
+optimizations such as simplification of integer operations,
+while our quasi-concrete model justifies them.
+
+For instance, consider a model in which some blocks have both concrete addresses and some extra permission information, so that we can tell when a block is exclusively owned. In such a model, we would like to know that we do not lose permission information when a pointer is cast to an integer, even if integer operations are performed on it (\eg \texttt{base64\_enc}oding a pointer and then \texttt{base64\_dec}oding it).
+
+However, this prevents the optimization presented in Figure~\ref{code:arith1}.
+Suppose the variable \texttt{b} contains an integer with permission
+  to access some valid block $l$, and \texttt{a} contains an integer
+  without any permission that is equal to the concrete address of the
+  block $l$. Then the source program successfully stores 123 into the block $l$
+   because \texttt{q} has the relevant permission, whereas the target program fails
+   because \texttt{q} does not have the permission.
+%
+\begin{figure}[t]
+\center
+\begin{tabular}{lll}
+%\small
+\begin{lstlisting}
+a = (a - b) + (2 * b - b);
+q = (ptr) a;
+*q = 123;
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%\small
+\begin{lstlisting}
+
+q = (ptr) a;
+*q = 123;
+\end{lstlisting}
+\end{tabular}
+\caption{Arithmetic Optimization Example I}\label{code:arith1}
+\end{figure}
+%
+See \S\ref{ex:arith1} for how to verify this optimization in our quasi-concrete model.
+
+Furthermore, while our quasi-concrete model does disallow some optimizations based on exclusive ownership (since once a block has become concrete it is non-exclusive for the remainder of the execution), we expect that our model would not lose many optimization
+opportunities in practice. This is because exclusively owned blocks are mostly local or temporary ones,
+  so that their concrete addresses are unlikely to be used by integer operations. See \S\ref{idea:downside} for further details.
+
+\subsection{Choosing Concrete Blocks}
+\label{idea:cast}
+As discussed in \S\ref{backgrounds:concrete}, using concrete addresses for memory locations provides no guarantees of ownership, and thus prevents certain optimizations. In the worst case, one function could guess the concrete address of a supposedly-private resource of another function, and then forge a pointer to that address and modify it. In order to maximize the range of optimizations that can be performed, a hybrid model should assign concrete addresses to as few blocks as possible.
+
+The natural choice, then, is to make concrete only those blocks whose concrete addresses are really used in some operation. If we perform some computation with the value of a pointer that only makes sense when that value is an integer (\eg % using it as an offset into another block
+comparing it with an integer value) then the target of that pointer must have a real address. In all other cases, even if the address of the block is taken, we could conceivably use a logical value and maintain the ownership guarantees of the logical model. However, this approach has a serious problem: it does not justify some important integer optimizations, such as a dead code elimination presented in Figure~\ref{code:dce}.
+
+Suppose the pointer \texttt{p} contains a logical block $l$. In the source program, since its concrete address is used in the function
+\texttt{foo}, the block $l$ must be given a concrete address. In the target, the read-only call to \texttt{foo} is optimized away, and the block $l$ may not be given a concrete address. That is, the source may have more concrete blocks than the target. Thus, if \texttt{bar()} accesses an arbitrary concrete memory location, then that access might succeed in the source but fail in the target. Since a failure is possible in the target that did not exist in the source, the optimization has introduced new behavior, and is invalid.
+
+\begin{figure}[t]
+\center
+\begin{tabular}{lll}
+%\small
+\begin{lstlisting}
+foo(int a) {
+  a = a & 123;
+  // return a;
+}
+$\cdots$
+a = (int) p;
+foo(a);
+bar();
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%\small
+\begin{lstlisting}
+foo(int a) {
+  a = a & 123;
+  // return a;
+}
+$\cdots$
+a = (int) p;
+
+bar();
+\end{lstlisting}
+\end{tabular}
+\caption{Dead Code Elimination Example}\label{code:dce}
+\end{figure}
+
+Instead, we make concrete those blocks whose addresses are cast to integers, 
+even if the cast integers are not used in any operation. This gives us a simple way to determine which blocks should be made concrete, and avoids making integer operations memory-relevant 
+(see \S\ref{ex:dce} for how to verify this example in the
+quasi-concrete model). In practice, this choice also allows most of the optimizations that would be performed in the minimally-concrete model (see \S\ref{idea:downside} for details).
+
+\subsection{Assigning Concrete Addresses}
+\label{idea:ownership}
+
+Once we know which blocks will need concrete addresses, we need to
+decide when during a program's execution to assign those addresses.
+
+One approach would be to make such a decision as early as possible
+(\ie at allocation time). We allocate blocks as either logical or
+concrete, and cause concrete operations (namely integer casts) on
+logical blocks to raise out-of-memory-type behavior (\ie no behavior).
+Since it is difficult to determine whether a block will need a
+concrete address,
+%% (and we would like to be able to compile our programs to more concrete ones),
+we would need to choose the kind of block to allocate
+non-deterministically. However, this would add unintuitive failures to
+our model, effectively allowing out-of-memory-type behavior when the
+allocator chooses the wrong kind of block even when concrete blocks
+are available.
+
+Our solution is to instead allocate all blocks as logical blocks, and assign concrete addresses to logical blocks at casting time. This casting can result in out of memory only when there is not enough free concrete space. By waiting to make blocks concrete until we reach the casting point,
+we can remove the non-determinism about whether the blocks are
+concrete or logical. That is, blocks are always logical until the
+first casting point, and concrete afterward.
+ %% at which they must be concrete, we reduce the non-determinism of the model. 
+
+\begin{figure}[t]
+\center
+\begin{tabular}{lll}
+%\small
+\begin{lstlisting}
+p = malloc (1);
+*p = 123;
+bar();
+a = *p;
+hash_put(h, p, a);
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%\small
+\begin{lstlisting}
+p = malloc (1);
+*p = 123;
+bar();
+a = *p;
+hash_put(h, p, 123);
+\end{lstlisting}
+\end{tabular}
+\caption{Ownership Transfer Example}\label{code:ownership}
+\end{figure}
+
+This also allows \emph{ownership transfer} optimizations such as the
+constant propagation example in Figure~\ref{code:ownership}, in which
+pointers are privately owned up until some point and then become
+publicly available.  
+%On the other hand, in the quasi-concrete model,
+In this example,
+the allocated block is initially logical and becomes concrete when cast to an
+integer (possibly in the call to \texttt{hash\_put}). At this point, the ownership of the block is transferred from
+private to public. Since \texttt{a} is treated as logical up until the
+call to \texttt{hash\_put}, we can perform constant propagation as
+normal before the call. (For formal details, see \S\ref{ex:ownership}.)
+
+On the other hand, the above model with
+non-deterministic allocation does not allow such optimizations.
+The reason why this optimization is not allowed in the above model is
+as follows.
+When the allocated block in the target is concrete, the
+  corresponding allocation in the source must be concrete; otherwise,
+  when the function \texttt{hash\_put} casts the address of the block to
+  an integer the source program raises no behavior, while the target succeeds.
+Thus, you lose the ownership over the block and cannot justify the constant propagation due to the presence of \texttt{bar()}.
+
+
+   However, note that this may not be a decisive example, since this
+   optimization is not used in all real-world compilers (it is
+   performed by \texttt{clang -O2} and higher, but not by \texttt{gcc
+     -O2} or higher).
+
+\subsection{Operations on Pointers}
+
+In \S\ref{idea:cast}, we explained that the fewer blocks we make concrete, the more we can take advantage of the ownership guarantees provided by logical blocks. We have seen that operations that require pointers to have integer values force a lower bound on the number of blocks that must be made concrete. As such, we can improve our model by reducing the number of operations that require concrete addresses. We take our cue from CompCert's memory model, in which several arithmetic operations, such as integer-pointer addition and subtraction of pointers from pointers in the
+same block, are well-defined even in the absence of a concrete address (see \S\ref{backgrounds:logical}). 
+
+One disadvantage of CompCert's approach to arithmetic operations is that it invalidates some important arithmetic optimizations, such as the optimization presented in Figure~\ref{code:arith2}, by introducing logical addresses as possible values for integer-typed variables. 
+To see this, suppose that the integer variables \texttt{a}, \texttt{b}, \texttt{c1}, and \texttt{c2} contain the same logical address $(l,0)$. The source program shown will successfully assign $(l,0)$ to the variables \texttt{d1} and \texttt{d2}, because \texttt{b - c1} and \texttt{b - c2} evaluate to $0$. However, in the target, the variable $\texttt{t}$ gets an unspecified value, because the addition of two logical addresses is undefined. Thus, the target has more behaviors than the source, and the optimization is invalid.
+
+\begin{figure}[t]
+\center
+\begin{tabular}{lll}
+%\small
+\begin{lstlisting}
+
+d1 = a + (b - c1);
+d2 = a + (b - c2);
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%\small
+\begin{lstlisting}
+t = a + b;
+d1 = t - c1;
+d2 = t - c2;
+\end{lstlisting}
+\end{tabular}
+\caption{Arithmetic Optimization Example II}\label{code:arith2}
+\end{figure}
+
+We avoid this disadvantage through the use of type checking. 
+As in the LLVM IR, we use types to ensure that integer variables contain only integer values.
+This allows us to justify the full range of arithmetic optimizations on integer variables (see \S\ref{ex:arith2} for details), 
+while also giving semantics to the operations on logical addresses when possible.
+See \S\ref{langsem} for an example of type-dependent semantics of arithmetic operations in our model.
+
+\subsection{Dead Cast Elimination}
+\label{idea:deadcast}
+
+As a result of our design decisions thus far, casts have become
+important effectful operations in our model, determining the points at
+which logical blocks are given concrete addresses. This leads to a
+potential problem with dead code elimination.  Since casting a pointer
+to an integer has a side effect in memory, removing dead cast
+operations is not obviously justified in the quasi-concrete model.
+
+However, in fact,
+we can solve this problem and support dead cast elimination in our
+framework. 
+The solution stems from our model's place in a broader compilation
+framework. We expect the quasi-concrete model to be used for mid-level
+intermediate representations in a compiler, while the back-end
+low-level language will use a fully concrete model. In the
+quasi-concrete model, casting a pointer to an integer has a side
+effect on memory, and we cannot eliminate cast operations. In the
+fully concrete model, however, a cast from pointer to integer is a 
+no-op, and such casts can always be eliminated. Thus, we can
+perform dead-cast-elimination optimizations in the backend.
+
+However, we still have a problem when dead cast is combined with dead
+allocation. In the concrete model allocations of dead blocks cannot be
+removed, because otherwise an arbitrary access in the source may
+succeed but fail in the target. 
+
+Our solution to this problem is to remove dead casts combined with dead blocks during
+the translation from the quasi-concrete to the fully concrete model.
+For instance, consider the dead call elimination optimization presented in Figure~\ref{code:deadcast}. This optimization is not valid when both the source and
+the target use the quasi-concrete model, due to the cast operation in the
+function. It is also not valid when both the source and the target use
+the concrete memory, due to the allocation in the function. However, the optimization is valid when the source uses the
+quasi-concrete model and the target uses the fully concrete model (see \S\ref{ex:deadcast} for formal details).
+
+\begin{figure}[t]
+\center
+\begin{tabular}{@{}l@{}l@{~~}l}
+%\small
+\begin{lstlisting}
+foo(ptr p, int n) {
+  var ptr q, int a, r;
+  q = malloc (n);
+  a = (int) p;
+  r = a * 123;
+  // return r;
+}
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%\small
+\begin{lstlisting}
+foo(ptr p, int n) {
+  var ptr q, int a, r;
+  q = malloc (n);
+  a = (int) p;
+  r = a * 123;
+  // return r;
+}
+\end{lstlisting}
+\\
+%\small
+\begin{lstlisting}
+$\cdots$
+foo(p, n);
+bar();
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%\small
+\begin{lstlisting}
+$\cdots$
+
+bar();
+\end{lstlisting}
+\end{tabular}
+\caption{Dead Cast Elimination Example}
+\label{code:deadcast}
+\end{figure}
+
+Although our solution does not justify the removal of all dead casts,
+it should cover most of them in practice (see \S\ref{idea:downside}).
+
+%% To sum up, ...  
+
+%% We do not have any practically meaningful optimizations justified in
+%% symbolic model but not justified in our concolic model
+%% (see \S\ref{idea:downside} for details).
+
+\subsection{Drawbacks of the Quasi-Concrete Model}
+\label{idea:downside}
+
+Although our quasi-concrete model is designed to allow as many optimizations as possible, it still disallows some reasonable optimizations. 
+In particular, if a function newly allocates a block and casts its address to an
+integer, then it loses the ownership guarantees on the block. 
+Even if the block is still effectively locally owned, 
+once its address is cast to an integer, we can no longer perform optimizations that rely on its locality, such as dead code elimination or constant propagation. 
+
+However, we think that blocks whose addresses are cast to
+integers in actual programs are unlikely to be completely local. There are few reasons to cast a local pointer to an integer unless the address will be shared with other code sections. 
+
+For instance, consider the following example of a simple program in which we might want to perform a locality optimization even after casting a pointer to an integer.
+The program is a variant of 
+the example in \S\ref{idea:deadcast}, in which we cast \texttt{q} into an integer instead of~\texttt{p},
+so that in our model the local block becomes concrete and cannot be eliminated.
+Although this optimization cannot be performed in our framework, the function \texttt{foo} is nothing but an %silly pseudo random 
+unpredictable number generator, and is unlikely to occur in real programs.
+
+\begin{center}
+\begin{tabular}{@{}l@{}l@{}l@{}}
+%\small
+\begin{lstlisting}
+foo(ptr p, int n) {
+  var ptr q, int a, r;
+  q = malloc (n);
+  a = (int) q;
+  r = a * 123;
+  // return r;
+}
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%\small
+\begin{lstlisting}
+foo(ptr p, int n) {
+  var ptr q, int a, r;
+  q = malloc (n);
+  a = (int) q;
+  r = a * 123;
+  // return r;
+}
+\end{lstlisting}
+\\
+%\small
+\begin{lstlisting}
+$\cdots$
+foo(p, n);
+bar();
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%\small
+\begin{lstlisting}
+$\cdots$
+
+bar();
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+Another, more reasonable limitation of our model occurs when one privately uses a local block for some time, then casts its address to an integer and releases it to the
+public (\eg by using the integer as a key for hash table).  Consider the following example, which is a variant of the example in \S\ref{idea:ownership},
+where we cast the address of a newly allocated block into an integer
+and use the integer as a key for hash table:
+\begin{center}
+\begin{tabular}{@{}l@{}l@{}l@{}}
+%\small
+\begin{lstlisting}
+$\cdots$
+p = malloc (1);
+*p = 123;
+b = (int) p;
+bar();
+a = *p;
+hash_put(h, b, a);
+$\cdots$
+\end{lstlisting}
+&
+$\qquad\rightarrow\qquad$
+&
+%\small
+\begin{lstlisting}
+$\cdots$
+p = malloc (1);
+*p = 123;
+b = (int) p;
+bar();
+a = *p;
+hash_put(h, b, 123);
+$\cdots$
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+This constant propagation optimization is invalid in the
+quasi-concrete model because the newly allocated block is cast to an
+integer before the call to \texttt{bar}.  (It becomes valid if the
+cast is moved after the call to \texttt{bar}, though.)  However, while
+ownership transfer optimizations of this sort are indeed performed by
+\texttt{clang -O2}, they are not performed by \texttt{gcc -O2} or
+higher, and can be viewed as minor optimizations that are not often
+used.
+
+
+%% because if they are going to be used temporarily, 
+%% public blocks (\ie imported from the environment, or
+%% exported to the environment).
+
+%% as we will see below, such optimizations are very unlikely to happen in
+%% usual C programs anyway, and thus it is not a serious drawback.
+
+%% For example, consider a variant of the dead cast elimination example
+%% in \S\ref{ex:deadcast} (LHS below).  In this example, the function
+%% \texttt{foo} allocates a block and cast its address to an integer.  In
+%% our framework, the function \texttt{foo} is never read-only and thus
+%% we cannot eliminate call to \textt{foo} even when the source has a
+%% concolic memory and the target has a concrete memory.  However, in
+%% some intuitive sense, this function \texttt{foo} can be seen as
+%% read-only and indeed both ``clang -O2'' and ``gcc -O2'' optimizes away
+%% a call to \texttt{foo} when the return value is ignored.
+
+
+%% \begin{lstlisting}
+%% foo() {
+%%   var ptr p, int r;
+%%   p = malloc (1);
+%%   3 -> p;
+%%   _ = (int) p;
+%%   bar();
+%%   r <- p;
+%%   printf(r);           $\to$ printf(3);
+%% }
+%% \end{lstlisting}
+
+%% \begin{itemize}
+%% \item The above example, a constant propagation of the value of a
+%%   casted pointer across a function call, is not justified in our
+%%   model.  Since \texttt{foo} does not have exclusive ownership of
+%%   \texttt{p} due to a casting to integer, \texttt{bar} may change the
+%%   content of \texttt{p}.
+%% \end{itemize}
+
+%% \begin{tabular}{lll}
+%% \begin{lstlisting}
+%% var ptr p,int r;
+%% p = malloc (1);
+%% 3 -> p;
+%% r = (int) p;
+%% r = r * 5;
+%% free (p);
+%% \end{lstlisting}
+%% &
+%% \begin{lstlisting}
+%% var ptr p;
+%% p = malloc (1);
+
+%% _ = (int) p;
+
+%% free (p);
+%% \end{lstlisting}
+%% &
+%% \begin{lstlisting}
+%% var ptr p;
+%% p = malloc (1);
+
+
+
+%% free (p);
+%% \end{lstlisting}
+%% \end{tabular}
+
+%% \begin{itemize}
+%% \item Unused casting is \emph{almost} dead, but we cannot eliminate
+%%   out the \texttt{malloc} and \texttt{free} of the casted block.
+%%   Between the logical languages, we can optimize out everything except
+%%   for \texttt{malloc}, \texttt{free}, and a cast.  From the logical
+%%   langauge to the concrete language, we can remove the cast, too.
+%% \item In both cases, we performed the int casting of short-term
+%%   memory.  Intuitively, this is very unnatural, hard to find use cases
+%%   and hard to expect such usecases to occur often.  So, we do not lose
+%%   much optimization opportunities.
+%% \end{itemize}
+
+%% \mbox{}\\
+%% -----------------------\\
+%% We first discuss the advantages of the concological model.
+
+%% The key idea is that when an unrealized address $(l,i)$ is cast to an
+%% integer, we find a free concrete space (say at $p$) and realize the
+%% block $l$ in the free space, so that the address $(l,i)$ is identified
+%% with the integer $p+i$. On the other hand, casting an already realized
+%% address is no operation. Thus, in this model, the cast of a pointer to
+%% an integer is an operation with side effect on the memory, which is
+%% the key difference from the logical model.
+
+%% The cast operation is non-deterministic, whereas the memory allocation
+%% is deterministic.
+
+%% If the address $(l,i)$ is already realized,
+%% the cast is no operation.
+
+%% operation
+
+%% cast -> realize
+
+%% reasoning principle -> visualize
+
+%% special operations
+
+%% Explain how we turn the logical model into hybrid one.
+
+%% explain the invariant visually.
+
+%% Main idea is to model casting as realization
+%% (migration of logical block to concrete one).
+
+%% Explain about handling OOM as stuck, not error (explain why)
+
+%% examples.
+
+%% revisit the hash table example.
+
+%% \begin{itemize}
+%% \item Explain its simplicity.
+%% \item Explain the problem using one of the following two examples.
+%% \begin{verbatim}
+%% void f(int i) {
+%%   int a[10];
+%%   int b = 0;
+
+%%   a[i] = 1;
+
+%%   return b;
+%% }
+%% ->
+%% void f(int i) {
+%%   int a[10];
+%%   int b = 0;
+
+%%   a[i] = 1;
+
+%%   return 0;
+%% }
+
+%% Or
+
+%% extern void g(void);
+%% void f(void) {
+%%   int a = 0;
+%%   g();
+%%   return a;
+%% }
+%% ->
+%% extern void g(void);
+%% void f(void) {
+%%   int a = 0;
+%%   g();
+%%   return 0;
+%% }
+%% \end{verbatim}
+%% \item Explain why it does not work using one of the following.
+%% \begin{verbatim}
+%% f(10);
+
+%% Or
+
+%% void g(void) {
+%%   int* p = (int *) 0x0000ff00;
+%%   *p = 1;
+%%   return;
+%% }
+%% \end{verbatim}
+
+%% \end{itemize}
+
+
+\subsection{Language Semantics}
+
+This section describes how to use the ideas of the quasi-concrete memory model to give semantics to the C-like language of \S\ref{backgrounds}.
+
+\paragraph{NULL pointer} 
+We represent the NULL pointer as the logical address $(0,0)$ and 
+initialize the block $0$ as follows:
+\[
+m(0) = (v,p,n,c) \text{ with } v=\texttt{true}, p=0, n=1.
+\]
+The only special treatment of the block $0$ is that we $(i)$ raise
+undefined behavior when accessing it via a load or a store;
+and $(ii)$ do nothing when freeing it (because \texttt{free(0)} is allowed in C).
+
+\paragraph{Casting between Integers and Pointers}
+We first define casting between integers and logical addresses via \emph{reification} and \emph{validity checking}.
+The reification function $\toint{}{m}$ under memory $m$
+converts a logical address to a corresponding integer if its block in memory has a concrete address.
+The validity predicate $\text{valid}_m$ checks if a logical address
+is inside the range of a valid block.
+\[
+\begin{array}{@{}r@{~~}c@{~~}ll@{}}
+\toint{(l, i)}{m} &\defeq& p + i &\text{if }~ m(l) = (v, p, n, c) \land p\text{ is defined} \\[2mm]
+\text{valid}_m(l,i) &\text{iff}& 
+\multicolumn{2}{@{}l@{}}{
+m(l) = (v, p, n, c) \land v=\mathrm{true} \land (0\le i < n)}
+\\
+\end{array}
+\]
+
+Casting a logical address $(l,i)$ into an integer first realizes the
+block $l$ and then reifies the address $(l,i)$ if it is valid;
+otherwise, raises undefined behavior.  Casting an integer $i$ yields a
+valid logical address $(l,j)$ that is reified to $i$ if there is such
+an address; otherwise, raises undefined behavior. Note that 
+an integer is cast to a unique address if it succeeds.
+\[
+\begin{array}{@{}l@{~}c@{~}ll@{}}
+\texttt{cast2int}_m(l,i) &\defeq& \toint{(l,i)}{m} &\text{if }~ \text{valid}_m(l,i)
+~~~\text{\{after realizing $l$\}}
+\\
+\texttt{cast2ptr}_m(i)   &\defeq& (l,j) & \text{if }~ \text{valid}_m(l,j) \land \toint{(l,j)}{m}=i \\
+\end{array}
+\]
+
+\paragraph{Computing with Logical Values}
+%% In order to use the quasi-concrete model in our language, we must first clarify the treatment of logical values in the language. Recall that logical addresses are pairs $(l, i)$ where $l$ is a block identifier and $i$ is an integer offset. 
+
+%% We identify logical addresses with integers via \emph{normalization}.
+%% The normalization function ${|-|_m}$ under memory $m$
+%% converts a logical address into a corresponding integer if its block in memory has a concrete address:%%normalization syntax?
+%% \[
+%% \begin{array}{@{}r@{~}c@{~}ll@{}}
+%% \toint{(l, i)}{m} &\defeq& p + i &\text{if }~ m(l) = (v, p, n, c) \land p\text{ is defined} \\
+%% \toptr{i}{m} &\defeq& (l,j) &\text{if }~ i = \toint{(l,j)}{m} \land \text{valid}_m(l,j)\\[2mm]
+%% \multicolumn{4}{@{}l@{}}{
+%% \text{where } \text{valid}_m(l,i) \text{ iff } 
+%% m(l) = (v, p, n, c) \land v=\mathrm{true} \land (0\le i < n).} \\
+%% \end{array}
+%% \]
+
+We now give semantics to the binary operations based on the static types of their operands. 
+When both operands are of type \texttt{int}, we perform ordinary integer addition, subtraction, etc. 
+When one or more arguments are of type \texttt{ptr}, we give the operations special semantics for the well-defined cases
+and raise undefined behavior otherwise: %%lines
+\[
+\begin{array}{@{}l@{~}l@{}}
+%% (\texttt{p + a}, m) \Downarrow i_1 + i_2 & \text{ if } |\texttt{p}|_m = i_1 \land
+%%  \texttt{a} = i_2\\
+(\texttt{p + a}, m) \Downarrow (l, i_1 + i_2) & \text{ if }~ \texttt{p} = (l, i_1) \land \texttt{a} = i_2\\
+%% (\texttt{a + p}, m) \Downarrow i_1 + i_2 & \text{ if } \texttt{a} = i_1 \land |\texttt{p}|_m = i_2\\ %%We can remove the symmetric cases if we need the space.
+(\texttt{a + p}, m) \Downarrow (l, i_1 + i_2) & \text{ if }~ \texttt{a} = i_1 \land \texttt{p} = (l, i_2)\\
+%% \end{array}
+%% \]
+%% \[
+%% \begin{array}{@{}ll@{}}
+%% (\texttt{p - a}, m) \Downarrow i_1 - i_2 & \text{ if } |\texttt{p}|_m = i_1 \lan
+  %% d \texttt{a} = i_2\\
+(\texttt{p - a}, m) \Downarrow (l, i_1 - i_2) & \text{ if }~ \texttt{p} = (l, i_1) \land \texttt{a} = i_2\\
+%% (\mathtt{p_1 \mathbin{\texttt{-}} p_2}, m) \Downarrow i_1 - i_2 & \text{ if } |\mathtt{p_1}|_m = i_1 \land |\mathtt{p_2}|_m = i_2\\
+(\mathtt{p_1 \mathbin{\texttt{-}} p_2}, m) \Downarrow i_1 - i_2 & \text{ if }~ \mathtt{p_1} = (l, i_1) \land \mathtt{p_2} = (l, i_2)\\
+%% \end{array}
+%% \]
+%% The question of pointer equality is slightly more complicated. In the
+%% presence of logical blocks, we will not always be able to tell whether
+%% two pointers are equal: in particular, when the offset of a logical
+%% address is outside the range of the block, its actual target is
+%% undetermined. In defining the semantics of equality, then, we identify
+%% as many cases as possible in which we can be certain that two pointers
+%% are not equal: 
+%% When both pointers normalize to integers or to logical
+%% pointers in the same block, we can compare them
+%% straightforwardly. Finally, when an operand is a logical pointer with
+%% an offset within the range of its block, we know that it is not equal
+%% to the null pointer or any pointer in the range of a different block.
+%% \[
+%% \begin{array}{@{}l@{~~~}l@{}}
+%% (\mathtt{p_1 \mathbin{\texttt{=}} p_2}, m) \Downarrow i_1 = i_2 & \text{ if } |\mathtt{p_1}|_m = i_1 \land |\mathtt{p_2}|_m = i_2\\
+(\mathtt{p_1 \mathbin{\texttt{=}} p_2}, m) \Downarrow i_1 = i_2 & \text{ if }~ \mathtt{p_1} = (l, i_1) \land \mathtt{p_2} = (l, i_2) \\
+%% (\mathtt{p_1 \mathbin{\texttt{=}} p_2}, m) \Downarrow \texttt{false} & \text{ if } |\mathtt{p_1}|_m = \texttt{NULL} \land \mathtt{p_2}\hookrightarrow_m l\\
+%% (\mathtt{p_1 \mathbin{\texttt{=}} p_2}, m) \Downarrow \texttt{false} & \text{ if }\; \mathtt{p_1}\hookrightarrow_m l \land |\mathtt{p_2}|_m = \texttt{NULL} \\
+(\mathtt{p_1 \mathbin{\texttt{=}} p_2}, m) \Downarrow \texttt{false} & \text{ if }~ 
+\mathtt{p_1} \!=\! (l_1, i_1) \land \mathtt{p_2} \!=\! (l_2, i_2) \land l_1 \!\neq\! l_2 \\
+%% \mathtt{p_1}\hookrightarrow_m l_1 \land \mathtt{p_2}\hookrightarrow_m l_2  \land l_1\neq l_2 \\
+  & \quad{}~ \land \text{valid}_m(l_1,i_1) \land \text{valid}_m(l_2,i_2) \\
+\end{array}
+\]
+%% where $\texttt{p} \hookrightarrow_m l$ denotes that the address in
+%% \texttt{p} (either concrete or logical) is inside the range of the
+%% block~$l$ in the memory $m$; and $\text{valid}_m(l)$ denotes that $l$
+%% is a valid (\ie allocated) block in $m$. 
+This definition of equality is a refinement of the pointer equality given in the ISO C standard~\cite{iso2011iec}; for instance, it allows us to conclude that $\mathtt{p = p}$ even when $\mathtt{p}$ is not a pointer to an allocated block, while in the C standard the result of this comparison is undefined.
+
+\paragraph{Quasi-Concrete and Concrete Semantics}
+Using these definitions, we can give the usual operational semantic definitions to our language constructs, and perform memory operations (loads, stores, allocations, and casts) in the quasi-concrete memory model. Static type checking allows us to split variables into pointer-typed variables (whose values are %normalized 
+always logical addresses
+and treated as described above) and integer-typed variables (whose values are always ordinary integers and require no special handling). 
+
+We also give the language a purely concrete semantics and use it as a
+low-level intermediate language with the concrete memory.  In this
+semantics, all memory blocks are realized and all values are just
+integers, interpreted as either integer values or physical addresses
+of memory cells.
+
+%% We also give the language a purely concrete semantics, in which all
+%% blocks are always concrete. The concrete semantics is derived from the
+%% quasi-concrete semantics simply by performing a realization step after
+%% each instruction, in which all blocks without concrete addresses are
+%% assigned arbitrary (consistent) concrete addresses. This allows the
+%% same syntax to serve as both a high-level intermediate language with
+%% the quasi-concrete memory model, and a low-level intermediate language
+%% in which all memory locations are concrete addresses.
+
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "main"

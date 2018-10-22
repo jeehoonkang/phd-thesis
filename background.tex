@@ -2,22 +2,104 @@
 \label{sec:background}
 
 We begin by briefly reviewing the technical background that informs the rest of the dissertation,
-using CompCert as the learning material.  We first explain CompCert's organization, its correctness
-statement, and its closed-simulation verification method (\Cref{sec:background:overview}).  To flesh
-out the details on formal semantics and compiler verification, we use constant propagation---one of
+using CompCert as the learning material.  We first explain CompCert's correctness statement, as well
+as its closed-simulation verification method (\Cref{sec:background:correctness}).  To flesh out the
+details on formal semantics and compiler verification, we use constant propagation---one of
 CompCert's optimizations---as a running example.  Specifically, We review the RTL language on which
 constant propagation is performed (\Cref{sec:background:rtl}), and explain how constant propagation
 works and how CompCert verifies it (\Cref{sec:background:constprop}).  Throughout the section, we
 keep the presentation semi-formal, abstracting away unnecessary detail to get across the main ideas.
 
+TODO: In this section, we review the concrete memory model (\S\ref{backgrounds:concrete}) as well as
+CompCert's logical model (\S\ref{backgrounds:logical}), because our quasi-concrete model builds on
+them.  We then review behavioral refinement (\S\ref{backgrounds:refinement}), a key definition used
+for proving compiler optimizations correct.
+
+TODO: To simplify the presentation, in this paper, we focus on handling integer-pointer casts and do not
+discuss many of the orthogonal aspects of C memory models. Specifically:
+
+\begin{itemize}
+\item We assume a 32-bit architecture: words are 4 bytes wide, and 
+the size of the address space is $2^{32}$.
+\item We consider only integer and pointer values, and omit values of
+  other types such as \texttt{float} or \texttt{char}.
+\item We also omit subword arithmetic, and assume each address 
+  stores a 32-bit value. 
+%and take all addressing to be
+%  aligned at 4-byte boundaries.
+%\todo{gil: this is not quite right. For example,
+%we have a 4-byte word at 0x0000FFF0 
+%and another 4-byte word at 0x0000FFF1, ratherthan at 0x0000FFF4.
+%We used this just for simplicity anyway.}
+% $(l,i)$ points to the $i$-th cell of 4
+% byte data in the logical block $l$).
+\end{itemize}
 
 
-\subsection{Overview of CompCert}
-\label{sec:background:overview}
+\subsection{CompCert's Correctness}
+\label{sec:background:correctness}
 
-\paragraph{Organization}
+\paragraph{Correctness Criteria: Behavioral Refinement}
 
-TODO
+The standard notion of compiler correctness is behavioral refinement, which states that \emph{the
+  set of target program behaviors must be a subset of the set of source program behaviors}.  We
+consider sets of behaviors as opposed to single behaviors because in general a program may have
+multiple behaviors due to nondeterminism.
+
+Given a set of I/O events that the program may generate, a behavior is one of the following three
+forms:
+\begin{enumerate}
+\item A terminating execution producing a finite sequence of I/O events,
+  $e_1, \cdots, e_n, \mathtt{term}$
+\item A diverging execution that has produced only a finite sequence of I/O events,
+  $e_1, \cdots, e_n, \mathtt{nonterm}$.
+\item A diverging execution producing an infinite sequence of I/O events,
+  $e_1, \cdots, e_n, \cdots$.
+\end{enumerate}
+
+We regard \emph{the undefined behavior as described in the ISO C18 standard as the set of all
+  behaviors}.  This captures the intuitive properties of compilers on undefined behavior: if the
+target program's behavior is undefined, then the source program's behavior is also undefined.  If
+the source program's behavior is undefined, then compiler can choose any program as its result.
+
+Then what is the set of behaviors of out of memory?\footnote{In ISO C18 Standard~\cite{iso2018iec},
+  \texttt{malloc} returns $0$ in case of out-of-memory [\S7.22.3 paragraph~1].  TODO: check.
+  However, this semantics does not justify dead allocation eliminations.  The reason is that, for
+  example, if a dead malloc is eliminated, then the source may have more allocated blocks than the
+  target has and thus a subsequent allocation may return 0 in the source but return a valid pointer
+  in the target.}
+  %% In C11
+  %% Standard~\cite{iso2011iec}, \texttt{malloc} returns $0$ when out of memory
+  %% (7.22.3 paragraph 1).  However, this semantics does not justify
+  %% memory optimizations, such as dead allocation eliminations, since
+  %% the a \texttt{malloc} in the target may return $0$ while the
+  %% corresponding \texttt{malloc} in the source may return a valid
+  %% pointer.
+%This question arises naturally,
+%since integer-pointer casts inherently introduce out of memory.
+We should allow the target program to run out of memory even if the source program does not, because
+important compiler transformations such as register allocation may increase the program's memory
+requirements.  Dually, since running out of memory is not that serious a problem for programmers as
+is genuine undefined behavior (\eg accessing freed memory), the target behavior of a source program
+running out of memory should not be arbitrary, but should match the source behavior and also run out
+of memory.
+
+Therefore, CompCertTSO~\cite{vsevvcik2013compcerttso} models \emph{out of memory as the empty set of
+  behaviors}, or in other words, no behaviors.  However, what happens if there were I/O events prior
+to the out-of-memory error?  Discarding I/O events before running out of memory is absurd: the
+target program should always perform a prefix of the events the source program could have performed.
+To handle this, CompCertTSO also observes \emph{partial behaviors}, possibly before discarding
+behavior due to running out of memory:
+\begin{enumerate}
+\setcounter{enumi}{3}
+\item A partial execution of the program that has produced a finite sequence
+of I/O events, $e_1, \cdots, e_n, \mathtt{partial}$.
+\end{enumerate}
+As before, refinement is defined as inclusion of the set of (possibly partial) behaviors of the
+target program into that of the source program.  In this dissertation, we follow CompCertTSO's
+approach of handling out of memory.
+% However, unlike CompCertTSO, where only the target language can run out of memory, our source
+% language can also run out of memory due to pointer-to-integer casts, as we explain below.
 
 
 \paragraph{End-to-End Correctness}
@@ -42,6 +124,8 @@ target-level output of $\mathcal{C}$, \emph{refines} its source-level input, \co
 
 
 \paragraph{Per-Pass Correctness}
+
+TODO: organization
 
 To verify compilation correctness for the compiler $\mathcal{C}$, we verify each pass of
 $\mathcal{C}$ independently.  Specifically, for each pass (transformation) $\mathcal{T}$ from
@@ -101,6 +185,117 @@ pass in CompCert and its simulation relation, as well as the langauge on which t
 performed.
 
 
+\subsection{The CompCert Memory Model}
+\label{sec:background:memory}
+
+\paragraph{Concrete Model}
+
+Concrete memory consists of a $2^{32}$-sized array of values, and a
+list of allocated blocks, 
+represented as pairs $(p,n)$ of the block's starting address and its size.
+Loading from or storing to an unallocated address raises
+an error (\ie undefined behavior).  Values are just 32-bit integers,
+since pointers are merely integers in the concrete model.
+As a result, \emph{the concrete model natively supports integer-pointer casts}.
+\[
+\begin{array}{@{}l@{~}c@{~}l@{}}
+\mathrm{Mem} &\defeq& (\inttype \to \mathrm{Val}) \times \mathtt{list}\ \mathrm{Alloc} \\
+\mathrm{Alloc} &\defeq& \setof{(p,n) \suchthat p \in \inttype \land n \in \inttype} \\
+\mathrm{Val} &\defeq& \setof{i\in\inttype}
+\end{array}
+\]
+
+Memory allocation inserts a block into the list of allocated blocks, 
+whereas deallocation removes one.  Overall, the list of allocated 
+blocks should be \emph{consistent}:\footnote{These are a subset of 
+  \texttt{malloc}'s properties according to the C11 Standard~\cite{iso2011iec}. 
+  For more details, see \S7.22.3 paragraph~1 and \S6.5.8 paragraph~5.}
+\begin{itemize}
+\item If $(p, n)$ is allocated, then $\emptyset \neq [p,p+n) \subseteq
+  (0,2^{32}-1)$.
+%\item If $(p, n)$ is allocated, then $p\neq 0$ and $n\neq 0$.
+\item If blocks $(p_1, n_1)$ and $(p_2, n_2)$ are distinct
+  allocations, their ranges $[p_1,p_1+n_1)$ and $[p_2,p_2+n_2)$
+  are disjoint.
+\end{itemize}
+
+As we have seen, however, the concrete model \emph{does not support 
+standard compiler optimizations} such as constant propagation and 
+dead allocation elimination in the presence of external function
+calls.  This is because the model does not provide 
+a mechanism for ensuring that a module has exclusive control over some
+part of memory, thereby assuming that unknown code can read and 
+update the contents of every allocated memory cell.
+
+
+\paragraph{CompCert's Logical Model}
+
+In CompCert's logical model
+\cite{leroy:compcert,Leroy-Appel-Blazy-Stewart-memory-v2}, memory
+consists of a finite set of logical blocks with unique block
+identifiers.  Each block is a fixed-sized array of values together
+with a validity flag $v$ that indicates whether the block is accessible or
+has been freed. As before, accessing a freed block raises an error.
+Values are either 32-bit integers or logical addresses.  Here, a
+logical address $(l,i)$ consists of a block identifier $l$ and an
+offset $i$ inside the block.
+% (For simplicity, throughout this paper, we assume pointers
+%are aligned at 4-byte boundaries and $(l,i)$ represents the 4-byte chunk at
+%offset $4i$. \todo{This is not right for the same reason as before.})
+%For a block identifier $l$, we henceforth write the 
+%block $l$ for the block with identifier $l$.
+\[
+\begin{array}{@{}l@{~}c@{~}l@{}}
+\mathrm{Mem} &\defeq& \mathrm{BlockID} \fpfun \mathrm{Block} \\
+\mathrm{Block} &\defeq&
+\setof{(v, n, c) \suchthat
+  v \in \mathtt{bool} \land n \in \Nat \land c \in \mathrm{Val}^n } \\
+\mathrm{Val} &\defeq& \setof{i\in\mathtt{int32}} \uplus \setof{(l,i) \in \mathrm{BlockID}\times \mathtt{int32}}
+\end{array}
+\]
+
+An important advantage of the logical model over the concrete one is that 
+it \emph{allows functions to have exclusive control over a logical block} as 
+long as they do not allow its address to escape. The reason is that it
+is not possible to manufacture the logical address of an already allocated block.  
+This property guarantees the correctness of many useful optimizations, 
+such as constant propagation across function calls and dead allocation
+elimination.
+
+A secondary advantage is that programs have \emph{infinite memory}, rendering
+their allocation behavior unobservable, which in turn makes it easy for
+compilers to remove dead allocations.
+
+%% there is no out-of-meory behavior since the memory has infinitely many logical blocks.
+%This is important because even if a source program consumes a huge
+%amount of memory, ... (\todo{Viktor, please say something about this
+% :)})
+
+Apart from that logical models have a slightly more complicated
+semantics, their main disadvantage is that \emph{they do not support
+  integer-to-pointer casts} very well.
+%% The main disadvantages of logical models are that they have a slightly
+%% more complicated semantics and, most importantly, that \emph{they do
+%%   not support integer-to-pointer casts} very well.  
+As a result,
+CompCert has very weak support for integer-pointer casts.  Generally,
+they are treated as \texttt{nop}s (\ie the identity function) rather
+than undefined (\ie erroneous), and thus variables of integer (or
+pointer) types can contain both integers and logical addresses.  In
+CompCert's higher-level languages (CompCert C and Clight), once a
+pointer is cast into an integer, any arithmetic on that integer
+returns an unspecified value.  In its lower-level languages (Cminor,
+RTL, \emph{etc.}), however, some of the integer operations (namely,
+addition, subtraction, and equality tests) are also well-defined for
+pointer values in special cases.  More specifically, for instance,
+%% subtraction and equality test are well defined for pointer values in
+%special cases: \eg 
+the addition of an integer to an address, the
+subtraction between addresses when they are in the same logical block,
+and the equality test between an address and \texttt{NULL} are well-defined.
+
+
+
 \subsection{The RTL Language in CompCert}
 \label{sec:background:rtl}
 
@@ -144,6 +339,11 @@ Throughout we assume that programs satisfy some basic well-formedness properties
 multiple definitions for the same global variable, declarations and definitions of the same variable
 should have matching signatures, and the parameter and local variable lists for each function do not
 have duplicate entries.
+
+
+\paragraph{Logical Memory Model}
+
+TODO
 
 
 \paragraph{Semantics}
@@ -226,10 +426,6 @@ possible step form a return state (rule \textsc{return2}) then pops the top-most
 transitions to a normal instruction state thereby restoring the registers, program counter, and
 stack pointers of the calling function.
 
-
-\paragraph{Logical Blocks}
-
-TODO
 
 
 \subsection{Constant Propagation in CompCert}
@@ -404,246 +600,31 @@ in the next section.
 
 
 
-\section{Technical Background from Intptrcast}
-
-In this section, we introduce a minimal C-like programming language
-and review the concrete memory model
-(\S\ref{backgrounds:concrete}) as well as CompCert's logical model
-(\S\ref{backgrounds:logical}), because our quasi-concrete model
-builds on them.  We then review behavioral refinement
-(\S\ref{backgrounds:refinement}), a key definition used for proving
-compiler optimizations correct. 
-
-To simplify the presentation, in this paper, we focus on handling 
-integer-pointer casts and do not discuss many of the orthogonal 
-aspects of C memory models. Specifically:
-
-\begin{itemize}
-\item We assume a 32-bit architecture: words are 4 bytes wide, and 
-the size of the address space is $2^{32}$.
-\item We consider only integer and pointer values, and omit values of
-  other types such as \texttt{float} or \texttt{char}.
-\item We also omit subword arithmetic, and assume each address 
-  stores a 32-bit value. 
-%and take all addressing to be
-%  aligned at 4-byte boundaries.
-%\todo{gil: this is not quite right. For example,
-%we have a 4-byte word at 0x0000FFF0 
-%and another 4-byte word at 0x0000FFF1, ratherthan at 0x0000FFF4.
-%We used this just for simplicity anyway.}
-% $(l,i)$ points to the $i$-th cell of 4
-% byte data in the logical block $l$).
-\item We do not consider concurrency.
-\end{itemize}
-Except for concurrency, the other simplifications we made can easily 
-be lifted.
-
-For concreteness, we consider the following simple C-like language:
-\[
-\begin{array}{@{}l@{~}c@{~}l@{}}
-\mathit{Typ} &::=& \texttt{int}~|~\texttt{ptr}\\
-\mathit{Bop} &::=& \texttt{+}~|~\texttt{-}~|~\texttt{*}~|~\texttt{\&\&}~|~\texttt{=}\\
-\mathit{Exp} &::=& \mathit{Int}~|~\mathit{Var}~|~\mathit{Global}~|~\mathit{Exp}\ \mathit{Bop}\ \mathit{Exp}\\
-\mathit{RExp} &::=& \mathit{Exp}~|~\texttt{malloc}(\mathit{Exp})~|~\texttt{free}(\mathit{Exp})~|~\texttt{(}\mathit{Typ}\texttt{)}\ \mathit{Exp}\\&&|~\texttt{input()}~|~\texttt{output}(\mathit{Exp})\\
-\mathit{Instr} &::=& \mathit{Fid}(\mathit{Exp}, \ldots, \mathit{Exp});
-~|~\mathit{Var}\ \texttt{=}\ \mathit{RExp}
-~|~\mathit{Var}\ \texttt{=}\ \texttt{*}\mathit{Exp}
-\\&&|~\texttt{*}\mathit{Exp}\ \texttt{=}\ \mathit{Exp}
-~|~\texttt{if}\ \texttt{(}\mathit{Exp}\texttt{)}\ \overline{\mathit{Instr}}\ \texttt{else}\ \overline{\mathit{Instr}}
-\\&&|~\texttt{while}~\texttt{(}\mathit{Exp}\texttt{)}\ \overline{\mathit{Instr}}\\
-\mathit{Decl} &::=& \mathit{Fid}(\mathit{Typ}\ \mathit{Var}, \ldots, \mathit{Typ}\ \mathit{Var})\\&&\texttt{\{}\texttt{var}~\overline{\mathit{Typ}\ \mathrm{Var}};\,\overline{\mathit{Instr}}\texttt{\}}
-\end{array}
-\]
-The \texttt{input} and \texttt{output} operations produce externally visible events; all other operations are intended to model the corresponding operations in C.
-By $\overline{T}$ we mean a list of $T$.
-For simplicity, we omit \texttt{return} instructions and instead return values via pointer-valued arguments to functions.
+% Example language from intptrcast
+%
+% For concreteness, we consider the following simple C-like language:
+% \[
+% \begin{array}{@{}l@{~}c@{~}l@{}}
+% \mathit{Typ} &::=& \texttt{int}~|~\texttt{ptr}\\
+% \mathit{Bop} &::=& \texttt{+}~|~\texttt{-}~|~\texttt{*}~|~\texttt{\&\&}~|~\texttt{=}\\
+% \mathit{Exp} &::=& \mathit{Int}~|~\mathit{Var}~|~\mathit{Global}~|~\mathit{Exp}\ \mathit{Bop}\ \mathit{Exp}\\
+% \mathit{RExp} &::=& \mathit{Exp}~|~\texttt{malloc}(\mathit{Exp})~|~\texttt{free}(\mathit{Exp})~|~\texttt{(}\mathit{Typ}\texttt{)}\ \mathit{Exp}\\&&|~\texttt{input()}~|~\texttt{output}(\mathit{Exp})\\
+% \mathit{Instr} &::=& \mathit{Fid}(\mathit{Exp}, \ldots, \mathit{Exp});
+% ~|~\mathit{Var}\ \texttt{=}\ \mathit{RExp}
+% ~|~\mathit{Var}\ \texttt{=}\ \texttt{*}\mathit{Exp}
+% \\&&|~\texttt{*}\mathit{Exp}\ \texttt{=}\ \mathit{Exp}
+% ~|~\texttt{if}\ \texttt{(}\mathit{Exp}\texttt{)}\ \overline{\mathit{Instr}}\ \texttt{else}\ \overline{\mathit{Instr}}
+% \\&&|~\texttt{while}~\texttt{(}\mathit{Exp}\texttt{)}\ \overline{\mathit{Instr}}\\
+% \mathit{Decl} &::=& \mathit{Fid}(\mathit{Typ}\ \mathit{Var}, \ldots, \mathit{Typ}\ \mathit{Var})\\&&\texttt{\{}\texttt{var}~\overline{\mathit{Typ}\ \mathrm{Var}};\,\overline{\mathit{Instr}}\texttt{\}}
+% \end{array}
+% \]
+% The \texttt{input} and \texttt{output} operations produce externally visible events; all other operations are intended to model the corresponding operations in C.
+% By $\overline{T}$ we mean a list of $T$.
+% For simplicity, we omit \texttt{return} instructions and instead return values via pointer-valued arguments to functions.
 
 %Our language has two types of values, integers and pointers, where the latter is represented as a pair $(l, i)$ of block identifier and integer offset. As a convention, we will use $\texttt{a}, \texttt{b}, \texttt{c}...$ for integer variables and $\texttt{p}, \texttt{q}, \texttt{r}...$ for pointer variables. 
 
 
-
-\subsection{Concrete Model}\label{backgrounds:concrete}
-
-Concrete memory consists of a $2^{32}$-sized array of values, and a
-list of allocated blocks, 
-represented as pairs $(p,n)$ of the block's starting address and its size.
-Loading from or storing to an unallocated address raises
-an error (\ie undefined behavior).  Values are just 32-bit integers,
-since pointers are merely integers in the concrete model.
-As a result, \emph{the concrete model natively supports integer-pointer casts}.
-\[
-\begin{array}{@{}l@{~}c@{~}l@{}}
-\mathrm{Mem} &\defeq& (\inttype \to \mathrm{Val}) \times \mathtt{list}\ \mathrm{Alloc} \\
-\mathrm{Alloc} &\defeq& \setof{(p,n) \suchthat p \in \inttype \land n \in \inttype} \\
-\mathrm{Val} &\defeq& \setof{i\in\inttype}
-\end{array}
-\]
-
-Memory allocation inserts a block into the list of allocated blocks, 
-whereas deallocation removes one.  Overall, the list of allocated 
-blocks should be \emph{consistent}:\footnote{These are a subset of 
-  \texttt{malloc}'s properties according to the C11 Standard~\cite{iso2011iec}. 
-  For more details, see \S7.22.3 paragraph~1 and \S6.5.8 paragraph~5.}
-\begin{itemize}
-\item If $(p, n)$ is allocated, then $\emptyset \neq [p,p+n) \subseteq
-  (0,2^{32}-1)$.
-%\item If $(p, n)$ is allocated, then $p\neq 0$ and $n\neq 0$.
-\item If blocks $(p_1, n_1)$ and $(p_2, n_2)$ are distinct
-  allocations, their ranges $[p_1,p_1+n_1)$ and $[p_2,p_2+n_2)$
-  are disjoint.
-\end{itemize}
-
-As we have seen, however, the concrete model \emph{does not support 
-standard compiler optimizations} such as constant propagation and 
-dead allocation elimination in the presence of external function
-calls.  This is because the model does not provide 
-a mechanism for ensuring that a module has exclusive control over some
-part of memory, thereby assuming that unknown code can read and 
-update the contents of every allocated memory cell.
-
-\subsection{CompCert's Logical Model}\label{backgrounds:logical}
-
-In CompCert's logical model
-\cite{leroy:compcert,Leroy-Appel-Blazy-Stewart-memory-v2}, memory
-consists of a finite set of logical blocks with unique block
-identifiers.  Each block is a fixed-sized array of values together
-with a validity flag $v$ that indicates whether the block is accessible or
-has been freed. As before, accessing a freed block raises an error.
-Values are either 32-bit integers or logical addresses.  Here, a
-logical address $(l,i)$ consists of a block identifier $l$ and an
-offset $i$ inside the block.
-% (For simplicity, throughout this paper, we assume pointers
-%are aligned at 4-byte boundaries and $(l,i)$ represents the 4-byte chunk at
-%offset $4i$. \todo{This is not right for the same reason as before.})
-%For a block identifier $l$, we henceforth write the 
-%block $l$ for the block with identifier $l$.
-\[
-\begin{array}{@{}l@{~}c@{~}l@{}}
-\mathrm{Mem} &\defeq& \mathrm{BlockID} \fpfun \mathrm{Block} \\
-\mathrm{Block} &\defeq&
-\setof{(v, n, c) \suchthat
-  v \in \mathtt{bool} \land n \in \Nat \land c \in \mathrm{Val}^n } \\
-\mathrm{Val} &\defeq& \setof{i\in\mathtt{int32}} \uplus \setof{(l,i) \in \mathrm{BlockID}\times \mathtt{int32}}
-\end{array}
-\]
-
-An important advantage of the logical model over the concrete one is that 
-it \emph{allows functions to have exclusive control over a logical block} as 
-long as they do not allow its address to escape. The reason is that it
-is not possible to manufacture the logical address of an already allocated block.  
-This property guarantees the correctness of many useful optimizations, 
-such as constant propagation across function calls and dead allocation
-elimination.
-
-A secondary advantage is that programs have \emph{infinite memory}, rendering
-their allocation behavior unobservable, which in turn makes it easy for
-compilers to remove dead allocations.
-
-%% there is no out-of-meory behavior since the memory has infinitely many logical blocks.
-%This is important because even if a source program consumes a huge
-%amount of memory, ... (\todo{Viktor, please say something about this
-% :)})
-
-Apart from that logical models have a slightly more complicated
-semantics, their main disadvantage is that \emph{they do not support
-  integer-to-pointer casts} very well.
-%% The main disadvantages of logical models are that they have a slightly
-%% more complicated semantics and, most importantly, that \emph{they do
-%%   not support integer-to-pointer casts} very well.  
-As a result,
-CompCert has very weak support for integer-pointer casts.  Generally,
-they are treated as \texttt{nop}s (\ie the identity function) rather
-than undefined (\ie erroneous), and thus variables of integer (or
-pointer) types can contain both integers and logical addresses.  In
-CompCert's higher-level languages (CompCert C and Clight), once a
-pointer is cast into an integer, any arithmetic on that integer
-returns an unspecified value.  In its lower-level languages (Cminor,
-RTL, \emph{etc.}), however, some of the integer operations (namely,
-addition, subtraction, and equality tests) are also well-defined for
-pointer values in special cases.  More specifically, for instance,
-%% subtraction and equality test are well defined for pointer values in
-%special cases: \eg 
-the addition of an integer to an address, the
-subtraction between addresses when they are in the same logical block,
-and the equality test between an address and \texttt{NULL} are well-defined.
-
-
-\subsection{Behavioral Refinement}\label{backgrounds:refinement}
-
-The standard notion of compiler correctness is behavioral refinement,
-which states that \emph{the set of target program behaviors must be a 
-subset of the set of source program behaviors}.  We consider sets of
-behaviors as opposed to single behaviors because in general a program
-may have multiple behaviors due to non-determinism.
-
-Given a set of I/O events that the program may generate, a behavior is 
-one of the following three forms:
-\begin{enumerate}
-\item A terminating execution producing a finite sequence of I/O
-  events,  $e_1, \cdots, e_n, \mathtt{term}$ 
-\item A diverging execution that has produced only a finite sequence 
-  of I/O events, $e_1, \cdots, e_n, \mathtt{nonterm}$.
-\item A diverging execution producing an infinite sequence of I/O events,
-$e_1, \cdots, e_n, \cdots$.
-\end{enumerate}
-
-We regard \emph{the undefined behavior as described in the C11 standard as the set of
-  all behaviors}.  This captures the intuitive properties of compilers
-on undefined behavior: if the target program's behavior is undefined,
-then the source program's behavior is also undefined.  If the source
-program's behavior is undefined, then compiler can choose any program
-as its result.
-
-Then what is the set of behaviors of out of memory?\footnote{ 
-  In C11
-  Standard~\cite{iso2011iec}, \texttt{malloc} returns $0$ in case of
-  out-of-memory [\S7.22.3 paragraph~1].  However, this semantics does not
-  justify dead allocation eliminations.  The reason is that, for
-  example, if a dead malloc is eliminated, then the source may have
-  more allocated blocks than the target has and thus a subsequent
-  allocation may return 0 in the source but return a valid pointer in
-  the target.
-  %% In C11
-  %% Standard~\cite{iso2011iec}, \texttt{malloc} returns $0$ when out of memory
-  %% (7.22.3 paragraph 1).  However, this semantics does not justify
-  %% memory optimizations, such as dead allocation eliminations, since
-  %% the a \texttt{malloc} in the target may return $0$ while the
-  %% corresponding \texttt{malloc} in the source may return a valid
-  %% pointer.
-  }
-%This question arises naturally,
-%since integer-pointer casts inherently introduce out of memory.
-Intuitively, we should allow the target program to run out of memory
-even if the source program does not, because important compiler 
-transformations such as register allocation may increase the program's
-memory requirements.
-Dually, since running out of memory is not that serious a problem
-for programmers as is genuine undefined behavior (\eg accessing freed 
-memory), the target behavior of a source program running out of memory
-should not be arbitrary, but should match the source behavior and also run
-out of memory. 
-
-Therefore, CompCertTSO~\cite{vsevvcik2013compcerttso} models \emph{out of memory
-  as the empty set of behaviors}, that is no behavior.  However, what
-happens if there were I/O events prior to the out-of-memory error?  Discarding I/O events
-before running out of memory is absurd: the target program should
-always perform a prefix of the events the source program could have
-performed.  To handle this, CompCertTSO also observes \emph{partial
-  behaviors}, possibly before discarding behavior due to running out
-of memory:
-\begin{enumerate}
-\setcounter{enumi}{3}
-\item A partial execution of the program that has produced a finite sequence
-of I/O events, $e_1, \cdots, e_n, \mathtt{partial}$.
-\end{enumerate}
-As before, refinement is defined as inclusion of the set of (possibly
-partial) behaviors of the target program into that of the source
-program.
-
-In this paper, we follow CompCertTSO's approach of handling out of memory.
-However, unlike CompCertTSO, where only the target language can run out of
-memory, our source language can also run out of
-memory due to pointer-to-integer casts, as we explain below.
 
 
 %%% Local Variables:
