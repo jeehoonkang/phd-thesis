@@ -1,4 +1,4 @@
-\section{Adapting the Constant Propagation Proof}
+\section{Running Example: Constant Propagation}
 \label{sec:sepcomp:constprop}
 
 In this section, we explain how to adapt the CompCert proof of
@@ -92,7 +92,7 @@ informally, is that the uses of the $\vprg$ and $\vsprg$ parameters in
 the revised $\soundstate$ invariant are really decoupled and that the
 preservation proof never depends on them being the same.
 
-\input{constprop-bug}
+% \input{constprop-bug} TODO
 
 The former requirement, however, requires some more work:
 not only should $\soundstate(\vprg,\vprg,\load(\vprg))$ hold for all programs $\vprg$,
