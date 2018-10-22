@@ -1,0 +1,278 @@
+\section{Introduction}
+% dmitri: Is this a taugology? Does any kind of programming _not_ rely on
+% some kind of understanding of semantics? I think the intention here is to
+% emphasize the difficulty of writing correct programs in C. Also, the problem
+% addressed by the paper, arbitrary manipulation of pointers as integer values,
+% is not identified early enough.
+%
+% C programmers rely crucially on a mental model of their program's
+% expected behavior:  they use their understanding of C semantics to
+% guide program development, to help with debugging, and to
+% predict the effects of program transformations and optimizations made
+% by the compiler.
+
+The ISO C standard~\cite{iso2011iec} famously does not give semantics to a significant
+subset of syntactically valid C programs. Instead, many programs
+exhibit implementation-defined, unspecified, or undefined behavior,
+with the latter imposing no requirements on a conforming
+implementation. This has led to the somewhat controversial practice of
+sophisticated C compilers reasoning backwards from instances of
+undefined behavior to conclude that, for example, certain code paths
+must be dead. Such transformations can lead to surprising non-local
+changes in program behavior and difficult-to-find bugs~\cite{wang2013towards,yang2011finding}.
+
+Accordingly, there have been numerous efforts to capture the
+subtleties of the C standard formally, either by giving an alternative
+language definition or a conforming implementation~\cite{norrish1998c,leroy:compcert,ellison2012executable}.
+
+ The C memory model has been of
+particular interest: cross-platform low-level access to memory is a
+defining feature of C-family languages and is essential for
+applications such as operating system kernels and language
+runtimes. However, subtle pointer aliasing
+rules~\cite{krebbers2013aliasing}, reliance on implementation-specific
+behavior, and the treatment of pointers to uninitialized memory makes
+reasoning about even single-threaded programs non-trivial.
+
+One popular extension of the standard C memory model that has not
+previously been formalized is the \emph{unrestricted} manipulation of
+pointers as integer values. While the language definition provides an integer
+type \texttt{uintptr\_t} that may be legally cast to and from pointer
+types, it does not require anything of the resulting values~\cite[\S7.20.1.4p1]{iso2011iec}. 
+Nevertheless, there are many important use cases for manipulating
+the representation of pointers in low-level code.
+
+For example, casting pointers to integers is
+widely used in the Linux kernel and JVM implementations to perform bitwise operations on pointers.
+Another common usage pattern occurs in the C++ standard library (\texttt{std::hash}),
+where the pointer's bit representation is used as a key for indexing into
+a hash table.
+This is useful since taking a pointer is a cheap way to get a unique key.
+
+%As a consequence, most programmers probably rely on a fairly concrete
+%model of C semantics in which pointer values are memory addresses,
+%which are themselves ``just'' integers.  Together with some
+%rules-of-thumb about data layout and the potential side effects of
+%function calls, this model serves as a basis for reasoning about C
+%programs.
+
+% The extent to which the programmer's model of the C semantics agrees
+% with that of the compiler implementor's is therefore an important
+% aspect of C program development---incompatibility between the two
+% perspectives can lead to hard-to-diagnose bugs or subtle dependencies
+% on compiler implementation details.
+%
+% Unfortunately, the C11 standard, while it strives for precision and
+% comprehensive coverage, is rather large, somewhat opaque, and
+% relatively informal.  A significant amount of complexity in the
+% standard is introduced to handle obscure cases or to justify the
+% correctness of desirable compiler optimizations.
+
+
+% The semantics in users' mind and that in compiler developer's must
+% coincide. Otherwise, compiled program may behave in an unexpected way
+% in a user's point of view. For example, compiler version up may make
+% previously well behaved programs to crash.  Also, compiler verification
+% result can be weakened.
+
+%% \todo{Dead allocation elimination is another good example. It might be
+%%   good to at least briefly explain the example.}
+
+
+% dmitri: Would it be more accurate to say that the concrete memory model is the
+% _simplest_ memory model that can support the arbitrary pointer manipulation
+% that we're after rather than that all C memory models fall into these two categories?
+% I'm also hesitant to make claims about what C programmers expect of
+% the memory model.
+
+The most straightforward way to support bit-level pointer 
+manipulation is to adopt what is often called a \emph{concrete} memory
+model. This approach most closely resembles what the machine is
+actually doing: pointers have the same representation as integer
+values of the appropriate width, and they simply index into a single
+flat array representing memory.
+
+However, the combination of finite memory and allowing casts
+of arbitrary integers to pointers invalidates many basic compiler
+optimizations. Consider, for example, a function \texttt{f} that
+initializes a local variable \texttt{a} and then calls some unknown
+external function~\texttt{g}. We might expect the compiler to deduce
+that the value of \texttt{a} is unaffected by the call to \texttt{g}
+and perform constant propagation:
+%% On the formal side, there are two types of memory models for C\@.
+% On the one hand, we have \emph{concrete} models.
+% These represent pointers as 32-bit (or 64-bit) integers,
+% which is close to what programmers expect, but do not support
+% some of even the most basic optimizations that compilers perform.
+% As a simple illustration, consider the following function \texttt{f} that
+% initializes a local variable \texttt{a} and then calls some unknown external
+% function \texttt{g}.
+% The compiler might perform constant propagation and optimize this program
+% as follows by assuming that the value of \texttt{a} is unaffected by the call to \texttt{g}.
+\begin{center}
+\begin{tabular}{@{}l@{}l@{}l@{}l@{}l@{}}
+%% \small
+\multicolumn{5}{c}{\texttt{extern void g();}}
+\\
+\begin{lstlisting}
+int f(void) {
+  int a = 0;
+  g();
+  return a;
+}
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%% \small
+\begin{lstlisting}
+int f(void) {
+  int a = 0;
+  g();
+  return 0;
+}
+\end{lstlisting}
+&
+$\quad\rightarrow\quad$
+&
+%% \small
+\begin{lstlisting}
+int f(void) {
+
+  g();
+  return 0;
+}
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+Using a simple concrete memory model, however, we have to consider the
+possibility that \texttt{g} is able to ``guess'' the location of
+\texttt{a} in memory and changes its value. This can happen if, for
+instance, our semantics allocates memory deterministically and 
+the caller of~\texttt{f} sets up the state of memory appropriately for
+\texttt{g}.
+
+% We note, however, that this reasoning is not valid in the concrete model.
+% The variable \texttt{a} is allocated somewhere in memory, and the external
+% function might `guess' the address at which it is allocated and overwrite
+% its value.
+%
+
+The compiler may further optimize the program by completely removing
+the now unused local variable \texttt{a}. This latter transformation is again
+disallowed by concrete models because it might change the behavior of
+the program:
+by virtue of there being one fewer memory cells allocated, the call to \texttt{g}
+might succeed where initially it exhausted memory.
+
+
+
+In order to enable such compiler optimizations, most work on verified
+compilation instead relies on \emph{logical} memory models.  These
+models represent pointers as pairs of an allocation block identifier
+and an offset within that block, where typically the set of valid
+allocation block identifiers is infinite.  In the above
+example, the first optimization is allowed since there is no way to
+forge the logical address of the variable \texttt{a} from those of
+other blocks. Also, the second one is allowed since the
+memory is infinitely large.
+
+Logical models allow most compiler optimizations, but cannot
+support many low-level C programming idioms using casts
+between pointers and integers, treating programs containing them
+as undefined (\ie erroneous).
+
+%\todo{Show example with pointer to integer cast.}
+%Gil:
+%{%% \small
+%\begin{lstlisting}
+%void set_attribute (struct hash * h,
+%     struct tree * v, struct attribute * w)
+%{
+%  hash_put(h, (void*) v, (void*) w)
+%}
+%\end{lstlisting}}
+
+In this paper, we propose a \emph{quasi-concrete} memory model for C/C++ that
+combines the strengths of the aforementioned approaches. It gives semantics to
+programs that manipulate the bit-level representation of pointers, yet permits
+the same optimizations as logical models for code not using these low-level
+features. Crucially, we achieve this without substantially complicating the
+proof techniques required for a verified compiler while retaining a model that is
+simple for the programmer to reason about.
+
+The key technical ingredient for making this work is having two
+distinct representations of pointer values, a concrete and a logical one,
+and a process for converting between the two.
+By default, a pointer is represented logically, and only when it is
+cast to an integer type, is the logical pointer value
+\emph{realized} to a concrete 32-bit (or 64-bit) integer.
+When an integer is cast (back) to a pointer value, 
+it is mapped to the corresponding logical address.
+%% it maintains its concrete
+%% representation, and only mapped to the corresponding logical address
+%% in memory accesses.
+
+The quasi-concrete model conservatively extends the logical model.  It
+gives semantics to strictly more programs than those supported by the
+logical model without changing the semantics of those programs that do
+have semantics under the logical model. Thus, any sound reasoning
+about programs in the logical model also holds in the quasi-concrete
+model, but the quasi-concrete model also supports reasoning about
+pointer arithmetic as in the concrete model.
+
+Finally, the quasi-concrete model is not intended to replace the
+memory model in the C standard. Like the concrete and logical models,
+it is a formal refinement of the (informal) C standard that can be
+used for formally reasoning about programs and program transformations
+(as in compiler verification).
+
+\medskip \noindent
+Our contributions are:
+\begin{itemize}
+\item The first formal memory model that \emph{fully} supports
+  integer-pointer casts and yet allows the standard compiler
+  optimizations.
+\item A technique for proving program equivalence under our memory
+model, and its application to verify a number of standard optimizations
+that are difficult to verify in the presence of integer-pointer casts.
+\end{itemize}
+
+All the proofs reported in this paper have been fully formalized in
+Coq and can be found in the following project webpage.
+\begin{center}
+\url{http://sf.snu.ac.kr/intptrcast}
+\end{center}
+
+%However, there is a big gap between the two.  The concrete semantics
+%does not justify useful compiler optimizations.  So, the standard
+%semantics, to justfiy such optimizations, have many informal, complex
+%exceptional rules that users do not expect, and thus is hard to
+%formalize. Compiler verification people use simple, formal logical
+%semantics which justify optimizations.  However, the semantics does
+%not support pointer-integer casting, a feature that users expect to
+%use.
+%
+%
+%The concrete semantics has a problem. use the following example to
+%explain the lack of justifying optimizations.
+%\begin{verbatim}
+%void f(int i) {
+%  int a[10];
+%  int b = 0;
+%  a[i] = 1;
+%  return b;    -> return 0
+%}
+%\end{verbatim}
+%
+%The standard semantics solves the above problem using some
+%exceptional rule. explain the rule and discuss the problems.
+%
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

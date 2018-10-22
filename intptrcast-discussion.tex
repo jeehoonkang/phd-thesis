@@ -1,0 +1,287 @@
+\section{Discussion}
+\label{sec:intptrcast:discussion}
+
+The quasi-concrete model refines the C standard by giving semantics to more programs involving pointer operations. We intend to use this model for compiler verification tasks, extending the range of common optimizations that can be verified. Ultimately, we would like to build a verified translation validation framework for LLVM that supports all commonly-used features of C. We would also like to integrate our model with CompCert and use it to justify new CompCert optimizations.
+We believe that our ideas are readily applicable to CompCert(TSO) and
+related projects like Vellvm~\cite{vellvm:popl12,vellvm:pldi13} because our memory model and notion of
+memory invariant are technically very close to CompCert's. (Vellvm
+also uses CompCert's memory model.) Essentially, all that would have
+to change in the proofs are the cases handling pointer to integer
+casts.
+
+\paragraph{Additional C language features}
+
+There are numerous other C language features that have some
+interaction with the memory model.  Some of them, such as
+\textit{indeterminate values} \cite[\S3.19.2p1]{iso2011iec}, \textit{dangling pointers}
+\cite[\S6.2.4p2]{iso2011iec}, and \textit{infinite loops with no side-effects}
+\cite[\S6.8.5p6]{iso2011iec}, have semantics that are largely orthogonal to
+the pointer realization used in our quasi-concrete model.
+Similarly, our model explicitly allows \textit{unsafely derived pointers},
+which are permitted in C11 and implementation-defined in C++11 \cite[\S3.7.4p4]{iso2011iec}. We allow them in order to support low-level
+programming idioms such as XOR linked lists and compressed oops in
+HotSpot JVM.
+
+Our paper does not directly address threads, so we cannot claim with
+certainty that the model extends to handle them.  However, we see no
+obstacles in this direction, and the quasi-concrete model is similar
+to CompCertTSO, which does support a weak memory model and threads, so
+we are optimistic that this extension to the semantics should follow similarly.
+
+A few language features require some adaptation of our memory model.
+For instance, we can adapt the quasi-concrete model to support
+\textit{union types} and \textit{strict aliasing}, following Krebbers'
+technique~\cite{krebbers2013aliasing}, which works regardless of
+whether the model is concrete, logical or hybrid.
+
+As another example, in C, \texttt{char*} is a ``universal'' pointer type, which allows
+efficient bulk data moves via \texttt{memcpy}.  Krebber's variant of
+CompCert~\cite{krebbers2014formal} already supports this semantics using a logical
+memory, and the quasi-concrete model is compatible with that solution.
+Briefly: we let \texttt{char} types store byte-indexed logical values
+(such as $(l,10)\!:\!2$, which denotes the second byte of the logical
+address $(l,10)$). This strategy works because a \texttt{char} is
+implicitly cast to an integer when used in arithmetic operations,
+and thus we
+can simply treat these casts as side-effecting (\textit{i.e.},
+realizing the logical addresses).  This approach lose (almost) no
+optimization opportunities because byte-indexed logical addresses
+are typically loaded from the memory and 
+thus (mostly) already treated as public by the compiler.
+
+
+% *** What is the role of our model?
+
+% We intend to use our model to build a verified translation validation
+% framework for LLVM (eventually) supporting all C features used in
+% practice.  Cleanly modeling pointer-to-integer casts is a necessary
+% step toward this goal.  With this application in mind, we strived to
+% make the model simple (necessary for proving correctness of
+% optimizations) yet permissive (allowing us to justify many
+% optimizations).
+
+% Our model is not intended to be a replacement for the C standard;
+% rather it is the specification of a particular compiler implementation
+% that refines the standard.
+
+% *** Can our model evolve to an actual language spec?
+
+% We believe that our model can be extended to support all practically
+% used features of C, and that all these extensions are orthogonal to
+% the realization of pointers we propose.  Here we elaborate on them.
+
+% 1. Unsafely-derived pointers. 
+% They are allowed in C11 and implementation-defined in C++11 [C++11
+% 3.7.4p4]. We chose to allow them in order to support low-level
+% programming idioms such as XOR linked lists and compressed oops in
+% HotSpot JVM.  (Disallowing them would enable garbage collection in
+% C/C++, which is rare.)
+
+% 2. Threads \& Concurrency.
+% Our paper does not directly address threads, so we cannot claim with
+% certainty that the model extends to handle them.  However, we see no
+% obstacles in this direction, and our model is similar to CompCerTSO,
+% which does support a weak memory model and threads, so we are
+% optimistic that this should be straight forward.
+
+% 3. Char*/memcpy
+% A variant of CompCert [with Krebber's patch, in github] already
+% supports char*/memcpy in logical memory, and our model is compatible
+% with that solution.  Briefly: we let char types store logical values
+% (eg, such as (l,10):2 denoting the second byte of the logical address
+% (l,10)). This is OK because chars are implicitly cast to integers by
+% arithmetic operations. We can simply treat these casts as
+% side-effecting (ie, realizing any logical addresses). Here, we lose
+% (almost) no optimization opportunities by realizing such logical
+% addresses because they are stored in the memory and thus (mostly)
+% already treated as public by the compiler.
+
+% 5. 
+% *** Applicability to existing verified compilers?
+
+% We believe that our ideas are readily applicable to CompCert(TSO) and
+% related projects like Vellvm because our memory model and notion of
+% memory invariant are technically very close to CompCert's. (Vellvm
+% also uses CompCert's memory model.) Essentially, all that would have
+% to change in the proofs are the cases handling pointer to integer
+% casts.
+
+\paragraph{Alias analyses} The quasi-concrete model is largely
+compatible with common alias analyses.  For instance, it can be used
+to justify \textit{size-based alias analysis}, which considers
+pointers to differently-sized objects as distinct. For example, in
+the code below, there is no alias between \texttt{p} and \texttt{q}:
+even if \texttt{q} points to the block
+pointed to by~\texttt{p}, loading or storing a double value in the
+block will fail since the block is not big enough to contain double
+values.
+\begin{lstlisting}
+int* p = malloc(sizeof(int));
+double* q = foo(p);    // no alias between p and q
+\end{lstlisting}
+
+It also justifies %(modulo the effects of cast)
+\textit{freshness-based alias analysis}, which assumes that the result of
+\texttt{malloc} is distinct from all other pointers.  The 
+following example of constant propagation is valid in the
+quasi-concrete model since \texttt{q} points to a fresh block that
+is different from the block pointed to by \texttt{p}.
+It is important to note that there is no alias
+between \texttt{p} and \texttt{q} even after
+the fresh block is realized. The reason is because
+even if \texttt{p} and \texttt{q} may be cast to the same integer,
+they still point to different blocks as pointer values.
+%% However, uncommenting the cast
+%% invalidates the transformation because  \texttt{p} might happen to point
+%% to the realized physical address of \texttt{q}. In practice, such cast
+%% pointer values are usually global and passed to other functions, such
+%% as \texttt{hash\_put} (as shown in the second comment). In
+%% such cases, neither GCC nor Clang performs the constant propagation.
+\begin{center}
+\begin{tabular}{@{}l@{}l@{~~}l}
+%\small
+\begin{lstlisting}
+foo(ptr p) {
+  var ptr q, int a,b,r;
+  q = malloc (1);
+  a = (int) q;
+  b = *p;
+  *q = 123;
+  r = *p;
+}
+\end{lstlisting}
+&
+$~\rightarrow$
+&
+%\small
+\begin{lstlisting}
+foo(ptr p) {
+  var ptr q, int a,b,r;
+  q = malloc (1);
+  a = (int) q;
+  b = *p;
+  *q = 123;
+  r = b;         // CP
+}
+\end{lstlisting}
+\end{tabular}
+\end{center}
+
+
+\paragraph{Coq Formalization}
+All the proofs reported in this paper have been fully formalized in
+Coq and can be found in the project webpage.  Our Coq formalization is about 10,000 lines of code,
+excluding empty lines and library code.  The formalization took about 2
+person-months to complete.
+
+\paragraph{Optimization Examples}
+All optimization examples presented in the paper are performed by Clang
+3.4.2 and/or GCC 4.8.3.  Examples in C and their compilation
+results can be found in the project webpage.
+
+\paragraph{Formal Memory Models}
+There have been numerous efforts to formalize C semantics, both from
+the perspective of clarifying the specification and defining
+implementations with formal semantics~\cite{norrish1998c,leroy:compcert,ellison2012executable,krebbers2011formalization,Greenaway:2014:DSS:2594291.2594296}. These invariably use
+variations of the logical memory model, where each allocation is
+associated with some abstract identifier and pointers consist of
+an identifier and some path representing an offset into the memory
+block, except for the work of Norrish~\cite{norrish1998c} which uses the concrete model.
+
+\paragraph{Comparison with CompCert}
+CompCert~\cite{leroy:compcert,Leroy-Appel-Blazy-Stewart-memory-v2} and its various extensions
+currently allow casting pointers to and from integers, but the
+semantics preserves the logical representation of pointers after the cast. 
+As a result, integer variables can contain not only normal 32-bit integers,
+but also logical pointer representations.
+In the higher-level languages (CompCert C and Clight), performing arithmetic
+on cast pointer is treated as a program error, whereas in the low-level languages
+(from Cminor down to assembly), adding and subtracting integer values 
+from converted pointers is defined and affects only the offset into the pointer's 
+logical block. There
+has also been work on extending the semantics to support pointer
+fragments to allow, for example, \texttt{memcpy} to work on memory
+containing pointers~\cite{krebbers2014formal}, but these extensions still cannot fully 
+support arithmetic operations on pointer values that have been cast
+to an integer type.
+
+\paragraph{Comparison with CompCertTSO}
+The CompCertTSO compiler~\cite{vsevvcik2013compcerttso} extends CompCert's
+Clight language with threading and atomic memory primitives following the
+x86-TSO relaxed memory model. Similar to us, CompCertTSO's memory model 
+also supports finite memory, but uses a different mechanism to do so.
+It has a distinguished logical block, where the offset serves as essentially a
+concrete memory address. 
+%In addition to the operations on pointers defined
+%under CompCert's Clight semantics, in CompCertTSO pointer equality is always
+%defined within the same block. 
+During compilation, all memory operations are
+lowered to act only on a single finite logical block. This allows the source
+and target languages, with infinite and finite memory respectively, to share a
+single memory model, and simplifies the correctness statements by removing
+the need for CompCert's memory injections. 
+%We can replicate this behavior by having a fully concrete semantics, where
+%all pointers become realized immediately upon allocation.
+CompCertTSO handles pointer-integer casts in the same way as CompCert, with the same limitations.
+
+\paragraph{Comparison with the Symbolic Value Approach}
+Most recently, Besson et al. have proposed an extension to CompCert's
+memory model that gives semantics to bit-masking operations on
+pointers and uninitialized values~\cite{besson2014precise}. Their
+approach involves adding lazily-evaluated symbolic expressions,
+including arbitrary operations on the representation of pointers, to
+the class of semantic values. Symbolic values are forced whenever a
+concrete value is needed to take a step, for example to access memory
+through a pointer or in the guard of a conditional. The mapping is
+performed by a normalization function given as a parameter of the
+semantics. The normalization function is partial, and is only defined
+precisely when the symbolic value evaluates to a unique result under
+every assignment from logical block identifiers to concrete addresses
+(subject to some validity conditions).
+% This is done using an auxiliary
+% low-level semantics for expressions in which pointers and integers
+% have the same representation.
+
+The semantics of Besson et al. is necessarily deterministic: non-determinism is
+interpreted as undefined behavior, while our model
+captures the non-deterministic allocation of concrete addresses.
+Furthermore, their semantics is complex and indeed intractable: their
+normalization is implemented with an SMT solver, and the semantics in general is too complex to serve as a mental model for ordinary C programmers. Normalization in our semantics,
+on the other hand, is a straightforward translation from
+pointers to concrete blocks and integers.
+
+Most importantly, while their approach gives semantics to non-strictly-conforming C programs involving bit-masking of pointers and
+uninitialized values, it fails to define useful programs that use
+integer-pointer casts.  Consider the \texttt{hash\_put} example
+discussed in \S\ref{idea:ownership}, where a pointer is hashed and
+then presumably used to index into an array.  Since the resulting
+memory location will depend on the concrete layout of memory, the
+resulting program will have undefined behavior in their semantics.  In
+general, any program that displays non-determinism due to the
+realization of pointers in our model is necessarily undefined in Besson et al.'s
+model.
+
+% the model of Besson et al. Furthermore, it
+% is not possible to extend their model to support these cases since
+% determinism is required for the correctness of their semantics: memory
+% only contains logical pointers and concrete realizations are
+% enumerated independently at each normalization step. Allowing
+% non-determinism would allow contradictory observations about the
+% physical layout of memory. Supporting concrete pointers in memory is
+% essential to ``remember'' previous decisions about the realization of
+% logical pointers. Finally, we contend that their model fails to allow
+% simple reasoning by the user.
+
+%% 
+
+% \paragraph{Conclusion and Future Work}
+% Future work 1: Revising CompCert in our way requires a lot of overhead? \cite{leroy:compcert}
+
+% Conclusion: our model applies to C, LLVM IR and CompCert(TSO).
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:
