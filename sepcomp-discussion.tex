@@ -12,7 +12,9 @@
 % We need to handle local name space in the def of syntatic linking.
 % Since there are several ways to define it, we leave it to Xavier.
 
-\paragraph{Compositional Compiler Correctness}
+\subsection{Related Work on Compositional Compiler Correctness}
+
+\paragraph{Compositional CompCert}
 
 The most closely related work to ours is Stewart~\etal's Compositional
 CompCert~\cite{stewart+:popl2015}, which establishes compositional correctness for a
@@ -84,6 +86,8 @@ our verification effort, however, since CompCert only verifies
 correctness of compilation down to the assembly level, not to the
 machine-code level where linking is actually performed.
 
+\paragraph{CompCertX}
+
 Concurrently with Stewart~\etal's work, Ramananandro~\etal~\cite{ramananandro+:cpp2015}
 developed a different approach to compositional correctness for
 CompCert.  While similar in many ways to the approach of
@@ -108,6 +112,8 @@ kernel verification, it means that, as the authors themselves note,
 ``CompCertX can not be regarded as a full featured separate compiler
 for CompCert.''
 
+\paragraph{Multi-lanugage Semantics}
+
 There have been several approaches proposed for compositional
 correctness of compilers other than CompCert as well, although these
 all involve \emph{de novo} verifications rather than ports of existing
@@ -127,6 +133,8 @@ difficult to gauge how well this approach scales as a practical
 compiler verification method because it has not yet been mechanized or
 applied to a full-blown compiler.
 
+\paragraph{Cito}
+
 Wang~\etal~\cite{cito} develop a compositional verification framework
 for a compiler for Cito, a simple C-like language~\cite{cito}.  Their
 approach is quite different from the others in that it characterizes
@@ -137,6 +145,8 @@ properties, and as its verification statement is so different from the
 traditional end-to-end behavioral refinement result established by a
 compiler like \mbox{CompCert}, it is not clear how Wang~\etal's method
 could reuse existing CompCert-style verifications.
+
+\paragraph{Parametric Inter-Language Simulation}
 
 Most recently, Neis~\etal~\cite{neis+:icfp15} present \emph{parametric
   inter-language simulations (PILS)}, which they use to
@@ -150,7 +160,7 @@ verification effort, involving several person-years of work and 55K
 lines of Coq.
 
 
-\paragraph{Generality of Our Techniques}
+\subsection{Generality of Our Techniques}
 
 In this paper, we have presented several simple techniques for
 establishing Level A and Level B compositional correctness, and
@@ -204,6 +214,11 @@ to define separate compilation and linking themselves.  The latter may
 be especially interesting since CakeML (unlike CompCert) verifies
 correctness of compilation all the way down to x86-64 machine code,
 and thus linking will need to be defined at the machine-code level.
+
+
+\subsection{Impact}
+
+TODO
 
 
 
