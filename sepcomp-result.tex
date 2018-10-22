@@ -1,0 +1,81 @@
+\section{Results}
+
+\newcommand{\specialcell}[2][c]{%
+  \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
+\definecolor{light-gray}{gray}{0.8}
+
+\begin{figure*}
+\begin{center}
+{\small \input{results.table.tex}}
+\end{center}
+{\vskip -1.2em
+  \[\begin{array}{lll}
+      \text{\textbf{Rm}: LOC removed from CompCert} &
+      \text{\textbf{AddD}: LOC added but derived from CompCert} &
+      \text{\textbf{AddN}: LOC newly added} \\
+      \text{\textbf{\%}: ratio to the LOC of CompCert} &
+      \text{\colorbox{light-gray}{shaded cell}: interesting changes}
+    \end{array}\]}
+\caption{Changes to lines of code when porting CompCert to \sepcomp-LevelA and \sepcomp-LevelB.}
+\label{fig:results}
+\end{figure*}
+
+We applied our Level A and B techniques to CompCert 2.4 with three
+patches applied (two bug fixes and RTL-level optimization flags),
+resulting in \emph{\sepcomp-LevelA} and \emph{\sepcomp-LevelB}.
+In the former, we prove the behavioral refinement result between the
+source C program obtained by syntactically linking several C files and
+the target assembly program obtained by syntactically linking the
+results of compiling source files with the \emph{same} optimization
+flag.  In the latter, we prove the same behavioral refinement result
+even when each source file is compiled with a different optimization
+flag.
+
+In the table in Figure~\ref{fig:results}, we summarize the changes we
+made in number of lines of Coq.  For these statistics, we first split
+the development of CompCert into two categories: $(i)$ Compiler \&
+Verification; and $(ii)$ Metatheory (\ie everything else). The former
+includes all Coq files in the directories \texttt{cfrontend},
+\texttt{backend}, \texttt{driver}, \texttt{arm}, \texttt{ia32}, and
+\texttt{powerpc}; and the latter includes all other files.
+
+We calculated the statistics fully automatically using the Unix
+\texttt{diff} command. The column \textbf{Rm} shows the number of
+lines of code~(LOC) removed from the original CompCert code reported
+by the diff command, and the columns \textbf{AddD} and \textbf{AddN}
+together show the number of LOC added in \sepcomp.  Here,
+\textbf{AddD} counts the LOC that are derived from the original
+CompCert code including copy-pasted-and-modified code and \textbf{AddN}
+the LOC that we newly proved. We syntactically marked the newly proved
+code in \sepcomp, so that we can automatically distinguish
+\textbf{AddD} and \textbf{AddN}.
+
+The shaded part in the table denotes interesting changes we made.  In
+Level A, the shaded part is mainly due to proving various monotonicity
+properties. In Level B, the shaded part is mainly due to
+copy-paste-and-modifying the original proof of simulation.  Examples of
+(what we consider) uninteresting changes, which are not shaded,
+include (a) proving straightforward ``wheel-greasing'' lemmas that
+merely serve to streamline the proof effort, and (b) updating
+automatically generated hypothesis names appropriately (\eg changing
+\texttt{apply H1} to \texttt{apply H2}).
+
+\sepcomp{} supports verified separate compilation to all three target
+assembly languages of CompCert---PowerPC, ARM, and IA32---with very
+few changes made to the original proofs. In the whole development, for
+Level A, we modified only 0.2\% of the existing code (\textbf{Rm}) and
+introduced an additional 1.6\%
+(\textbf{AddN}+\textbf{AddD}-\textbf{Rm}); and for Level B, we
+modified only 0.2\% of the existing code (\textbf{Rm}) and introduced
+an additional 2.8\% (\textbf{AddN}+\textbf{AddD}-\textbf{Rm}).  We
+spent less than two person-months in total for the whole development,
+much of which was spent understanding the existing CompCert
+development.
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

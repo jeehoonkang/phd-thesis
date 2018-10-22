@@ -1,0 +1,214 @@
+\section{Discussion}
+\label{sec:sepcomp:discussion}
+
+% - comparison with compositional compcert and tahina's work
+
+% - comparison with amal's work and pils
+
+% - general applicability of the method (compcert 2.5, cakeml)
+
+% Why we didn't do CompCert 2.5?
+% Due to ``static variables and functions''.
+% We need to handle local name space in the def of syntatic linking.
+% Since there are several ways to define it, we leave it to Xavier.
+
+\paragraph{Compositional Compiler Correctness}
+
+The most closely related work to ours is Stewart~\etal's Compositional
+CompCert~\cite{stewart+:popl2015}, which establishes compositional correctness for a
+significant subset of CompCert 2.1.  Their approach builds on their
+previous work on \emph{interaction semantics}~\cite{beringer+:esop14}, which defines
+linking between modules in a (somewhat) language-independent way.
+(The languages in question must share a common memory model, as is the
+case for C, assembly, and all the intermediate languages of CompCert.)
+Essentially, interaction semantics enables Compositional CompCert to
+reduce the compiler verification problem to one of contextual
+refinement.  The output of the compiler is proven to refine the source
+under an arbitrary ``semantic context'', which may consist of a
+linking of C and assembly modules.
+
+On the one hand, Compositional CompCert is targeting a more ambitious
+goal than \sepcomp{}.  Their approach inherently supports the
+possibility of linking results of multiple different compilers, as
+well as the ability to link C modules with hand-coded assembly
+modules, both of which are beyond the scope of our techniques.
+
+On the other hand, as we explained in the introduction, the modesty of
+our goal is quite deliberate---it enables our \sepcomp{} verification
+to use a considerably more lightweight approach than they do.  For
+example, they report that their porting of CompCert passes to verify
+compositional correctness took approximately 10 person-months and led
+to more than a doubling in the size of each pass.  In contrast, our
+porting took less than 2 person-months, and even if we look at just
+the passes alone (ignoring the metatheory), they are on average less
+than 2\% (for Level A) or 4\% (for Level B) larger than the original
+CompCert passes.  The new metatheory backing up our proof technique is
+also smaller than the corresponding new metatheory of Compositional
+CompCert by roughly a factor of 7.
+
+One reason for this, we believe, is that the \emph{structured
+  simulations} employed in the Compositional CompCert proof require
+all passes in the compiler to be verified using a common
+``memory-injection'' invariant.  In contrast, with \sepcomp{} we were
+able to essentially reuse the invariants from the original CompCert
+proof, which are different for different passes.  Another potential
+reason concerns the treatment of inter-module vs.\ external function
+calls.  In CompCert, external functions are assumed to satisfy a
+number of axioms, which are used in the verification to establish that
+external function calls preserve the simulation relation in each pass.
+In Compositional CompCert, inter-module function calls are treated the
+same as external function calls, and as a result Stewart~\etal's
+verification must additionally establish that functions compiled by
+the compiler satisfy the external function axioms.  In contrast, with
+SepCompCert we reduce the problem of verifying separate compilation to
+that of verifying correctness of compilation for a whole
+(multi-module) program.  Thus, for us, inter-module function calls are
+\emph{not} treated as external calls---they merely shift control to
+another part of the program---and there is no need for us to prove
+that CompCert-compiled functions satisfy the external function axioms.
+
+There are two other points of difference worth mentioning.  First, we
+have ported over the entire CompCert 2.4 compiler, from C to assembly
+(including the x86, Power, and ARM backends), whereas Compositional
+CompCert omitted the front-end of CompCert 2.1 (from C to Clight),
+along with three of its RTL-level optimizations (CSE, constant
+propagation, and inlining).  Second, due to its use of interaction
+semantics, Compositional CompCert employs a bespoke ``semantic''
+notion of linking (even for linking assembly files), which has not yet
+been related to the standard notion of syntactic linking (see
+\S\ref{sec:adaptconstprop}) that we employ in the \sepcomp{}
+verification.  Syntactic linking corresponds much more closely to the
+physical linking of machine code implemented by the \cd{gcc} linker
+that CompCert uses by default.  Proving this is outside the scope of
+our verification effort, however, since CompCert only verifies
+correctness of compilation down to the assembly level, not to the
+machine-code level where linking is actually performed.
+
+Concurrently with Stewart~\etal's work, Ramananandro~\etal~\cite{ramananandro+:cpp2015}
+developed a different approach to compositional correctness for
+CompCert.  While similar in many ways to the approach of
+Stewart~\etal, the \emph{compositional semantics} of
+Ramananandro~\etal\ defines linking so that the linking of
+assembly-level modules boils down to syntactic linking (essentially,
+concatenation), as it does in \sepcomp{}.  On the other hand, they
+have only used their approach to compositionally verify a few passes
+of CompCert.
+
+Also concurrently with the above work, Gu~\etal~\cite{gu+:popl2015} have
+developed CompCertX, a compositional adaptation of CompCert
+specifically targeted for use in the compositional verification of OS
+kernels.  CompCertX supports linking of compiled C code with
+hand-written assembly code, and ports over all passes of CompCert, but
+the source and target of the compiler are different from CompCert's.
+In particular, the ClightX source language of CompCertX does not
+generally allow functions to modify other functions' stack frames and
+thus does not support stack-allocated data structures.  Although this
+restriction is not problematic for their particular application to OS
+kernel verification, it means that, as the authors themselves note,
+``CompCertX can not be regarded as a full featured separate compiler
+for CompCert.''
+
+There have been several approaches proposed for compositional
+correctness of compilers other than CompCert as well, although these
+all involve \emph{de novo} verifications rather than ports of existing
+whole-program compiler verifications.
+
+Perconti and Ahmed~\cite{perconti+:esop14}  present an approach to compositional
+compiler correctness for ML-like languages.  They use multi-language
+semantics to combine all the languages of a compiler into one joint
+language, with wrapping operations to coerce values in one language to
+values of the appropriate type in the other languages.  Like
+Compositional CompCert, their approach recasts the compiler
+verification problem as a contextual refinement problem, except that
+they model contexts syntactically rather than semantically and use
+\emph{logical relations} as a proof technique for establishing
+contextual refinement rather than structured simulations.  It is
+difficult to gauge how well this approach scales as a practical
+compiler verification method because it has not yet been mechanized or
+applied to a full-blown compiler.
+
+Wang~\etal~\cite{cito} develop a compositional verification framework
+for a compiler for Cito, a simple C-like language~\cite{cito}.  Their
+approach is quite different from the others in that it characterizes
+the compiler verification problem in terms of Hoare-style
+specifications of assembly code.  Currently, the approach is limited
+in its ability to talk about preservation of termination-sensitive
+properties, and as its verification statement is so different from the
+traditional end-to-end behavioral refinement result established by a
+compiler like \mbox{CompCert}, it is not clear how Wang~\etal's method
+could reuse existing CompCert-style verifications.
+
+Most recently, Neis~\etal~\cite{neis+:icfp15} present \emph{parametric
+  inter-language simulations (PILS)}, which they use to
+compositionally verify Pilsner, a compiler for an ML-like core
+language, in Coq.  PILS build on earlier work by Hur~\etal\ on logical
+relations~\cite{benton+:icfp09,hur+:popl11} and parametric
+bisimulations (aka relation transition
+systems)~\cite{hur+:popl12,rts-trans}.  Pilsner supports a very strong
+compositional correctness statement, but it also required a major
+verification effort, involving several person-years of work and 55K
+lines of Coq.
+
+
+\paragraph{Generality of Our Techniques}
+
+In this paper, we have presented several simple techniques for
+establishing Level A and Level B compositional correctness, and
+demonstrated the feasibility and effectiveness of these techniques by
+porting a major landmark compiler verification (CompCert 2.4) to
+support compositional correctness without much difficulty at all.  We
+hope the almost embarrassingly simple nature of these techniques will
+encourage future compiler verifiers to consider proving at least a
+restricted form of compositional correctness for their compilers from
+the start.
+
+One may wonder, however, how general our techniques are.  Are they
+dependent on particular aspects of CompCert 2.4?  Can they be applied
+to other verified compilers?  For C or for other languages?  Given the
+landscape of compiler verification, dotted as it is with unique and
+majestic mountains, it is difficult to give sweepingly general answers
+to these questions.  But we can say the following.
+
+We believe our techniques should be applicable to the most recent
+version of CompCert (2.5), but a necessary first step is to determine
+the appropriate notion of syntactic linking.  CompCert 2.5 introduces
+support for \cd{static} variables (which in C means variables that are
+only locally visible within a single file).  The presence of
+\cd{static} variables means that the simple canonical definition of
+syntactic linking we have used no longer works and must be revisited.
+Assuming a reasonable definition can be found, as we expect, we do not
+foresee any problems adapting our techniques to handle it.
+% In private communication, Xavier Leroy has informed us that he is
+% interested in developing such a redefinition of syntactic linking so
+% that he can potentially incorporate (some of) our techniques into a
+% future version of CompCert.
+
+Regarding the application to compilers for other languages, we can
+only speculate, but we also do not foresee any fundamental problems.
+For instance, CakeML~\cite{cakeml} is a verified compiler for a
+significant subset of Standard ML, implemented in HOL4.  CakeML's
+end-to-end verification statement concerns the correctness of an x86
+implementation of an interactive SML read-eval-print loop.  In that
+sense, the verification is not exactly ``whole-program'' because new
+code can be compiled and added to a global database interactively.
+But it also does not support true separate compilation in the sense
+that \sepcomp{} does because modules cannot be compiled independently
+of the other modules they depend on.
+
+We believe in principle it should be possible to use our techniques to
+adapt CakeML to verify correctness of separate compilation, because
+CakeML is not an optimizing compiler and in particular does not
+perform any optimizations that depend fundamentally on the
+whole-program assumption.  The key challenge will be figuring out how
+to define separate compilation and linking themselves.  The latter may
+be especially interesting since CakeML (unlike CompCert) verifies
+correctness of compilation all the way down to x86-64 machine code,
+and thus linking will need to be defined at the machine-code level.
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

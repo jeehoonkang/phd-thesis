@@ -1,0 +1,452 @@
+\section{Introduction}
+\label{sec:sepcomp:introduction}
+
+Over ten years ago, Xavier Leroy initiated the CompCert
+project~\cite{compcert:CACM,leroy:compcert}, a landmark effort that
+resulted in the first \emph{realistic verified compiler}.  The
+CompCert compiler~\cite{compcert-website} is \emph{realistic} in the
+sense that it ``could realistically be used in the context of
+production of critical software''.  In particular, it compiles a
+significant subset of the C language down to assembly, and it performs
+a number of common and useful optimizations.  It is \emph{verified} in
+the sense that it ``is accompanied by a machine-checked proof [in Coq]
+of a semantic preservation property: the generated machine code
+behaves as prescribed by the semantics of the source program.''  As
+such, CompCert guarantees that program analyses and verifications
+performed on its input carry over soundly to its machine-level output.
+It has served as a fundamental building block in academic work on
+end-to-end verified software~\cite{appel:plcc}, as well as receiving
+significant interest from the avionics industry~\cite{avionics}.
+% http://projects.laas.fr/IFSE/FMF/J3/slides/P05_Jean_Souyiris.pdf
+% XXX: Any other projects that depend on CompCert besides Appel's
+% XXX: Verified Software Toolchain or Airbus?
+
+There is, however, a key dimension in which the verification of
+CompCert is not realistic---namely that, for simplicity, it only
+establishes the correctness of \emph{whole-program} compilation: if
+CompCert is used to compile a self-contained C program consisting of a
+single file, then the output of CompCert preserves the semantics of
+that program.  But clearly this does not correspond to what many
+clients of a verified compiler would expect.  For example, it is often
+essential in practice to be able to compile a client module separately
+from the many standard libraries it depends on, yet be assured that
+linking the resulting binaries together will result in an executable
+that preserves the semantics of the linked source modules.
+Furthermore, it is commonplace for different modules in a program to
+be compiled with different sets of optimization passes turned on.
+Although the CompCert compiler does indeed support such forms of
+separate compilation, its verification statement says nothing about
+them.
+
+The technical reason for this limitation is that it makes it possible
+for the CompCert verification to be carried out straightforwardly
+using \emph{closed simulations}: simulations between closed (\ie
+self-contained, executable) programs.  For each pass of the compiler,
+the output of the pass is shown to simulate the input of the pass,
+assuming and preserving whatever invariant the verifier wishes to
+impose on the relation between the states of the input and output.
+Working with closed simulations simplifies life in two ways: (1) the
+simulation proof for each pass can rely on whatever state invariant it
+chooses, independent of what invariants are used in other passes, and
+(2) these independent simulations collectively imply the end-to-end
+correctness of the whole compiler (this is sometimes called
+``vertical compositionality'').  However, closed simulations are by definition
+simulations over whole program states, thus seemingly confining
+their applicability to the verification of whole-program compilation.
+
+There has consequently been a great deal of work in the past several
+years attempting to prove compiler correctness \emph{without} the
+whole-program restriction.  Indeed, it turns out that even specifying,
+let alone verifying, when separate compilation is ``correct''---often
+referred to as \emph{compositional compiler
+  correctness}~\cite{benton+:icfp09}---is non-trivial, and has sparked
+a variety of interesting proposals involving technically sophisticated
+techniques, such as Kripke logical relations~\cite{hur+:popl11},
+multi-language semantics~\cite{perconti+:esop14}, and parametric
+simulations~\cite{hur+:popl12,neis+:icfp15}.  All these approaches aim
+to achieve a highly flexible form of compositionality, guaranteeing
+for instance that the results of multiple different verified compilers
+can be correctly linked together, and that it is safe to link those
+results with hand-written assembly code.
+
+It seems, however, that achieving such flexibility comes at the
+expense of significant complication to the proof method.  For example,
+Perconti and Ahmed's approach~\cite{perconti+:esop14} involves constructing logical
+relations over a multi-language semantics encompassing all languages
+used in a compiler, a considerable departure from CompCert-style
+verification.  Neis~\etal's method~\cite{neis+:icfp15} employs a novel notion of
+``parametric inter-language simulations (PILS)'', whose proof of the
+aforementioned ``vertical compositionality'' is highly
+involved~\cite{rts-trans}, whereas for closed simulations it is trivial.
+% the recently proposed method of PILS~\cite{??} supports
+% highly flexible compositionality
+% proposed PILS~\cite{??}) offer an even stronger notion of
+% compositionality, supporting compilers with wildly different source
+% and target languages, but they are also much more technically
+% sophisticated than ours, so porting existing compiler verifications to
+% use them would require a substantial effort.
+In the context of CompCert, Stewart~\etal\ recently developed
+Compositional CompCert~\cite{stewart+:popl2015}, a re-engineering of
+CompCert to support verified separate compilation, along with the
+ability to link C modules with assembly modules.  Their approach,
+however, relies on a novel notion of ``structured simulation'' on top
+of a multi-language ``interaction semantics''~\cite{beringer+:esop14},
+which is different enough from the closed simulations employed in the
+CompCert verification that it required significant changes and
+extensions to \mbox{the original proofs}.
+% \todo{gil: the CompCert compiler is intact but the majority of the correctness verification was rewritten.}
+
+In this paper, we ask the question: If we aim somewhat lower, can we
+do a lot better?  That is, if we pursue a more restricted notion of
+compositional correctness than prior work has done, can we develop a
+much simpler, more lightweight proof method that enables us to
+\emph{reuse} existing verifications of whole-program compilation as
+much as possible instead of rewriting them?
+% to , one which can 
+% compiler verifications from whole-program  separate compilation, so that
+% previous proof effort can be \emph{reused} as much as possible?
+
+% Is there a way to support
+% verification of separate compilation in a simpler, more lightweight
+% manner, so that existing verifications of whole-program compilation
+% can be reused as much as possible?
+
+Indeed, we can.  In particular, we restrict attention here to
+verifying separate compilation for a \emph{single} compiler.  Our goal
+is to establish that, when different modules in a program are compiled
+separately by the \emph{same} verified compiler, the linking of the
+resulting assembly modules preserves the semantics of the linking of
+the original source modules.  Within the scope of this more modest but
+still important goal, we develop simple and effective techniques for
+verifying two levels of compositional correctness:
+%
+% First, we develop an extremely simple
+% technique for adapting a verification 
+%
+% We present several simple
+% but effective techniques for establishing that, when different modules
+% in a program are compiled separately by the \emph{same} verified
+% compiler, the linking of the resulting assembly modules preserves the
+% semantics of the linking of the original source modules.  Within the
+% scope of this more limited goal, we actually consider two levels of
+% compositionality.
+%
+% Our answer is: ``Yes, if one restricts attention to compositional
+% correctness with respect to a \emph{single} compiler.''  That is,
+% in this paper, rather than attempting to achieve maximally compositional
+% compiler correctness as previous work has done, we focus on a more
+% limited goal: proving that, when different modules in a program
+% are compiled separately by the \emph{same} verified compiler, the
+% linking of the resulting assembly modules preserves the semantics
+% of the linking of the original source modules.  Within the scope
+% of this more limited goal, we actually consider two levels of
+% compositionality.
+%  -- but the degree of simplicity depends
+% (inversely) on the desired level of compositionality.''  In
+% particular, we develop several verification techniques, at increasing
+% levels of sophistication and supporting increasing levels of
+% compositionality:
+\begin{itemize}
+\item \textbf{Compositional Correctness Level A:} 
+Correctness of compilation is preserved when linking modules
+that were compiled with \emph{the same exact compiler}.
+% Linking separately
+%   compiled modules is correct, assuming that all modules in the
+%   program have been compiled by \emph{exactly the same compiler}.
+\item \textbf{Compositional Correctness Level B:} Correctness of
+  compilation is preserved when linking modules that were compiled
+  with the same compiler, \emph{but possibly with different
+    optimizations}---\ie different modules may be compiled with
+  different optimization passes turned on.
+% Linking separately
+%   compiled modules is correct, assuming that all modules in the
+%   program have been compiled by the same compiler, 
+ % We first consider the modest goal of supporting
+  % verified separate compilation for a \emph{single, fixed} compiler.
+  % Given a compiler like CompCert, which supports separate compilation
+  % but only verifies the correctness of single-file compilation, we
+  % present an extremely simple way to adapt its correctness proof into
+  % one that verifies separate compilation as well.
+% Given a compiler like CompCert, which supports separate compilation
+% but whose verification only accounts for single-file compilation, we
+% present an extremely simple way to adapt its correctness proof into
+% one that verifies 
+% \item \textbf{Level 2: Separate compilation in the presence of
+%     optimization flags.}  Still restricting attention to verification
+%   of a single compiler, we strengthen the compositionality afforded by
+%   our Level 1 method in order to enable different modules in a program
+%   to be compiled with different optimization passes turned on.  This
+%   strengthening requires a small amount of additional proof effort.
+%   % Like our Level 1 method, the Level 2 method is very simple and
+%   % should be
+%   % applicable to a wide variety of compilers.
+% \item \textbf{Level 3: Inter-compiler and inter-language linking.}
+%   Lastly, we consider an even stronger form of compositional
+%   correctness, by which different modules in a program may be compiled
+%   with \emph{different} compilers, and which allows linking between
+%   different languages (\eg C and assembly).  With Level 3
+%   compositionality, we are targeting essentially the same goal as in
+%   prior work by Stewart~\etal\ on Compositional CompCert~\cite{stewart+:popl2015},
+%   and to do so we exploit their multi-language ``interaction''
+%   semantics, which introduces some (but not much) complexity.
+%   \mbox{Unlike} their approach, however, applying ours to CompCert
+%   requires only minor changes to its existing verification (see below).
+\end{itemize}
+Level B correctness is stronger than Level A, and correspondingly
+requires somewhat (but not much) more work to prove.
+
+% closed-simulation
+%   (whole-program) compiler verification into one that allows different
+%   modules in a program to be compiled separately (and each with
+%   potentially different optimization passes turned on).  We applied
+%   this technique to CompCert and, in so doing, uncovered an (easily
+%   fixable) bug in CompCert's existing (unverified) separate
+%   compilation facility.  The adaptation took only X person-months and
+%   required changes to only Y\% lines of proof.
+
+% Like
+%   their work, our Level 3 method is restricted in its applicability
+%   because it assumes the source and target languages share a common
+%   memory model (true for CompCert, but not for, say, ML compilers).
+
+The key idea spanning both levels is to formulate a compositional
+correctness statement about a single \emph{module} $M$ in terms of a
+``contextual'' correctness statement about how $M$ behaves when linked
+with arbitrary other modules to form a complete program.  The latter
+has the advantage of being a statement about closed (whole) programs,
+and as such, we can prove it using the kind of simple,
+closed-simulation-style proofs employed in traditional verifications
+of whole-program compilation.  This in turn enables us to
+significantly reuse existing compiler proofs.  We believe the
+lightweight nature of our techniques---and the consequent ease of
+adapting existing verifications to use them---will make them a highly
+attractive option for compiler verifiers.
+
+% In prior work (\eg \cite{hur+:popl11,stewart+:popl15,neis+:icfp15}),
+% it seems to be mostly taken for granted that such a ``contextual''
+% approach is only applicable to compositional compiler correctness when
+% the source and target languages of the compiler are the same.  Our
+% observation here is that this is not the case: one can gainfully
+% employ contextual reasoning to simplify compositional compiler
+% verification even if, as is usually the case, the source and target
+% languages of the compiler are different.\footnote{Perconti and
+%   Ahmed~\cite{perconti+:esop14} also employ contextual reasoning in
+%   their account of compositional compiler correctness, but in a way
+%   that depends fundamentally on the use of multi-language semantics in
+%   order to embed the source and target languages of the compiler in
+%   one common language.  Our Levels 1 and 2 show that contextual
+%   reasoning is useful even without multi-language semantics.  For
+%   further comparison, see \S\ref{sec:related}.}
+
+% That said, there is a tradeoff here: in return for the simplicity of
+% our approach, its scope is somewhat narrower than that of some prior
+% approaches.  In particular, Levels 1 and 2 only support proving the
+% correctness of linking modules compiled by a \emph{single} compiler.
+% Level 3 supports a stronger form of compositional correctness, but
+% (like Stewart~\etal's work) it is restricted in its applicability
+% because it assumes the compiler's source and target languages share a
+% common memory model (true for CompCert but not for, say, ML
+% compilers).  In contrast, some prior approaches (such as the recently
+% proposed PILS~\cite{??}) offer an even stronger notion of
+% compositionality, supporting compilers with wildly different source
+% and target languages, but they are also much more technically
+% sophisticated than ours, so porting existing compiler verifications to
+% use them would require a substantial effort.  
+% We believe the
+% lightweight nature of our techniques---and the consequent ease of
+% adapting existing verifications to use them---make them an attractive
+% option for compiler verifiers when applicable.
+
+We demonstrate the effectiveness of our techniques by applying them to
+CompCert 2.4.  In less than two person-months total, we adapted the
+existing CompCert verification to support both Level A and Level B
+compositional correctness, and much of that time was spent trying to
+understand the original CompCert proof.  \textbf{The result of this
+  effort is \sepcomp{}, the first verification of separate compilation
+  for the full CompCert compiler}.  The \sepcomp{} verification
+(available online~\cite{sepcompcert-website}) is mostly the same as
+the original CompCert verification, and is only 2\% (for Level A) or
+3\% (for Level B) larger than the original verification in terms of
+lines of Coq.  Furthermore, in the process of porting CompCert to
+\sepcomp{}, we uncovered two bugs in CompCert: one in an invalid
+axiom, and one (in CompCert's ``value analysis'') that was outside the
+scope of CompCert's original verification because it only showed up in
+the presence of separate compilation.  These have been confirmed and
+subsequently fixed in the latest version of the compiler.\footnote{The
+  latest version of CompCert is 2.5.  It was released on June 12,
+  2015, after we had already completed our verification of \sepcomp{}.
+  See \S\ref{sec:related} for discussion of what would be involved in
+  porting \sepcomp{} to handle the new features of CompCert 2.5.}
+
+% \todo{gil: say that CompCert 2.4 was the
+%   latest version at the time we started this project.  The latest
+%   version CompCert 2.5 was just released on 12 Jun 2015.}
+
+% \footnote{The prior work on
+%   Compositional CompCert~\cite{stewart+:popl2015} does not handle the full
+%   \mbox{CompCert} compiler, and it employs a bespoke form of linking
+%   that does not match the standard assembly-level linking.  See
+%   \S\ref{sec:related} for a detailed comparison.}
+
+% The prior work on Compositional CompCert~\cite{stewart+:popl2015} only verified 10 of
+% CompCert's 19 passes, and it established correctness w.r.t.\ a
+% different notion of assembly-level linking than the one used by
+% CompCert.
+
+The remainder of the paper is structured as follows.  In
+\S\ref{sec:overview}, we give a high-level overview of our new
+techniques, which are presented in detail in the subsequent sections
+in the context of our CompCert adaptation.  In \S\ref{sec:related}, we
+conclude with a comparison to related work.
+
+% We applied this technique to CompCert, verifying correctness of its
+% separate compilation facility in a few weeks' time.  Along the way, we
+% uncovered (and fixed) a bug in CompCert that was only triggered by
+% separate compilation (and hence outside the scope of the original
+% CompCert verification).
+
+% In the case of CompCert, it performs six optimizations at the level of
+% its RTL intermediate language (\ie translations from RTL to RTL).
+% With Level 2 compositionality, we can verify the correctness of
+% linking modules that were each compiled with arbitrary different
+% subsets of these optimizations.
+
+
+
+
+
+
+% , which aim at ``full
+% compositionality'', \eg linking results of different verified compilers
+% whose source and target languages are wildly different.  
+
+
+% because the classic
+% correctness notion of \emph{contextual equivalence/refinement} only
+% applies to program transformations \emph{within} a single language,
+% not between two different languages.  Our observation here is that,
+% if one is willing to restrict the scope of one's compositional correctness
+% statement---in ways that still provide a useful result---then contextual
+% reasoning can be usefully integrated 
+
+
+
+
+% This is
+% intuitively similar to, but different in detail from, how one
+% typically defines \emph{contextual refinement}, a common correctness
+% property for program transformations within a \emph{single} language.
+% Here, effectively, we show how one can reduce contextual reasoning is useful
+% even when proving compositional correctness for compilers whose source
+% and target languages are \emph{not} the same.  Since contextual reasoning
+% defines compositional One key benefit this affords
+% us is the ability to reuse existing closed-simulation proofs with very
+% few modifications.
+
+
+% Our approach, which is geared toward minimizing modification of existing
+
+% Levels 1 and 2 provide more limited forms of compositional correctness
+% for a single compiler, but the techniques are simple and general
+% enough to be applicable to a wide variety of compilers.  In contrast,
+% Level 3 supports a more flexible form of compositional correctness,
+% but (like Stewart~\etal's work) it is restricted in its applicability
+% because it assumes the compiler's source and target languages share a
+% common memory model (true for CompCert but not for, say, ML compilers).
+
+
+% In
+% other words, we reduce the compositional correctness problem to a
+% whole-program correctness program where a piece of the whole program
+% is unknown.
+
+% that, in order
+% to simplify the porting of existing whole-program
+% compiler verifications and reuse their proofs to the greatest extent
+% possible, we want to  we aim to formulate a compositional correctness statement
+% about a single module $M$ in terms of a ``contextual''
+% as ``contextual'' statements about 
+
+
+
+
+% demonstrate that---at least for a compiler like
+% CompCert, which has been deliberately designed to be compatible with
+% separate compilation, and whose source and target languages share a
+% common memory model---there is a much simpler way to
+% ``compositionalize'' its verification, \ie transforming its
+% correctness guarantee for whole-program compilation into a correctness
+% guarantee for separate compilation.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% is realistic in the sense that it perfor This landmark
+% project resulted in the first realistic, verified compiler.  A
+% verified compiler is a compiler whose output has been formally
+% guaranteed to preserve the semantics of its input.  Such a compiler
+% can be used to establish that program analyses and proofs, conducted
+% at the level of its source language, carry over to the lower-level
+% code that actually runs on the machine.  As such, verified compilers
+% have the potential to play an indispensable role in end-to-end
+% verified software.  Moreover, compiler verification is
+
+
+% therefore play a critical role in
+% end-to-end software verification: role in end-to-end verified
+% software.  Such a compiler is thus an indispensable building block for
+% end-to-end verified software: it enables one to transfer program
+% analyses and proofs, conducted at the level of the compiler's source
+% language, to the code that actually runs at the machine level.  that
+% program analyses and proofs, performed at the level of the compiler's
+% source language, remain valid for the lower-level code that the
+% compiler produces.  Such a guarantee Although compiler verification is
+% a As recent projects like CompCert~\cite{??} and CakeML~\cite{??}
+% demonstrate, interactive proof assistants like Coq and HOL4 have
+% evolved into highly effective tools for the verification of realistic
+% optimizing compilers.  Suchthey are increasingly becoming
+% indispensable building blocks for end-to-end verified software.
+% % of executable machine code
+% % are increasingly becoming
+% % indispensable building blocks for end-to-end verified software, because they make
+% % it possible 
+% % ensure that program
+% % analyses and verifications performed at the source-language level do
+% % in fact carry over to the code that actually executes at the machine
+% % level.  As a result, they are increasingly becoming indispensable
+% % building blocks for end-to-end verified software.
+
+% Nonetheless, developing such a verified compiler from scratch tends to
+% be an arduous multi-person-year enterprise.  Thus, for simplicity,
+% these verification efforts have restricted attention to the
+% correctness of \emph{whole-program} compilation---\eg if CompCert is
+% used to compile a \emph{complete} C program, then the output of
+% CompCert preserves the semantics of that complete program.
+% Unfortunately, this does not correspond to what many clients of a
+% verified compiler likely want or expect.  For example, it is essential
+% in practice to be able to compile a client module separately from the
+% many standard libraries it depends on, yet be assured that linking the
+% resulting binaries together will result in an executable that
+% preserves the semantics of the linked source modules.  Furthermore,
+% the
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

@@ -1,0 +1,261 @@
+\section{Adapting the Constant Propagation Proof}
+\label{sec:sepcomp:constprop}
+
+In this section, we explain how to adapt the CompCert proof of
+constant propagation to support separate compilation.  Before doing
+so, let us briefly explain syntactic linking in some more detail since
+it is central to the compositional correctness results we prove.
+
+Syntactic linking merges global declarations for each identifier.
+The linker must check if the declarations meet the following conditions:
+\begin{itemize}
+\item The declarations have the same type.  They should be either
+  $(i)$ function declarations or definitions of the same signature, or
+  $(ii)$ variable declarations or definitions of the same type.
+\item At most one of the declarations is a definition.  If there is a
+  single definition, then that is the result of the linking;
+  otherwise, everything is necessarily the same declaration, and that
+  is the result of the linking.
+\end{itemize}
+\noindent We have generically defined syntactic linking for all the
+languages used in CompCert, as it does not depend on specific language
+features.
+
+% Next, we describe how we can adapt the CompCert proof of constant propagation to achieve separate compilation.
+
+\subsection{Verifying Compositional Correctness Level A}
+
+\paragraph{Adapting the Simulation Relation Definition}
+
+To verify compositional correctness Level A, we will---as in the
+original CompCert proof---construct a simulation relation $R$ that
+relates the initial states of the source and target programs.  The
+difference is that the source program consists of multiple files, each
+of which is separately compiled.
+\[
+\frac{
+\begin{array}{@{}c@{}}
+\vprg = \mathtt{s}_1\circ \ldots \circ \mathtt{s}_n \qquad
+\vprg' = \mathcal{T}_\mathrm{cp}(\mathtt{s}_n)\circ \ldots \circ \mathcal{T}_\mathrm{cp}(\mathtt{s}_n)
+\end{array}
+}
+{\exists R.~ \mathrm{simulation}~R \land (\rtlload(\vprg),\rtlload(\vprg'))\in R
+}
+\]
+Therefore, for each function definition ($\vfd$) in the source program
+($\vprg$), the corresponding function definition ($\vfd'$) in the
+target program ($\vprg'$) is no longer obtained by
+$\mathrm{transfun}(\vprg,\vfd)$, but rather by
+$\mathrm{transfun}(\mathtt{s}_i,\vfd)$ for some subprogram
+$\mathtt{s}_i$ of $\vprg$.  Moreover, the value analysis run as part
+of $\mathrm{transfun}$ also gets a subprogram of $\vprg$ as its first
+argument.
+
+Consequently, the simulation relation we use for the proof of soundness has to change.
+The main change is, naturally, in the definition of $\simFun$.
+Two function definitions are now related if the second can be obtained by transforming the first in the context of a subprogram of $\vprg$.
+\[ 
+\vprg \vdash \vfd \simFun \vfd' ~\defeq~ \exists \vsprg \subseteq \vprg.~ \vfd' = \mathrm{transfun}(\vsprg,\vfd)
+\]
+where $\vsprg \subseteq \vprg$ iff $\exists \vsprg'.~\vsprg \circ
+\vsprg' = \vprg$.\footnote{In the Coq development, we define $\vsprg
+  \subseteq \vprg$ in an equivalent but more direct, semantic way,
+  rather than relying on syntactic linking ($\circ$).  This enables us
+  to avoid having to prove associativity and commutativity of
+  linking.}
+
+The second change is to decouple the two uses of $\vprg$ in $\soundstate$,
+changing its signature so that it takes three arguments: two programs $\vprg$ and $\vsprg$, and a state $s$.
+The first program, $\vprg$, corresponds to the full program and is used to calculate the global environment,
+whereas the second program, $\vsprg$, is a subprogram of the first one and is used to perform the global analysis
+(\ie to detect which variables are constant). 
+
+We then define a wrapper predicate $\soundstate'$ as follows:
+\[
+\soundstate'(\vprg,s) ~\defeq~ 
+  \forall \vsprg \subseteq \vprg.~ \soundstate(\vprg,\vsprg,s)
+\]
+and change $R$ to use $\soundstate'$ instead of $\soundstate$.
+
+%A final difference is that also have to parametrize the simulation relation by the target program, $\vprg'$
+%is preserved by constant propagation.
+
+\paragraph{Adapting the Proof of Value Analysis}
+
+There are multiple proofs that require adaptation.
+First, we have to prove that value analysis is correct with respect to our stronger invariant.
+That is, we have to show that $\soundstate'$ holds of the initial state of a loaded program and that it is preserved by execution steps.
+
+The latter requirement is actually trivial to show and requires only
+very minor changes to the CompCert proof script.  The reason for this,
+informally, is that the uses of the $\vprg$ and $\vsprg$ parameters in
+the revised $\soundstate$ invariant are really decoupled and that the
+preservation proof never depends on them being the same.
+
+\input{constprop-bug}
+
+The former requirement, however, requires some more work:
+not only should $\soundstate(\vprg,\vprg,\load(\vprg))$ hold for all programs $\vprg$,
+but rather $\soundstate(\vprg,\vsprg,\load(\vprg))$ should hold for all programs $\vprg$ and all subprograms $\vsprg\subseteq\vprg$.
+In essence, to satisfy this stronger statement, the additional requirement that we have to show is that value analysis is monotone with respect to linking.
+That is, for each global variable \texttt{x}, we prove
+\[
+\vsprg \subseteq \vprg \implies  \mathrm{abs\text{-}val}(\vsprg,\texttt{x}) \sqsupseteq \mathrm{abs\text{-}val}(\vprg,\texttt{x})
+\]
+where $\mathrm{abs\text{-}val}(\vprg,\texttt{x})$ is the abstract value of \texttt{x} computed by the global analysis on $\vprg$.
+In other words, running the analysis on a larger program may only give results that are at least as precise.
+
+Somewhat surprisingly, (the global part of) the value analysis in
+CompCert 2.4 does not satisfy this monotonicity requirement because of
+its treatment of variables declared as both \cd{extern} and
+\cd{const}.  Figure~\ref{fig:constprop-bug} presents two C files that,
+when compiled separately and linked together, expose the bug.  Since
+the global variable \cd{xptr} is declared using the \cd{const}
+qualifier, the global part of CompCert 2.4's value analysis assumes
+that it is uninitialized and therefore assigns it the abstract value
+$\bot$.  As a result, the value analysis deems that \cd{xptr} cannot
+possibly alias with \texttt{x}.  At the \cd{printf} statement, it
+hence deduces that $\texttt{x}=1$, and constant propagation
+``optimizes'' away the summation \cd{x+x} to the constant $2$, which
+gets printed.  This analysis, however, is unsound.  In particular, the
+assumption that \cd{xptr} is uninitialized is invalid in the context
+of multiple separately compiled files: since \cd{xptr} is also
+declared as \cd{extern}, another file (\cd{b.c}) can provide a
+definition that initializes it.  And indeed, since the definition of
+\cd{xptr} in \cd{b.c} causes \cd{x} and \cd{xptr} to alias, the
+correct result is $0$, not $2$.
+
+Restoring soundness of the value analysis is straightforward: one
+simple if rather crude fix (which has been adopted by CompCert 2.5
+since we reported the bug) is just to ignore the \cd{const} modifier
+on \cd{extern} declarations.  Having done that, it is easy to show
+that the analysis is monotone with respect to program linking and that
+therefore the initial state of loading a program satisfies the
+stronger invariant $\soundstate'(\vprg,\load(\vprg))$.
+
+
+\paragraph{Adapting the Proof of Constant Propagation}
+
+Showing that constant propagation is sound requires only very little additional work.
+
+The only important difference is in the treatment of global environments that index the $\estep{}$ relation.
+Generally, these environments are obtained by the respective programs ($ge=\rtlgenv(\vprg)$ and $ge'=\rtlgenv(\vprg')$). 
+
+The original CompCert 2.4 proof used the fact that
+$\vprg'=\mathcal{T}_{\rm cp}(\vprg)$ to establish a relationship
+between $ge$ and $ge'$.  It proved two basic properties relating the
+two global environments: (1) that they map each global variable name
+to the same block identifier, and (2) that if $ge$ maps a block
+identifier to a function signature or definition $\vfds$, then $ge'$
+maps it to $\mathrm{transfun}(\vprg,\vfds)$, where $\mathrm{transfun}$
+applied to a function signature returns the same signature.  These
+lemmas were then used in the proof that $R$ is a simulation relation.
+
+Since, now, the relationship between $\vprg$ and $\vprg'$ is more involved, 
+we have to update the proof of the first lemma, which is rather straightforward,
+as well as the statement and proofs of the second lemma.
+For the second lemma, we now assert that 
+if $ge$ maps a block identifier to a function signature or definition $\vfds$, 
+then $ge'$ maps it to $\mathrm{transfun}(\vsprg,\vfds)$ for \emph{some} subprogram $\vsprg\subseteq\vprg$.
+Besides this change, 
+the proof that now (the new definition of) $R$ is a simulation relation is basically unchanged.
+The few lines of the proof script that required editing were those invoking the lemmas about the relationship between the global environments.
+
+
+\subsection{Verifying Compositional Correctness Level B}
+
+\paragraph{Adapting the Simulation Relation Definition}
+
+We move on to verifying the second level of compositional correctness, that of composition with the same compiler modulo optimization flags.
+As we have explained in \S\ref{sec:overview:LevelB}, for every optional optimization pass, we need to show that linking it against the identity compiler is sound.
+Since constant propagation is one of the optional optimization passes, we have to prove the following:
+\[
+\frac{
+\begin{array}{@{}r@{~}l@{}}
+\vprg &= \mathtt{u}_1\circ \ldots \circ \mathtt{u}_m\circ\mathtt{s} \circ \mathtt{v}_1\circ \ldots \circ \mathtt{v}_n\\
+\vprg' &= \mathtt{u}_1\circ \ldots \circ \mathtt{u}_m\circ\mathcal{T}_{\rm cp}(\mathtt{s}) \circ \mathtt{v}_1\circ \ldots \circ \mathtt{v}_n
+\end{array}
+}
+{\exists R.~ \mathrm{simulation}~R \land 
+(\rtlload(\vprg),\rtlload(\vprg'))\in R
+}
+\]
+In the scenario above, the corresponding target function definition $\vfd'$ of a source function definition $\vfd$
+is either syntactically identical to $\vfd$ if it belongs to one of the $\mathtt{u}_i$/$\mathtt{v}_j$ files, 
+or has been obtained by optimizing $\vfd$ if it belongs to the $\mathtt{s}$ file.
+To account for the change, we should therefore redefine the $\simFun$ relation as follows:
+\[ 
+\begin{array}{l}
+\vprg \vdash \vfd \simFun \vfd' ~\defeq~ 
+\\\qquad\qquad
+\vfd' = \vfd \lor (\exists \vsprg \subseteq \vprg.~ \vfd' = \mathrm{transfun}(\vsprg,\vfd))
+\end{array}
+\]
+This is the only change needed in the simulation relation.
+
+%% \[
+%%  \frac{
+%% \begin{array}{c}
+%% \vfd = \vfd' \qquad
+%%  rs \le_\rtldef rs'
+%% \end{array}
+%%  }
+%%  {
+%% \vprg \vdash (r,\vfd,sp,pc,rs) \simFrame (r,\vfd',sp,pc,rs')
+%%  }
+%% \]
+
+%% \[
+%%  \frac{
+%% \begin{array}{c}
+%%  m \sqsubseteq_\mathrm{ext}  m' \quad
+%%  s \simStack s' \quad
+%% \vfd = \vfd' \quad
+%%  rs \le_\rtldef rs'
+%% \end{array}
+%%  }
+%%  {
+%% \vprg \vdash
+%% \rtlist~m~s~\vfd~sp~pc~rs \simState
+%% \rtlist~m'~s'~\vfd'~sp~pc~rs'
+%%  }
+%% \]
+
+
+%% \[
+%%  \frac{
+%% \begin{array}{@{}c@{}}
+%% m \sqsubseteq_\mathrm{ext}  m' \quad
+%% s \simStack s' \quad
+%% \vfd = \vfd' \quad
+%% \vargs \le_\rtldef \vargs' 
+%% \end{array}
+%%  }
+%%  {
+%% \vprg \vdash
+%% \rtlcst~m~s~\vfd~\vargs \simState 
+%% \rtlcst~m'~s'~\vfd'~\vargs'
+%%  }
+%% \]
+
+\paragraph{Adapting the Proof of Constant Propagation}
+
+To avoid changing the proof script of the main lemma showing that $R$
+is in fact a simulation, we prove a helper lemma
+(\textit{transf\_step\_correct\_identical}) saying that, given two
+matching instruction states with $\vfd'=\vfd$, when the source state
+takes a step, the target state can also take a step and reach a
+matching state.  As explained in \S\ref{sec:overview:LevelB}, the
+content of the proof of this helper lemma is already present in the
+existing simulation proof, just not in one place, so it simply needs
+to be extracted and consolidated.  We then adapt the proof of the main
+lemma (showing $R$ is a simulation) so that it performs a case split on
+whether $\vfd=\vfd'$ or not, and correspondingly either invokes our
+helper lemma or uses the same proof script as for Level A.
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

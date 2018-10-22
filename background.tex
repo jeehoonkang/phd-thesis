@@ -1,63 +1,59 @@
 \section{Background: A Brief Tour of CompCert}
 \label{sec:background}
 
-We begin by briefly reviewing the technical background that informs the rest of the dissertation,
+We begin by briefly reviewing the technical background that informs the rest of this dissertation,
 using CompCert as the learning material.  We first explain CompCert's correctness statement, as well
 as its closed-simulation verification method (\Cref{sec:background:correctness}).  To flesh out the
 details on formal semantics and compiler verification, we use constant propagation---one of
 CompCert's optimizations---as a running example.  Specifically, We review the RTL language on which
-constant propagation is performed (\Cref{sec:background:rtl}), and explain how constant propagation
-works and how CompCert verifies it (\Cref{sec:background:constprop}).  Throughout the section, we
-keep the presentation semi-formal, abstracting away unnecessary detail to get across the main ideas.
-
-TODO: In this section, we review the concrete memory model (\S\ref{backgrounds:concrete}) as well as
-CompCert's logical model (\S\ref{backgrounds:logical}), because our quasi-concrete model builds on
-them.  We then review behavioral refinement (\S\ref{backgrounds:refinement}), a key definition used
-for proving compiler optimizations correct.
-
-TODO: To simplify the presentation, in this paper, we focus on handling integer-pointer casts and do not
-discuss many of the orthogonal aspects of C memory models. Specifically:
-
-\begin{itemize}
-\item We assume a 32-bit architecture: words are 4 bytes wide, and 
-the size of the address space is $2^{32}$.
-\item We consider only integer and pointer values, and omit values of
-  other types such as \texttt{float} or \texttt{char}.
-\item We also omit subword arithmetic, and assume each address 
-  stores a 32-bit value. 
-%and take all addressing to be
-%  aligned at 4-byte boundaries.
-%\todo{gil: this is not quite right. For example,
-%we have a 4-byte word at 0x0000FFF0 
-%and another 4-byte word at 0x0000FFF1, ratherthan at 0x0000FFF4.
-%We used this just for simplicity anyway.}
-% $(l,i)$ points to the $i$-th cell of 4
-% byte data in the logical block $l$).
-\end{itemize}
+constant propagation is performed (\Cref{sec:background:rtl}) and CompCert's memory model that is
+designed to verify compiler optimizations (\Cref{sec:background:memory}), and explain how constant
+propagation works and how CompCert verifies it (\Cref{sec:background:constprop}).  Throughout the
+section, we keep the presentation semi-formal, abstracting away unnecessary detail to get across the
+main ideas.
 
 
-\subsection{CompCert's Correctness}
+\subsection{Compiler Correctness in CompCert}
 \label{sec:background:correctness}
 
-\paragraph{Correctness Criteria: Behavioral Refinement}
+\paragraph{End-to-End Correctness}
 
-The standard notion of compiler correctness is behavioral refinement, which states that \emph{the
-  set of target program behaviors must be a subset of the set of source program behaviors}.  We
-consider sets of behaviors as opposed to single behaviors because in general a program may have
-multiple behaviors due to nondeterminism.
+Roughly speaking, the correctness result of CompCert can be understood to assert the following.
+Suppose \code{s.c} is a ``source'' file (in C), \code{t.asm} is a ``target'' file (in assembly), and
+$\mathcal{C}$ is a verified compiler (represented as a function from C files to assembly files).
+\[
+\frac{
+\mathcal{C}(\mathtt{s.c}) = \mathtt{t.asm} \qquad
+s = \mathrm{load}(\mathtt{s.c})\qquad
+t = \mathrm{load}(\mathtt{t.asm})}
+{\mathrm{Behav}(s) \supseteq \mathrm{Behav}(t)}
+\]
+If \code{t.asm} is the result of compiling \code{s.c} with $\mathcal{C}$, then executing
+\code{t.asm} according to assembly semantics will result in a subset of the behaviors one could
+observe from executing \code{s.c} according to C semantics.  (We write
+$s = \mathrm{load}(\mathtt{s.c})$ to denote the \emph{machine state} that results from loading
+$\mathtt{s.c}$ into memory, $\mathrm{Behav}(s)$ to denote the observable behaviors of the execution
+of $s$, and analogously for $t$ and $\mathtt{t.asm}$.)  Hence, we say that \code{t.asm}, the
+target-level output of $\mathcal{C}$, \emph{refines} its source-level input, \code{s.c}.
 
-Given a set of I/O events that the program may generate, a behavior is one of the following three
-forms:
-\begin{enumerate}
+
+\paragraph{Set of Behaviors}
+
+% The standard notion of compiler correctness is behavioral refinement, which states that \emph{the
+%   set of target program behaviors must be a subset of the set of source program behaviors}.
+We consider sets of behaviors as opposed to single behaviors because in general a program may have
+multiple behaviors due to nondeterminism.  Given a set of I/O events that the program may generate,
+a behavior is one of the following three forms:
+\begin{itemize}
 \item A terminating execution producing a finite sequence of I/O events,
   $e_1, \cdots, e_n, \mathtt{term}$
 \item A diverging execution that has produced only a finite sequence of I/O events,
   $e_1, \cdots, e_n, \mathtt{nonterm}$.
 \item A diverging execution producing an infinite sequence of I/O events,
   $e_1, \cdots, e_n, \cdots$.
-\end{enumerate}
+\end{itemize}
 
-We regard \emph{the undefined behavior as described in the ISO C18 standard as the set of all
+We regard \emph{the undefined behavior as described in the ISO C standards as the set of all
   behaviors}.  This captures the intuitive properties of compilers on undefined behavior: if the
 target program's behavior is undefined, then the source program's behavior is also undefined.  If
 the source program's behavior is undefined, then compiler can choose any program as its result.
@@ -82,50 +78,28 @@ important compiler transformations such as register allocation may increase the 
 requirements.  Dually, since running out of memory is not that serious a problem for programmers as
 is genuine undefined behavior (\eg accessing freed memory), the target behavior of a source program
 running out of memory should not be arbitrary, but should match the source behavior and also run out
-of memory.
+of memory.  Thus we model \emph{out of memory as the empty set of behaviors}, or in other words, no
+behaviors, following CompCertTSO~\cite{vsevvcik2013compcerttso}.
 
-Therefore, CompCertTSO~\cite{vsevvcik2013compcerttso} models \emph{out of memory as the empty set of
-  behaviors}, or in other words, no behaviors.  However, what happens if there were I/O events prior
-to the out-of-memory error?  Discarding I/O events before running out of memory is absurd: the
-target program should always perform a prefix of the events the source program could have performed.
-To handle this, CompCertTSO also observes \emph{partial behaviors}, possibly before discarding
-behavior due to running out of memory:
-\begin{enumerate}
-\setcounter{enumi}{3}
+However, what happens if there were I/O events prior to the out-of-memory error?  Discarding I/O
+events before running out of memory is absurd: the target program should always perform a prefix of
+the events the source program could have performed.  To handle this, we also observes \emph{partial
+  behaviors}, possibly before discarding behavior due to running out of memory:
+
+
+\begin{itemize}
 \item A partial execution of the program that has produced a finite sequence
 of I/O events, $e_1, \cdots, e_n, \mathtt{partial}$.
-\end{enumerate}
+\end{itemize}
 As before, refinement is defined as inclusion of the set of (possibly partial) behaviors of the
-target program into that of the source program.  In this dissertation, we follow CompCertTSO's
-approach of handling out of memory.
+target program into that of the source program.
 % However, unlike CompCertTSO, where only the target language can run out of memory, our source
 % language can also run out of memory due to pointer-to-integer casts, as we explain below.
 
 
-\paragraph{End-to-End Correctness}
-
-Roughly speaking, the correctness result of CompCert can be understood to assert the following.
-Suppose \code{s.c} is a ``source'' file (in C), \code{t.asm} is a ``target'' file (in assembly), and
-$\mathcal{C}$ is a verified compiler (represented as a function from C files to assembly files).
-\[
-\frac{
-\mathcal{C}(\mathtt{s.c}) = \mathtt{t.asm} \qquad
-s = \mathrm{load}(\mathtt{s.c})\qquad
-t = \mathrm{load}(\mathtt{t.asm})}
-{\mathrm{Behav}(s) \supseteq \mathrm{Behav}(t)}
-\]
-If \code{t.asm} is the result of compiling \code{s.c} with $\mathcal{C}$, then executing
-\code{t.asm} according to assembly semantics will result in a subset of the behaviors one could
-observe from executing \code{s.c} according to C semantics.  (We write
-$s = \mathrm{load}(\mathtt{s.c})$ to denote the \emph{machine state} that results from loading
-$\mathtt{s.c}$ into memory, $\mathrm{Behav}(s)$ to denote the observable behaviors of the execution
-of $s$, and analogously for $t$ and $\mathtt{t.asm}$.)  Hence, we say that \code{t.asm}, the
-target-level output of $\mathcal{C}$, \emph{refines} its source-level input, \code{s.c}.
-
-
 \paragraph{Per-Pass Correctness}
 
-TODO: organization
+TODO: organization?
 
 To verify compilation correctness for the compiler $\mathcal{C}$, we verify each pass of
 $\mathcal{C}$ independently.  Specifically, for each pass (transformation) $\mathcal{T}$ from
@@ -178,15 +152,153 @@ here because it is orthogonal to our high-level story, but we will return to it 
 \Cref{chap:sepcomp}.
 
 
-\paragraph*{}
 
-Then what does a simulation relation look like?  As an example, we explain the constant propagation
-pass in CompCert and its simulation relation, as well as the langauge on which the optimization is
-performed.
+
+\subsection{The RTL Language in CompCert}
+\label{sec:background:rtl}
+
+In the rest of this section, we will explain how to establish a simulation relation for optimization
+passes, using constant propagation as a running example.  We start with the syntax and semantics of
+CompCert's register transfer language (RTL), the compiler's internal language where constant
+propagation takes place.  For presentation purposes, we simplify the language a bit by removing
+types and other unnecessary details.
+
+
+\paragraph{Syntax}
+
+% \input{rtl-syntax}
+% TODO
+
+The syntax of the CompCert's RTL is given in Figure~\ref{fig:rtl-syntax}.  Programs are just a list
+of global declarations, which consist of $(1)$ declarations of external variables and functions
+provided by different compilation units, and $(2)$ definitions of variables and functions provided
+by the current compilation unit.  For global variable declarations and definitions, we also specify
+a (positive) integer number denoting the size of the declared block in bytes.
+
+Function declarations only contain the function signature, which is a list of parameters, but
+function definitions additionally contain a list of local registers, the size of their stack frame,
+and the code.  The code is essentially a control-flow graph of three-address code: it is represented
+as a mapping from node identifiers to instructions, where instructions either
+%
+do some local computation (\eg write a constant to a register, or perform some arithmetic
+computation),
+%
+load from a memory address, 
+%
+store to memory,
+%
+do a comparison,
+%
+call a function, 
+%
+or exit the function and return a result. 
+%
+Each instruction also stores the node identifier(s) of its successor instruction(s).
+
+Throughout we assume that programs satisfy some basic well-formedness properties: there cannot be
+multiple definitions for the same global variable, declarations and definitions of the same variable
+should have matching signatures, and the parameter and local variable lists for each function do not
+have duplicate entries.
+
+
+\paragraph{Semantics}
+
+TODO: defer memory model to the next subsection.
+
+% \input{rtl-semdom}
+% TODO
+
+We move on to the semantics of RTL.  Figure~\ref{fig:rtl-semdom} defines the necessary semantic
+domains.
+
+Memory, $m\in\rtlMem$, is represented as a finite collection of allocation blocks (a mapping from
+block identifiers to blocks), each of which is a contiguous portion of memory that may be either
+valid to access or already deallocated (freed) and therefore invalid to access.  CompCert values,
+$v\in\rtlVal$, can be either 32-bit integers, logical addresses (pairs of a block identifier
+together with an offset within the block), or the special $\rtlundef$ value used to represent
+uninitialized data.  A global environment, $ge=(g,d)\in\rtlGEnv$, maps each global variable name to
+a logical block identifier, and each logical block identifier corresponding to some function's code
+to either the corresponding function signature for external functions or the corresponding function
+definition for functions defined in the program.
+
+Next, program states can be of three kinds: normal instruction states ($\rtlist$), call states
+($\rtlcst$) just before passing control to an invoked function, and return states ($\rtlrst$), just
+after returning from an invoked function.  Instruction states store the memory ($m$), the sequence
+of parent stack frames ($s$), the definition of the function whose body is currently executed
+($\vfd$), the current stack pointer ($sp$), the program counter ($pc$), and the contents of the
+local registers ($rs$).  Call states record the memory, the stack, and the function to be called
+($\vfds$) with its arguments ($args$).  The function to be called can be either an internal
+function, in which case we record its definition, or an external one, in which case we record its
+signature.  Return states record just the memory, the stack, and the value that was returned by the
+function.  A stack $s$ is a list of stack frames, each of which records the same information as
+normal instruction states, except with the addition of a register name $r$ where its return value
+should be stored, and minus the memory ($m$) and stack ($s$) components.
+
+The meaning of programs is described by three definitions:
+\[
+\begin{array}{r@{~~}c@{~~}l}
+\rtlgenv &\in& \rtlProg \to \rtlGEnv \\
+\rtlload &\in& \rtlProg \pfun \rtlState\\
+\estep{} &\in& \powset{\rtlGEnv\times\rtlState\times\rtlEvent\times\rtlState}\\
+\end{array}
+\]
+The first function, $\rtlgenv(\vprg)$, returns the global environment corresponding to the program:
+it `allocates' the global variables of the program sequentially in blocks 1, 2, 3, and so on, and
+maps the blocks corresponding to function symbols to the relevant function definition or signature.
+
+Similarly, $\rtlload(\vprg)$ returns the initial state obtained by loading a program into memory: it
+initializes the memory $m$ with the initial values of the global variables at the appropriate
+addresses generated by $\rtlgenv(\vprg)$, and returns a call state, $\rtlcst~m~[\,]~\vfd~[\,]$,
+where $\vfd$ is the function definition corresponding to \texttt{main()}.  Loading is a partial
+function because it is undefined for programs without a \texttt{main()} function.
+
+% \input{rtl-opsem}
+% TODO
+
+The $\estep{}$ relation is a small-step reduction relation describing how program states evolve
+during the computation.  For clarity, we write $s \estep{\vevt}_{ge} s'$ instead of
+$(ge,s,\vevt,s')\in {\estep{}}$.  The operational semantics for RTL is fairly standard and shown in
+Figure~\ref{fig:rtl-opsem}: there is a rule for each of the various basic instructions of the
+language.  Starting from normal instruction states, the instruction at the node pointed to by the
+program counter is scrutinized ($\vfd@pc$).  Depending on what instruction is there, only one rule
+is applicable.  The corresponding rule calculates the new values of the registers, the memory (for
+store instructions), and the next program counter.  Calls and returns are treated a bit differently:
+they do not directly transition from an instruction state to the next instruction state---they go
+through an intermediate call/return state.
+
+In more detail, calling a function (rule \textsc{call}) looks up the function in the global
+environment, evaluates its arguments, creates a new stack frame corresponding to the current
+instruction state, and transitions to a call state.  From a call state, there are two possible
+execution steps.  If the function to be called is internal, \ie we have its function definition
+$\vfd\in\rtlFunc$, rule \textsc{internal-call} applies.  It allocates the necessary stack space for
+the called function, initializes the parameter registers with the values passed as arguments, sets
+the program counter to point to the first node of the called function, and moves to the appropriate
+instruction state of the called function.  If the function to be called is external, \ie we have a
+function signature $\vfs\in\rtlFSig$, rule \textsc{external-call} goes directly to the return state,
+and generates an event $\vevt$ indicating that it called an external function.
+
+Conversely, returning from a function (rule \textsc{return}) evaluates the result to be returned,
+deallocates the stack space used by the function, and transitions to the return state.  The only
+possible step form a return state (rule \textsc{return2}) then pops the top-most stack frame and
+transitions to a normal instruction state thereby restoring the registers, program counter, and
+stack pointers of the calling function.
+
 
 
 \subsection{The CompCert Memory Model}
 \label{sec:background:memory}
+
+To simplify the presentation, we focus on handling integer-pointer casts and relaxed-memory
+concurrency and do not discuss many of the orthogonal aspects of C semantics.  Specifically, we
+$(1)$ assume a 32-bit architecture: words are 4 bytes wide, and the size of the address space is
+$2^{32}$, $(2)$ consider only integer and pointer values, and omit values of other types such as
+\texttt{float} or \texttt{char}, and $(3)$ omit subword arithmetic, and assume each address stores a
+32-bit value.  TODO: check it.
+% and take all addressing to be aligned at 4-byte boundaries.  \todo{gil: this is not quite
+% right. For example, we have a 4-byte word at 0x0000FFF0 and another 4-byte word at 0x0000FFF1,
+% ratherthan at 0x0000FFF4.  We used this just for simplicity anyway.}  $(l,i)$ points to the $i$-th
+% cell of 4 byte data in the logical block $l$).
+
 
 \paragraph{Concrete Model}
 
@@ -293,138 +405,6 @@ pointer values in special cases.  More specifically, for instance,
 the addition of an integer to an address, the
 subtraction between addresses when they are in the same logical block,
 and the equality test between an address and \texttt{NULL} are well-defined.
-
-
-
-\subsection{The RTL Language in CompCert}
-\label{sec:background:rtl}
-
-We start with the syntax and semantics of CompCert's register transfer language (RTL), the
-compiler's internal language where constant propagation takes place.  For presentation purposes, we
-simplify the language a bit by removing types and other unnecessary details.
-
-
-\paragraph{Syntax}
-
-% \input{rtl-syntax}
-% TODO
-
-The syntax of the CompCert's RTL is given in Figure~\ref{fig:rtl-syntax}.  Programs are just a list
-of global declarations, which consist of $(1)$ declarations of external variables and functions
-provided by different compilation units, and $(2)$ definitions of variables and functions provided
-by the current compilation unit.  For global variable declarations and definitions, we also specify
-a (positive) integer number denoting the size of the declared block in bytes.
-
-Function declarations only contain the function signature, which is a list of parameters, but
-function definitions additionally contain a list of local registers, the size of their stack frame,
-and the code.  The code is essentially a control-flow graph of three-address code: it is represented
-as a mapping from node identifiers to instructions, where instructions either
-%
-do some local computation (\eg write a constant to a register, or perform some arithmetic
-computation),
-%
-load from a memory address, 
-%
-store to memory,
-%
-do a comparison,
-%
-call a function, 
-%
-or exit the function and return a result. 
-%
-Each instruction also stores the node identifier(s) of its successor instruction(s).
-
-Throughout we assume that programs satisfy some basic well-formedness properties: there cannot be
-multiple definitions for the same global variable, declarations and definitions of the same variable
-should have matching signatures, and the parameter and local variable lists for each function do not
-have duplicate entries.
-
-
-\paragraph{Logical Memory Model}
-
-TODO
-
-
-\paragraph{Semantics}
-
-% \input{rtl-semdom}
-% TODO
-
-We move on to the semantics of RTL.  Figure~\ref{fig:rtl-semdom} defines the necessary semantic
-domains.
-
-Memory, $m\in\rtlMem$, is represented as a finite collection of allocation blocks (a mapping from
-block identifiers to blocks), each of which is a contiguous portion of memory that may be either
-valid to access or already deallocated (freed) and therefore invalid to access.  CompCert values,
-$v\in\rtlVal$, can be either 32-bit integers, logical addresses (pairs of a block identifier
-together with an offset within the block), or the special $\rtlundef$ value used to represent
-uninitialized data.  A global environment, $ge=(g,d)\in\rtlGEnv$, maps each global variable name to
-a logical block identifier, and each logical block identifier corresponding to some function's code
-to either the corresponding function signature for external functions or the corresponding function
-definition for functions defined in the program.
-
-Next, program states can be of three kinds: normal instruction states ($\rtlist$), call states
-($\rtlcst$) just before passing control to an invoked function, and return states ($\rtlrst$), just
-after returning from an invoked function.  Instruction states store the memory ($m$), the sequence
-of parent stack frames ($s$), the definition of the function whose body is currently executed
-($\vfd$), the current stack pointer ($sp$), the program counter ($pc$), and the contents of the
-local registers ($rs$).  Call states record the memory, the stack, and the function to be called
-($\vfds$) with its arguments ($args$).  The function to be called can be either an internal
-function, in which case we record its definition, or an external one, in which case we record its
-signature.  Return states record just the memory, the stack, and the value that was returned by the
-function.  A stack $s$ is a list of stack frames, each of which records the same information as
-normal instruction states, except with the addition of a register name $r$ where its return value
-should be stored, and minus the memory ($m$) and stack ($s$) components.
-
-The meaning of programs is described by three definitions:
-\[
-\begin{array}{r@{~~}c@{~~}l}
-\rtlgenv &\in& \rtlProg \to \rtlGEnv \\
-\rtlload &\in& \rtlProg \pfun \rtlState\\
-\estep{} &\in& \powset{\rtlGEnv\times\rtlState\times\rtlEvent\times\rtlState}\\
-\end{array}
-\]
-The first function, $\rtlgenv(\vprg)$, returns the global environment corresponding to the program:
-it `allocates' the global variables of the program sequentially in blocks 1, 2, 3, and so on, and
-maps the blocks corresponding to function symbols to the relevant function definition or signature.
-
-Similarly, $\rtlload(\vprg)$ returns the initial state obtained by loading a program into memory: it
-initializes the memory $m$ with the initial values of the global variables at the appropriate
-addresses generated by $\rtlgenv(\vprg)$, and returns a call state, $\rtlcst~m~[\,]~\vfd~[\,]$,
-where $\vfd$ is the function definition corresponding to \texttt{main()}.  Loading is a partial
-function because it is undefined for programs without a \texttt{main()} function.
-
-% \input{rtl-opsem}
-% TODO
-
-The $\estep{}$ relation is a small-step reduction relation describing how program states evolve
-during the computation.  For clarity, we write $s \estep{\vevt}_{ge} s'$ instead of
-$(ge,s,\vevt,s')\in {\estep{}}$.  The operational semantics for RTL is fairly standard and shown in
-Figure~\ref{fig:rtl-opsem}: there is a rule for each of the various basic instructions of the
-language.  Starting from normal instruction states, the instruction at the node pointed to by the
-program counter is scrutinized ($\vfd@pc$).  Depending on what instruction is there, only one rule
-is applicable.  The corresponding rule calculates the new values of the registers, the memory (for
-store instructions), and the next program counter.  Calls and returns are treated a bit differently:
-they do not directly transition from an instruction state to the next instruction state---they go
-through an intermediate call/return state.
-
-In more detail, calling a function (rule \textsc{call}) looks up the function in the global
-environment, evaluates its arguments, creates a new stack frame corresponding to the current
-instruction state, and transitions to a call state.  From a call state, there are two possible
-execution steps.  If the function to be called is internal, \ie we have its function definition
-$\vfd\in\rtlFunc$, rule \textsc{internal-call} applies.  It allocates the necessary stack space for
-the called function, initializes the parameter registers with the values passed as arguments, sets
-the program counter to point to the first node of the called function, and moves to the appropriate
-instruction state of the called function.  If the function to be called is external, \ie we have a
-function signature $\vfs\in\rtlFSig$, rule \textsc{external-call} goes directly to the return state,
-and generates an event $\vevt$ indicating that it called an external function.
-
-Conversely, returning from a function (rule \textsc{return}) evaluates the result to be returned,
-deallocates the stack space used by the function, and transitions to the return state.  The only
-possible step form a return state (rule \textsc{return2}) then pops the top-most stack frame and
-transitions to a normal instruction state thereby restoring the registers, program counter, and
-stack pointers of the calling function.
 
 
 
