@@ -1,0 +1,47 @@
+%!TEX root=main.tex
+
+\begin{figure}
+\[\begin{array}{@{}l@{~}c@{~}l@{}}
+\rtlMem &\defeq& \setof{(nb,bs)\suchthat nb\in\rtlBId\land bs \in \rtlBId \fpfun \rtlBlock} \\
+\rtlBlock &\defeq&
+\setof{(p, n, c) \suchthat
+  p \in \setofz{\rtlvalid,\rtlfreed} \land n \in \Nat \land c \in \rtlVal^n \!} \\
+\rtlVal &\defeq& \rtlInt \uplus \rtlAddr \uplus \setofz{\rtlundef} \\
+\rtlAddr &\defeq& \setof{(l,i) \in \rtlBId\times \rtlInt} \\
+\rtlGEnv &\defeq& \setof{(g,d)\suchthat g\in \rtlId \fpfun \rtlBId {}\land{}\\
+&&\qquad\quad~~~ d \in \rtlBId \fpfun \rtlFSig\uplus\rtlFunc}\\
+\rtlState &\defeq& \rtlIState\uplus\rtlCState\uplus\rtlRState\\
+\rtlIState&\defeq& \setof{\rtlist~m~s~\vfd~sp~pc~rs \suchthat\\
+&&~~
+m\in\rtlMem\land s\in\overline{\rtlStkFrm}
+\land\vfd\in\rtlFunc\land{}\\
+&&~~sp\in\rtlAddr \land pc\in\rtlNId\land
+rs\in \rtlReg \fpfun \rtlVal
+}
+\\
+\rtlCState&\defeq& \setof{\rtlcst~m~s~\vfds~vs\suchthat
+m\in\rtlMem\land s\in\overline{\rtlStkFrm}{}\land{}\\
+&&~~\vfds\in\rtlFunc\uplus\rtlFSig\land vs\in\overline{\rtlVal}
+}
+\\
+\rtlRState&\defeq& \setof{\rtlrst~m~s~v \suchthat
+m\in\rtlMem\land s\in\overline{\rtlStkFrm}\land
+v\in \rtlVal
+}
+\\
+\rtlStkFrm &\defeq& \setof{(r,\vfd,sp,pc,rs)\suchthat
+r\in\rtlReg\land \vfd\in\rtlFunc\land{}\\
+&&~~ sp\in\rtlAddr \land pc\in\rtlNId\land
+rs\in \rtlReg \fpfun \rtlVal
+}
+\end{array}
+\]
+\caption{RTL semantic domains.}
+\label{fig:rtl-semdom}
+\end{figure}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-PDF-mode: t
+%%% End: 

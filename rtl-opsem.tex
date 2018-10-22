@@ -1,0 +1,125 @@
+%!TEX root=main.tex
+
+\begin{figure*}[!ht]
+\begin{mathpar}
+
+\inferrule[imm]{
+\begin{array}{c}
+\vfd @  pc = (dst := src~\rtljmp~pc')\\
+rs' = rs[dst\leftarrow \sem{src}(ge,sp,rs)]\\
+\end{array}
+}{
+\rtlist~m~s~\vfd~sp~pc~rs
+\estep{\epsilon}_{ge}
+\rtlist~m~s~\vfd~sp~pc'~rs'
+}
+
+\inferrule[op]{
+\begin{array}{c}
+\vfd @  pc = (dst := \rtlop~\vargs~\rtljmp~pc')\\
+rs' = rs[dst\leftarrow \sem{\rtlop}(ge,sp,\sem{\vargs}(rs))]\\
+\end{array}
+}{
+\rtlist~m~s~\vfd~sp~pc~rs
+\estep{\epsilon}_{ge}
+\rtlist~m~s~\vfd~sp~pc'~rs'
+}
+
+\inferrule[load]{
+\begin{array}{c}
+\vfd @ pc = (dst := src[n]~\rtljmp~pc')\\
+(l,i) = \sem{src}(ge,sp,rs)\\
+rs' = rs[dst\leftarrow m[(l,i+n)]]\\
+\end{array}
+}{
+\rtlist~m~s~\vfd~sp~pc~rs
+\estep{\epsilon}_{ge}
+\rtlist~m~s~\vfd~sp~pc'~rs'
+}
+
+\inferrule[store]{
+\begin{array}{c}
+\vfd @ pc = (dst[n] := src~\rtljmp~pc')\\
+(l,i) = \sem{dst}(ge,sp,rs)\\
+m' = m[(l,i+n)\leftarrow \sem{src}(rs)]\\
+\end{array}
+}{
+\rtlist~m~s~\vfd~sp~pc~rs
+\estep{\epsilon}_{ge}
+\rtlist~m'~s~\vfd~sp~pc'~rs
+}
+
+\inferrule[cond]{
+\begin{array}{c}
+\vfd @  pc = 
+(\rtlcondop~\vargs~?~\rtljmp~pc_1:\rtljmp~pc_2)\\
+b = \sem{\rtlcondop}(ge,sp,\sem{\vargs}(rs)) \\
+pc' = b ~?~ pc_1 : pc_2\\
+\end{array}
+}{
+\rtlist~m~s~\vfd~sp~pc~rs
+\estep{\epsilon}_{ge}
+\rtlist~m~s~\vfd~sp~pc'~rs
+}
+
+\inferrule[call]{
+\begin{array}{c}
+\vfd @ pc = (res := f(\vargs)~\rtljmp~pc')\\
+(l,0) = \sem{f}(ge,sp,rs) \\
+\vfds' = \mathrm{findfunc}(ge,l) \\
+vs = \sem{\vargs}(rs) \\
+\end{array}
+}{
+\rtlist~m~s~\vfd~sp~pc~rs
+\estep{\epsilon}_{ge}
+\rtlcst~m~((res,\vfd,sp,pc',rs){::}s)~\vfds'~vs
+}
+
+\inferrule[return]{
+\begin{array}{c}
+\vfd @ pc = (\rtlreturn~r)\\
+v = \sem{r}(rs) \\
+m' = \mathrm{free}(m,sp,\mathrm{stacksize}(\vfd)) \\
+\end{array}
+}{
+\rtlist~m~s~\vfd~sp~pc~rs
+\estep{\epsilon}_{ge}
+\rtlrst~m'~s~v
+}
+
+\inferrule[internal-call]{
+\begin{array}{c}
+(m',l) = \mathrm{alloc}(m, \mathrm{stacksize}(\vfd))\\
+pc = \mathrm{entrynode}(\vfd)\\
+rs = \mathrm{init\text{-}regs}(\mathrm{params}(\vfd),vs)\\
+\end{array}
+}{
+\rtlcst~m~s~\vfd~vs
+\estep{\epsilon}_{ge}
+\rtlist~m'~s~\vfd~(l,0)~pc~rs
+}
+
+\inferrule[return2]{
+rs' = rs[res \leftarrow v]
+}{
+\rtlrst~m~(res,\vfd,sp,pc,rs){::}s~v
+\estep{\epsilon}_{ge}
+\rtlist~m~s~\vfd~sp~pc~rs'
+}
+
+\inferrule[external-call]{
+\begin{array}{c}
+(\vevt,v,m') \in \mathrm{extcall\text{-}sem}(\vfs,ge,vs,m) \\
+\end{array}
+}{
+\rtlcst~m~s~\vfs~vs
+\estep{\vevt}_{ge}
+\rtlrst~m'~s~v
+}
+
+\end{mathpar}
+\caption{Operational semantics of RTL.}
+\label{fig:rtl-opsem}
+\end{figure*}
+
+
