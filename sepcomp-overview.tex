@@ -1,33 +1,24 @@
-\section{Key Idea}
-\label{sec:sepcomp:keyidea}
+\section{Overview}
+\label{sec:sepcomp:overview}
 
-We begin by briefly reviewing CompCert's correctness statement for
-whole-program compilation, as well as its closed-simulation verification
-method (\S\ref{sec:overview:compcert}).  We then explain our Level A
-and Level B notions of compositional correctness and our techniques
-for establishing them (\S\ref{sec:overview:LevelA} and
-\S\ref{sec:overview:LevelB}).  We also briefly give some intuition as
-to why it is easy to adapt CompCert's verification to employ our new
-techniques, but we leave a more thorough explanation of this
-adaptation to subsequent sections.  Throughout the section, we keep
-the presentation semi-formal, abstracting away unnecessary detail to
+We begin by explaining our Level A and Level B notions of compositional correctness and our
+techniques for establishing them (\S\ref{sec:overview:LevelA} and \S\ref{sec:overview:LevelB}).  We
+also briefly give some intuition as to why it is easy to adapt CompCert's verification to employ our
+new techniques, but we leave a more thorough explanation of this adaptation to subsequent sections.
+Throughout the section, we keep the presentation semi-formal, abstracting away unnecessary detail to
 get across the main ideas.
 %   We focus on correctness of compilation
 % from C to assembly, but this is merely for concreteness: the ideas
 % are more general
 
-\subsection{\sepcomp{}'s Compositional Correctness Level A}
+\subsection{Compositional Correctness Level A}
 \label{sec:overview:LevelA}
 
 \begin{figure}[!t]
 \begin{center}
-\includegraphics[width=200px]{part1.png}
+\includegraphics[width=200px]{sepcomp-levela.png}
 \end{center}
-\caption{Proving Level A correctness.  Here, we show the case
-  of three separately-compiled modules and two compiler passes,
-  $\mathcal{T}_1$ and $\mathcal{T}_2$.  Since the compilations march
-  in lock step, we can verify each pass as applied to all modules
-  simultaneously.}
+\caption{Proving Level A correctness}
 \label{fig:LevelA}
 \end{figure}
 
@@ -68,14 +59,16 @@ linking.
 
 \paragraph{Per-Pass Correctness}
 
-To prove that compiler $\mathcal{C}$ satisfies Level A compositional
-correctness, we again want to reduce the problem to one of verifying
-the individual passes of $\mathcal{C}$.  The key idea here, as
-illustrated in Figure~\ref{fig:LevelA}, is that since we know that the
-source modules are all compiled via the exact same sequence of passes,
-we can verify their compilations in lock step.  In other words, it
-suffices to verify that, for each pass $\mathcal{T}$ from $L_1$ to
-$L_2$, the following holds:
+To prove that compiler $\mathcal{C}$ satisfies Level A compositional correctness, we again want to
+reduce the problem to one of verifying the individual passes of $\mathcal{C}$.  The key idea here,
+as illustrated in Figure~\ref{fig:LevelA} where three separately-compiled modules go through two
+compiler passes $\mathcal{T}_1$ and $\mathcal{T}_2$, is that since we know that the source modules
+are all compiled via the exact same sequence of passes, we can verify their compilations in lock
+step as if each pass is applied to all modules simultaneously.  In other words, it suffices to
+verify that, for each pass $\mathcal{T}$ from $L_1$ to $L_2$, the following holds:
+% Here, we show the case of three separately-compiled modules and two compiler passes,
+% $\mathcal{T}_1$ and $\mathcal{T}_2$.  Since the compilations march in lock step, we can verify
+% each pass as applied to all modules simultaneously.
 \[
 \frac{
 \begin{array}{@{}c@{}}
@@ -176,20 +169,19 @@ passes that did not fall into the trivial case).
 % \]
 
 
-\subsection{\sepcomp{}'s Compositional Correctness Level B}
+\subsection{Compositional Correctness Level B}
 \label{sec:overview:LevelB}
 
 \begin{figure}[!t]
 \begin{center}
-\includegraphics[width=200px]{part2.png}
+\includegraphics[width=200px]{sepcomp-levelb.png}
 \end{center}
-\caption{Proving Level B correctness.  Here, we show only the
-  RTL-level passes (for other passes, it is the same as Level A).
-  Since each module is compiled with different optimization passes, we
-  verify each pass applied to exactly one module, while simultaneously
-  the other modules undergo the identity transformation.}
+\caption{Proving Level B correctness for RTL passes}
 \label{fig:LevelB}
 \end{figure}
+% Here, we show only the RTL-level passes (for other passes, it is the same as Level A).  Since each
+% module is compiled with different optimization passes, we verify each pass applied to exactly one
+% module, while simultaneously the other modules undergo the identity transformation.
 
 \paragraph{End-to-End Correctness}
 
@@ -227,17 +219,15 @@ perform these same passes in the same order.  However, for the RTL
 optimizations, we must do something different because at the RTL level
 the various $\mathcal{C}_i$'s do not all march in lock step.
 
-The key idea for handling the RTL optimizations, as illustrated in
-Figure~\ref{fig:LevelB}, is to pad the $\mathcal{C}_i$'s with extra
-dummy identity passes (which do not affect their end-to-end
-functionality) so that, whenever one compiler is performing an RTL
-optimization pass, the other compilers will for that step perform an
-identity transformation.  Thus, we first verify the RTL passes of
-$\mathcal{C}_1$ in parallel with identity passes for the other
-compilers, then verify the RTL passes of $\mathcal{C}_2$ in parallel
-with identity passes for the other compilers, and so on.  For this to
-work, the Level B per-pass correctness statement (for optimization
-passes $\mathcal{T}$ from RTL to RTL) must be updated as follows:
+The key idea for handling the RTL optimizations, as illustrated in Figure~\ref{fig:LevelB} where
+each module is compiled with different optimization passes, is to pad the $\mathcal{C}_i$'s with
+extra dummy identity passes (which do not affect their end-to-end functionality) so that, whenever
+one compiler is performing an RTL optimization pass, the other compilers will for that step perform
+an identity transformation.  Thus, we first verify the RTL passes of $\mathcal{C}_1$ in parallel
+with identity passes for the other compilers, then verify the RTL passes of $\mathcal{C}_2$ in
+parallel with identity passes for the other compilers, and so on.  For this to work, the Level B
+per-pass correctness statement (for optimization passes $\mathcal{T}$ from RTL to RTL) must be
+updated as follows:
 \[
 \frac{
 \begin{array}{@{}c@{}}

@@ -178,6 +178,26 @@ soundly to its machine-level output.  It has served as a fundamental building bl
 on end-to-end verified software~\cite{TODO}, as well as receiving significant interest from the
 avionics industry~\cite{TODO}.
 
+% Over ten years ago, Xavier Leroy initiated the CompCert
+% project~\cite{compcert:CACM,leroy:compcert}, a landmark effort that
+% resulted in the first \emph{realistic verified compiler}.  The
+% CompCert compiler~\cite{compcert-website} is \emph{realistic} in the
+% sense that it ``could realistically be used in the context of
+% production of critical software''.  In particular, it compiles a
+% significant subset of the C language down to assembly, and it performs
+% a number of common and useful optimizations.  It is \emph{verified} in
+% the sense that it ``is accompanied by a machine-checked proof [in Coq]
+% of a semantic preservation property: the generated machine code
+% behaves as prescribed by the semantics of the source program.''  As
+% such, CompCert guarantees that program analyses and verifications
+% performed on its input carry over soundly to its machine-level output.
+% It has served as a fundamental building block in academic work on
+% end-to-end verified software~\cite{appel:plcc}, as well as receiving
+% significant interest from the avionics industry~\cite{avionics}.
+% % http://projects.laas.fr/IFSE/FMF/J3/slides/P05_Jean_Souyiris.pdf
+% % XXX: Any other projects that depend on CompCert besides Appel's
+% % XXX: Verified Software Toolchain or Airbus?
+
 In the same spirit as CompCert, Vellvm~\cite{vellvm} by Steve Zdancewic and his collaborators
 formalizes a significant subset of the LLVM IR and verifies interesting compiler transformations and
 optimizations performed at the IR level.  Most notably, Vellvm formalizes the static single

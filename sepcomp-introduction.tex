@@ -1,58 +1,29 @@
 \section{Introduction}
 \label{sec:sepcomp:introduction}
 
-Over ten years ago, Xavier Leroy initiated the CompCert
-project~\cite{compcert:CACM,leroy:compcert}, a landmark effort that
-resulted in the first \emph{realistic verified compiler}.  The
-CompCert compiler~\cite{compcert-website} is \emph{realistic} in the
-sense that it ``could realistically be used in the context of
-production of critical software''.  In particular, it compiles a
-significant subset of the C language down to assembly, and it performs
-a number of common and useful optimizations.  It is \emph{verified} in
-the sense that it ``is accompanied by a machine-checked proof [in Coq]
-of a semantic preservation property: the generated machine code
-behaves as prescribed by the semantics of the source program.''  As
-such, CompCert guarantees that program analyses and verifications
-performed on its input carry over soundly to its machine-level output.
-It has served as a fundamental building block in academic work on
-end-to-end verified software~\cite{appel:plcc}, as well as receiving
-significant interest from the avionics industry~\cite{avionics}.
-% http://projects.laas.fr/IFSE/FMF/J3/slides/P05_Jean_Souyiris.pdf
-% XXX: Any other projects that depend on CompCert besides Appel's
-% XXX: Verified Software Toolchain or Airbus?
+There was a key dimension in which the verification of CompCert is not realistic---namely that, for
+simplicity, it only establishes the correctness of \emph{whole-program} compilation: if CompCert is
+used to compile a self-contained C program consisting of a single file, then the output of CompCert
+preserves the semantics of that program.  But clearly this does not correspond to what many clients
+of a verified compiler would expect.  For example, it is often essential in practice to be able to
+compile a client module separately from the many standard libraries it depends on, yet be assured
+that linking the resulting binaries together will result in an executable that preserves the
+semantics of the linked source modules.  Furthermore, it is commonplace for different modules in a
+program to be compiled with different sets of optimization passes turned on.  Although the CompCert
+compiler does indeed support such forms of separate compilation, its verification statement says
+nothing about them.
 
-There is, however, a key dimension in which the verification of
-CompCert is not realistic---namely that, for simplicity, it only
-establishes the correctness of \emph{whole-program} compilation: if
-CompCert is used to compile a self-contained C program consisting of a
-single file, then the output of CompCert preserves the semantics of
-that program.  But clearly this does not correspond to what many
-clients of a verified compiler would expect.  For example, it is often
-essential in practice to be able to compile a client module separately
-from the many standard libraries it depends on, yet be assured that
-linking the resulting binaries together will result in an executable
-that preserves the semantics of the linked source modules.
-Furthermore, it is commonplace for different modules in a program to
-be compiled with different sets of optimization passes turned on.
-Although the CompCert compiler does indeed support such forms of
-separate compilation, its verification statement says nothing about
-them.
-
-The technical reason for this limitation is that it makes it possible
-for the CompCert verification to be carried out straightforwardly
-using \emph{closed simulations}: simulations between closed (\ie
-self-contained, executable) programs.  For each pass of the compiler,
-the output of the pass is shown to simulate the input of the pass,
-assuming and preserving whatever invariant the verifier wishes to
-impose on the relation between the states of the input and output.
-Working with closed simulations simplifies life in two ways: (1) the
-simulation proof for each pass can rely on whatever state invariant it
-chooses, independent of what invariants are used in other passes, and
-(2) these independent simulations collectively imply the end-to-end
-correctness of the whole compiler (this is sometimes called
-``vertical compositionality'').  However, closed simulations are by definition
-simulations over whole program states, thus seemingly confining
-their applicability to the verification of whole-program compilation.
+The technical reason for this limitation is that it makes it possible for the CompCert verification
+to be carried out straightforwardly using \emph{closed simulations}: simulations between closed (\ie
+self-contained, executable) programs.  \jeehoon{``it makes it possible''?}  For each pass of the
+compiler, the output of the pass is shown to simulate the input of the pass, assuming and preserving
+whatever invariant the verifier wishes to impose on the relation between the states of the input and
+output.  Working with closed simulations simplifies life in two ways: $(1)$ the simulation proof for
+each pass can rely on whatever state invariant it chooses, independent of what invariants are used
+in other passes, and $(2)$ these independent simulations collectively imply the end-to-end
+correctness of the whole compiler (this is sometimes called ``vertical compositionality'').
+However, closed simulations are by definition simulations over whole program states, thus seemingly
+confining their applicability to the verification of whole-program compilation.
 
 There has consequently been a great deal of work in the past several
 years attempting to prove compiler correctness \emph{without} the
@@ -209,19 +180,6 @@ requires somewhat (but not much) more work to prove.
 %   because it assumes the source and target languages share a common
 %   memory model (true for CompCert, but not for, say, ML compilers).
 
-The key idea spanning both levels is to formulate a compositional
-correctness statement about a single \emph{module} $M$ in terms of a
-``contextual'' correctness statement about how $M$ behaves when linked
-with arbitrary other modules to form a complete program.  The latter
-has the advantage of being a statement about closed (whole) programs,
-and as such, we can prove it using the kind of simple,
-closed-simulation-style proofs employed in traditional verifications
-of whole-program compilation.  This in turn enables us to
-significantly reuse existing compiler proofs.  We believe the
-lightweight nature of our techniques---and the consequent ease of
-adapting existing verifications to use them---will make them a highly
-attractive option for compiler verifiers.
-
 % In prior work (\eg \cite{hur+:popl11,stewart+:popl15,neis+:icfp15}),
 % it seems to be mostly taken for granted that such a ``contextual''
 % approach is only applicable to compositional compiler correctness when
@@ -236,7 +194,7 @@ attractive option for compiler verifiers.
 %   order to embed the source and target languages of the compiler in
 %   one common language.  Our Levels 1 and 2 show that contextual
 %   reasoning is useful even without multi-language semantics.  For
-%   further comparison, see \S\ref{sec:related}.}
+%   further comparison, see \Cref{sec:related}.}
 
 % That said, there is a tradeoff here: in return for the simplicity of
 % our approach, its scope is somewhat narrower than that of some prior
@@ -257,26 +215,30 @@ attractive option for compiler verifiers.
 % adapting existing verifications to use them---make them an attractive
 % option for compiler verifiers when applicable.
 
-We demonstrate the effectiveness of our techniques by applying them to
-CompCert 2.4.  In less than two person-months total, we adapted the
-existing CompCert verification to support both Level A and Level B
-compositional correctness, and much of that time was spent trying to
-understand the original CompCert proof.  \textbf{The result of this
-  effort is \sepcomp{}, the first verification of separate compilation
-  for the full CompCert compiler}.  The \sepcomp{} verification
-(available online~\cite{sepcompcert-website}) is mostly the same as
-the original CompCert verification, and is only 2\% (for Level A) or
-3\% (for Level B) larger than the original verification in terms of
-lines of Coq.  Furthermore, in the process of porting CompCert to
-\sepcomp{}, we uncovered two bugs in CompCert: one in an invalid
-axiom, and one (in CompCert's ``value analysis'') that was outside the
-scope of CompCert's original verification because it only showed up in
-the presence of separate compilation.  These have been confirmed and
-subsequently fixed in the latest version of the compiler.\footnote{The
-  latest version of CompCert is 2.5.  It was released on June 12,
-  2015, after we had already completed our verification of \sepcomp{}.
-  See \S\ref{sec:related} for discussion of what would be involved in
-  porting \sepcomp{} to handle the new features of CompCert 2.5.}
+The key idea spanning both levels is to formulate a compositional correctness statement about a
+single \emph{module} $M$ in terms of a ``contextual'' correctness statement about how $M$ behaves
+when linked with arbitrary other modules to form a complete program.  The latter has the advantage
+of being a statement about closed (whole) programs, and as such, we can prove it using the kind of
+simple, closed-simulation-style proofs employed in traditional verifications of whole-program
+compilation.  This in turn enables us to significantly reuse existing compiler proofs.  We believe
+the lightweight nature of our techniques---and the consequent ease of adapting existing
+verifications to use them---will make them a highly attractive option for compiler verifiers.
+
+We demonstrate the effectiveness of our techniques by applying them to CompCert 2.4.  In less than
+two person-months total, we adapted the existing CompCert verification to support both Level A and
+Level B compositional correctness, and much of that time was spent trying to understand the original
+CompCert proof.  \textbf{The result of this effort is the first verification of separate compilation
+  for the full CompCert compiler, which has subsequently been merged upstream in CompCert 2.7.}  Our
+verification (available online~\cite{sepcompcert-website}) is mostly the same as the original
+CompCert verification, and is only 2\% (for Level A) or 3\% (for Level B) larger than the original
+verification in terms of lines of Coq.  Furthermore, in the course of doing so, we uncovered two
+bugs in CompCert: one in an invalid axiom, and one (in CompCert's ``value analysis'') that was
+outside the scope of CompCert's original verification because it only showed up in the presence of
+separate compilation.  These have been confirmed and subsequently fixed in CompCert 2.5.
+
+% \footnote{The latest version of CompCert is 2.5.  It was released on June 12, 2015, after we had
+%   already completed our verification of \sepcomp{}.  See \Cref{sec:related} for discussion of what
+%   would be involved in porting \sepcomp{} to handle the new features of CompCert 2.5.}
 
 % \todo{gil: say that CompCert 2.4 was the
 %   latest version at the time we started this project.  The latest
@@ -286,18 +248,17 @@ subsequently fixed in the latest version of the compiler.\footnote{The
 %   Compositional CompCert~\cite{stewart+:popl2015} does not handle the full
 %   \mbox{CompCert} compiler, and it employs a bespoke form of linking
 %   that does not match the standard assembly-level linking.  See
-%   \S\ref{sec:related} for a detailed comparison.}
+%   \Cref{sec:related} for a detailed comparison.}
 
 % The prior work on Compositional CompCert~\cite{stewart+:popl2015} only verified 10 of
 % CompCert's 19 passes, and it established correctness w.r.t.\ a
 % different notion of assembly-level linking than the one used by
 % CompCert.
 
-The remainder of the paper is structured as follows.  In
-\S\ref{sec:overview}, we give a high-level overview of our new
-techniques, which are presented in detail in the subsequent sections
-in the context of our CompCert adaptation.  In \S\ref{sec:related}, we
-conclude with a comparison to related work.
+The remainder of this chapter is structured as follows.  In \Cref{sec:sepcomp:overview}, we give the
+overview of our new techniques, which are presented in detail in the subsequent sections in the
+context of our CompCert adaptation.  In \Cref{sec:sepcomp:discussion}, we conclude with a comparison
+to related work and discussion on the generality and the impact of our techniques.
 
 % We applied this technique to CompCert, verifying correctness of its
 % separate compilation facility in a few weeks' time.  Along the way, we
