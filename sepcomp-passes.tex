@@ -20,7 +20,7 @@ to 13 passes and the non-trivial technique to 6 passes.  For Level B, we apply o
 % % case of Level A (when passes commute with linking) is, well, trivial,
 % % we do not discuss it here.
 
-% As explained in \S\ref{sec:overview:LevelA}, porting 13 of the 19
+% As explained in \Cref{sec:overview:LevelA}, porting 13 of the 19
 % passes of CompCert to Level A was trivial because those passes commute
 % with syntactic linking.  For porting the remaining passes to Level A,
 % and for porting all passes to Level B, we can update the proof, as we
@@ -208,7 +208,7 @@ clearly a bug.
 
 After we reported this bug, it was fixed in the development branch of
 CompCert (and subsequently CompCert 2.5). In this fix, which we
-backported to CompCert 2.4 using \cd{git-cherry-pick}, the OCaml
+backported to CompCert 2.4 using \code{git-cherry-pick}, the OCaml
 $\code{get\_helpers}$ function is replaced by the aforementioned
 $\code{check\_helpers}$, which is implemented and verified directly
 in Coq, thereby avoiding the need for an invalid axiom.

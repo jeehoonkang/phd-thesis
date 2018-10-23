@@ -78,9 +78,9 @@ propagation, and inlining).  Second, due to its use of interaction
 semantics, Compositional CompCert employs a bespoke ``semantic''
 notion of linking (even for linking assembly files), which has not yet
 been related to the standard notion of syntactic linking (see
-\S\ref{sec:adaptconstprop}) that we employ in the \sepcomp{}
+\Cref{sec:adaptconstprop}) that we employ in the \sepcomp{}
 verification.  Syntactic linking corresponds much more closely to the
-physical linking of machine code implemented by the \cd{gcc} linker
+physical linking of machine code implemented by the \code{gcc} linker
 that CompCert uses by default.  Proving this is outside the scope of
 our verification effort, however, since CompCert only verifies
 correctness of compilation down to the assembly level, not to the
@@ -182,9 +182,9 @@ to these questions.  But we can say the following.
 We believe our techniques should be applicable to the most recent
 version of CompCert (2.5), but a necessary first step is to determine
 the appropriate notion of syntactic linking.  CompCert 2.5 introduces
-support for \cd{static} variables (which in C means variables that are
+support for \code{static} variables (which in C means variables that are
 only locally visible within a single file).  The presence of
-\cd{static} variables means that the simple canonical definition of
+\code{static} variables means that the simple canonical definition of
 syntactic linking we have used no longer works and must be revisited.
 Assuming a reasonable definition can be found, as we expect, we do not
 foresee any problems adapting our techniques to handle it.

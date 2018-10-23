@@ -1,6 +1,8 @@
 \section{Adapting Constant Propagation to Separate Compilation}
 \label{sec:sepcomp:constprop}
 
+\jeehoon{edited up here}
+
 In this section, we explain how to adapt the CompCert proof of
 constant propagation to support separate compilation.  Before doing
 so, let us briefly explain syntactic linking in some more detail since
@@ -10,8 +12,8 @@ Syntactic linking merges global declarations for each identifier.
 The linker must check if the declarations meet the following conditions:
 \begin{itemize}
 \item The declarations have the same type.  They should be either
-  $(i)$ function declarations or definitions of the same signature, or
-  $(ii)$ variable declarations or definitions of the same type.
+  $(1)$ function declarations or definitions of the same signature, or
+  $(2)$ variable declarations or definitions of the same type.
 \item At most one of the declarations is a definition.  If there is a
   single definition, then that is the result of the linking;
   otherwise, everything is necessarily the same declaration, and that
@@ -107,28 +109,28 @@ In other words, running the analysis on a larger program may only give results t
 
 Somewhat surprisingly, (the global part of) the value analysis in
 CompCert 2.4 does not satisfy this monotonicity requirement because of
-its treatment of variables declared as both \cd{extern} and
-\cd{const}.  Figure~\ref{fig:constprop-bug} presents two C files that,
+its treatment of variables declared as both \code{extern} and
+\code{const}.  Figure~\ref{fig:constprop-bug} presents two C files that,
 when compiled separately and linked together, expose the bug.  Since
-the global variable \cd{xptr} is declared using the \cd{const}
+the global variable \code{xptr} is declared using the \code{const}
 qualifier, the global part of CompCert 2.4's value analysis assumes
 that it is uninitialized and therefore assigns it the abstract value
-$\bot$.  As a result, the value analysis deems that \cd{xptr} cannot
-possibly alias with \texttt{x}.  At the \cd{printf} statement, it
+$\bot$.  As a result, the value analysis deems that \code{xptr} cannot
+possibly alias with \texttt{x}.  At the \code{printf} statement, it
 hence deduces that $\texttt{x}=1$, and constant propagation
-``optimizes'' away the summation \cd{x+x} to the constant $2$, which
+``optimizes'' away the summation \code{x+x} to the constant $2$, which
 gets printed.  This analysis, however, is unsound.  In particular, the
-assumption that \cd{xptr} is uninitialized is invalid in the context
-of multiple separately compiled files: since \cd{xptr} is also
-declared as \cd{extern}, another file (\cd{b.c}) can provide a
+assumption that \code{xptr} is uninitialized is invalid in the context
+of multiple separately compiled files: since \code{xptr} is also
+declared as \code{extern}, another file (\code{b.c}) can provide a
 definition that initializes it.  And indeed, since the definition of
-\cd{xptr} in \cd{b.c} causes \cd{x} and \cd{xptr} to alias, the
+\code{xptr} in \code{b.c} causes \code{x} and \code{xptr} to alias, the
 correct result is $0$, not $2$.
 
 Restoring soundness of the value analysis is straightforward: one
 simple if rather crude fix (which has been adopted by CompCert 2.5
-since we reported the bug) is just to ignore the \cd{const} modifier
-on \cd{extern} declarations.  Having done that, it is easy to show
+since we reported the bug) is just to ignore the \code{const} modifier
+on \code{extern} declarations.  Having done that, it is easy to show
 that the analysis is monotone with respect to program linking and that
 therefore the initial state of loading a program satisfies the
 stronger invariant $\soundstate'(\vprg,\load(\vprg))$.
@@ -144,8 +146,8 @@ Generally, these environments are obtained by the respective programs ($ge=\rtlg
 The original CompCert 2.4 proof used the fact that
 $\vprg'=\mathcal{T}_{\rm cp}(\vprg)$ to establish a relationship
 between $ge$ and $ge'$.  It proved two basic properties relating the
-two global environments: (1) that they map each global variable name
-to the same block identifier, and (2) that if $ge$ maps a block
+two global environments: $(1)$ that they map each global variable name
+to the same block identifier, and $(2)$ that if $ge$ maps a block
 identifier to a function signature or definition $\vfds$, then $ge'$
 maps it to $\mathrm{transfun}(\vprg,\vfds)$, where $\mathrm{transfun}$
 applied to a function signature returns the same signature.  These
@@ -167,7 +169,7 @@ The few lines of the proof script that required editing were those invoking the 
 \paragraph{Adapting the Simulation Relation Definition}
 
 We move on to verifying the second level of compositional correctness, that of composition with the same compiler modulo optimization flags.
-As we have explained in \S\ref{sec:overview:LevelB}, for every optional optimization pass, we need to show that linking it against the identity compiler is sound.
+As we have explained in \Cref{sec:overview:LevelB}, for every optional optimization pass, we need to show that linking it against the identity compiler is sound.
 Since constant propagation is one of the optional optimization passes, we have to prove the following:
 \[
 \frac{
@@ -245,7 +247,7 @@ is in fact a simulation, we prove a helper lemma
 (\textit{transf\_step\_correct\_identical}) saying that, given two
 matching instruction states with $\vfd'=\vfd$, when the source state
 takes a step, the target state can also take a step and reach a
-matching state.  As explained in \S\ref{sec:overview:LevelB}, the
+matching state.  As explained in \Cref{sec:overview:LevelB}, the
 content of the proof of this helper lemma is already present in the
 existing simulation proof, just not in one place, so it simply needs
 to be extracted and consolidated.  We then adapt the proof of the main

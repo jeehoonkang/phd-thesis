@@ -35,7 +35,7 @@ concrete block starting at an address $p$.
 %% quasi-concrete model does not distinguish between the address $(l,i)$
 %% and the integer $p+i$ (\ie they are completely identified).
 In this case, the address $(l,i)$ can be cast to the integer $p+i$
-and vice versa (see \S\ref{langsem} for details).
+and vice versa (see \Cref{langsem} for details).
 
 As in the concrete model, the list of allocated (\ie valid) blocks with concrete addresses must be consistent: they should not include 0 or the maximum address, and their ranges should be disjoint. Logical blocks have no such requirement, since they are non-overlapping by construction.
 %\label{model:issues}
@@ -92,15 +92,15 @@ q = (ptr) a;
 \caption{Arithmetic Optimization Example I}\label{code:arith1}
 \end{figure}
 %
-See \S\ref{ex:arith1} for how to verify this optimization in our quasi-concrete model.
+See \Cref{ex:arith1} for how to verify this optimization in our quasi-concrete model.
 
 Furthermore, while our quasi-concrete model does disallow some optimizations based on exclusive ownership (since once a block has become concrete it is non-exclusive for the remainder of the execution), we expect that our model would not lose many optimization
 opportunities in practice. This is because exclusively owned blocks are mostly local or temporary ones,
-  so that their concrete addresses are unlikely to be used by integer operations. See \S\ref{idea:downside} for further details.
+  so that their concrete addresses are unlikely to be used by integer operations. See \Cref{idea:downside} for further details.
 
 \subsection{Choosing Concrete Blocks}
 \label{idea:cast}
-As discussed in \S\ref{backgrounds:concrete}, using concrete addresses for memory locations provides no guarantees of ownership, and thus prevents certain optimizations. In the worst case, one function could guess the concrete address of a supposedly-private resource of another function, and then forge a pointer to that address and modify it. In order to maximize the range of optimizations that can be performed, a hybrid model should assign concrete addresses to as few blocks as possible.
+As discussed in \Cref{backgrounds:concrete}, using concrete addresses for memory locations provides no guarantees of ownership, and thus prevents certain optimizations. In the worst case, one function could guess the concrete address of a supposedly-private resource of another function, and then forge a pointer to that address and modify it. In order to maximize the range of optimizations that can be performed, a hybrid model should assign concrete addresses to as few blocks as possible.
 
 The natural choice, then, is to make concrete only those blocks whose concrete addresses are really used in some operation. If we perform some computation with the value of a pointer that only makes sense when that value is an integer (\eg % using it as an offset into another block
 comparing it with an integer value) then the target of that pointer must have a real address. In all other cases, even if the address of the block is taken, we could conceivably use a logical value and maintain the ownership guarantees of the logical model. However, this approach has a serious problem: it does not justify some important integer optimizations, such as a dead code elimination presented in Figure~\ref{code:dce}.
@@ -142,8 +142,8 @@ bar();
 
 Instead, we make concrete those blocks whose addresses are cast to integers, 
 even if the cast integers are not used in any operation. This gives us a simple way to determine which blocks should be made concrete, and avoids making integer operations memory-relevant 
-(see \S\ref{ex:dce} for how to verify this example in the
-quasi-concrete model). In practice, this choice also allows most of the optimizations that would be performed in the minimally-concrete model (see \S\ref{idea:downside} for details).
+(see \Cref{ex:dce} for how to verify this example in the
+quasi-concrete model). In practice, this choice also allows most of the optimizations that would be performed in the minimally-concrete model (see \Cref{idea:downside} for details).
 
 \subsection{Assigning Concrete Addresses}
 \label{idea:ownership}
@@ -206,7 +206,7 @@ the allocated block is initially logical and becomes concrete when cast to an
 integer (possibly in the call to \texttt{hash\_put}). At this point, the ownership of the block is transferred from
 private to public. Since \texttt{a} is treated as logical up until the
 call to \texttt{hash\_put}, we can perform constant propagation as
-normal before the call. (For formal details, see \S\ref{ex:ownership}.)
+normal before the call. (For formal details, see \Cref{ex:ownership}.)
 
 On the other hand, the above model with
 non-deterministic allocation does not allow such optimizations.
@@ -226,8 +226,8 @@ Thus, you lose the ownership over the block and cannot justify the constant prop
 
 \subsection{Operations on Pointers}
 
-In \S\ref{idea:cast}, we explained that the fewer blocks we make concrete, the more we can take advantage of the ownership guarantees provided by logical blocks. We have seen that operations that require pointers to have integer values force a lower bound on the number of blocks that must be made concrete. As such, we can improve our model by reducing the number of operations that require concrete addresses. We take our cue from CompCert's memory model, in which several arithmetic operations, such as integer-pointer addition and subtraction of pointers from pointers in the
-same block, are well-defined even in the absence of a concrete address (see \S\ref{backgrounds:logical}). 
+In \Cref{idea:cast}, we explained that the fewer blocks we make concrete, the more we can take advantage of the ownership guarantees provided by logical blocks. We have seen that operations that require pointers to have integer values force a lower bound on the number of blocks that must be made concrete. As such, we can improve our model by reducing the number of operations that require concrete addresses. We take our cue from CompCert's memory model, in which several arithmetic operations, such as integer-pointer addition and subtraction of pointers from pointers in the
+same block, are well-defined even in the absence of a concrete address (see \Cref{backgrounds:logical}). 
 
 One disadvantage of CompCert's approach to arithmetic operations is that it invalidates some important arithmetic optimizations, such as the optimization presented in Figure~\ref{code:arith2}, by introducing logical addresses as possible values for integer-typed variables. 
 To see this, suppose that the integer variables \texttt{a}, \texttt{b}, \texttt{c1}, and \texttt{c2} contain the same logical address $(l,0)$. The source program shown will successfully assign $(l,0)$ to the variables \texttt{d1} and \texttt{d2}, because \texttt{b - c1} and \texttt{b - c2} evaluate to $0$. However, in the target, the variable $\texttt{t}$ gets an unspecified value, because the addition of two logical addresses is undefined. Thus, the target has more behaviors than the source, and the optimization is invalid.
@@ -256,9 +256,9 @@ d2 = t - c2;
 
 We avoid this disadvantage through the use of type checking. 
 As in the LLVM IR, we use types to ensure that integer variables contain only integer values.
-This allows us to justify the full range of arithmetic optimizations on integer variables (see \S\ref{ex:arith2} for details), 
+This allows us to justify the full range of arithmetic optimizations on integer variables (see \Cref{ex:arith2} for details), 
 while also giving semantics to the operations on logical addresses when possible.
-See \S\ref{langsem} for an example of type-dependent semantics of arithmetic operations in our model.
+See \Cref{langsem} for an example of type-dependent semantics of arithmetic operations in our model.
 
 \subsection{Dead Cast Elimination}
 \label{idea:deadcast}
@@ -294,7 +294,7 @@ For instance, consider the dead call elimination optimization presented in Figur
 the target use the quasi-concrete model, due to the cast operation in the
 function. It is also not valid when both the source and the target use
 the concrete memory, due to the allocation in the function. However, the optimization is valid when the source uses the
-quasi-concrete model and the target uses the fully concrete model (see \S\ref{ex:deadcast} for formal details).
+quasi-concrete model and the target uses the fully concrete model (see \Cref{ex:deadcast} for formal details).
 
 \begin{figure}[t]
 \center
@@ -344,13 +344,13 @@ bar();
 \end{figure}
 
 Although our solution does not justify the removal of all dead casts,
-it should cover most of them in practice (see \S\ref{idea:downside}).
+it should cover most of them in practice (see \Cref{idea:downside}).
 
 %% To sum up, ...  
 
 %% We do not have any practically meaningful optimizations justified in
 %% symbolic model but not justified in our concolic model
-%% (see \S\ref{idea:downside} for details).
+%% (see \Cref{idea:downside} for details).
 
 \subsection{Drawbacks of the Quasi-Concrete Model}
 \label{idea:downside}
@@ -366,7 +366,7 @@ integers in actual programs are unlikely to be completely local. There are few r
 
 For instance, consider the following example of a simple program in which we might want to perform a locality optimization even after casting a pointer to an integer.
 The program is a variant of 
-the example in \S\ref{idea:deadcast}, in which we cast \texttt{q} into an integer instead of~\texttt{p},
+the example in \Cref{idea:deadcast}, in which we cast \texttt{q} into an integer instead of~\texttt{p},
 so that in our model the local block becomes concrete and cannot be eliminated.
 Although this optimization cannot be performed in our framework, the function \texttt{foo} is nothing but an %silly pseudo random 
 unpredictable number generator, and is unlikely to occur in real programs.
@@ -416,7 +416,7 @@ bar();
 \end{center}
 
 Another, more reasonable limitation of our model occurs when one privately uses a local block for some time, then casts its address to an integer and releases it to the
-public (\eg by using the integer as a key for hash table).  Consider the following example, which is a variant of the example in \S\ref{idea:ownership},
+public (\eg by using the integer as a key for hash table).  Consider the following example, which is a variant of the example in \Cref{idea:ownership},
 where we cast the address of a newly allocated block into an integer
 and use the integer as a key for hash table:
 \begin{center}
@@ -467,7 +467,7 @@ used.
 %% usual C programs anyway, and thus it is not a serious drawback.
 
 %% For example, consider a variant of the dead cast elimination example
-%% in \S\ref{ex:deadcast} (LHS below).  In this example, the function
+%% in \Cref{ex:deadcast} (LHS below).  In this example, the function
 %% \texttt{foo} allocates a block and cast its address to an integer.  In
 %% our framework, the function \texttt{foo} is never read-only and thus
 %% we cannot eliminate call to \textt{foo} even when the source has a
@@ -633,7 +633,7 @@ used.
 
 \subsection{Language Semantics}
 
-This section describes how to use the ideas of the quasi-concrete memory model to give semantics to the C-like language of \S\ref{backgrounds}.
+This section describes how to use the ideas of the quasi-concrete memory model to give semantics to the C-like language of \Cref{backgrounds}.
 
 \paragraph{NULL pointer} 
 We represent the NULL pointer as the logical address $(0,0)$ and 
@@ -641,9 +641,9 @@ initialize the block $0$ as follows:
 \[
 m(0) = (v,p,n,c) \text{ with } v=\texttt{true}, p=0, n=1.
 \]
-The only special treatment of the block $0$ is that we $(i)$ raise
+The only special treatment of the block $0$ is that we $(1)$ raise
 undefined behavior when accessing it via a load or a store;
-and $(ii)$ do nothing when freeing it (because \texttt{free(0)} is allowed in C).
+and $(2)$ do nothing when freeing it (because \texttt{free(0)} is allowed in C).
 
 \paragraph{Casting between Integers and Pointers}
 We first define casting between integers and logical addresses via \emph{reification} and \emph{validity checking}.

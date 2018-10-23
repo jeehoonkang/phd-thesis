@@ -253,7 +253,7 @@ pointers to concrete blocks and integers.
 Most importantly, while their approach gives semantics to non-strictly-conforming C programs involving bit-masking of pointers and
 uninitialized values, it fails to define useful programs that use
 integer-pointer casts.  Consider the \texttt{hash\_put} example
-discussed in \S\ref{idea:ownership}, where a pointer is hashed and
+discussed in \Cref{idea:ownership}, where a pointer is hashed and
 then presumably used to index into an array.  Since the resulting
 memory location will depend on the concrete layout of memory, the
 resulting program will have undefined behavior in their semantics.  In

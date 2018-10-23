@@ -470,18 +470,14 @@ That is, for every well-formed source RTL program $\vprg$, it proves
 there exists a simulation $R(\vprg)$ such that 
 $(\mathrm{load}(\vprg),\mathrm{load}(\mathcal{T}_\mathrm{cp}(\vprg)))\in R(\vprg)$.
 
-The simulation relation, $R$, used for the constant propagation pass
-is given in Figure~\ref{fig:part0-rel}.  It is defined in terms of
-matching relations on states, stack frames, and stacks and function
-definitions ($\simState$, $\simFrame$, $\simStack$, and $\simFun$
-respectively).  These relations take as a parameter the source
-program, $\vprg$, which is used to relate the function definitions of
-the source and target programs.\footnote{The version shown here is a
-  slight simplification of the actual simulation used in the constant
-  propagation pass.  It abstracts away some tedious details of the
-  actual $\simFrame$ definition that are orthogonal to the problem of
-  porting the simulation proof to \sepcomp{}.  This is merely to
-  streamline the presentation.}
+The simulation relation, $R$, used for the constant propagation pass is given in
+Figure~\ref{fig:part0-rel}.  It is defined in terms of matching relations on states, stack frames,
+and stacks and function definitions ($\simState$, $\simFrame$, $\simStack$, and $\simFun$
+respectively).  These relations take as a parameter the source program, $\vprg$, which is used to
+relate the function definitions of the source and target programs.\footnote{The version shown here
+  is a slight simplification of the actual simulation used in the constant propagation pass.  It
+  abstracts away some tedious details of the actual $\simFrame$ definition that are orthogonal to
+  our story.  This is merely to streamline the presentation.}
 
 We say that two function definitions are related in the program $\vprg$, written $\vfd \simFun \vfd'$, 
 if the target function, $\vfd'$, is the result of applying constant propagation to the source function, $\vfd$.
@@ -495,26 +491,26 @@ Two stacks are related, $\vprg \vdash s\simStack s'$, if they have the same leng
 % TODO
 
 Two states are related, $\vprg \vdash s \simState s'$
-if (1) they are of the same kind, 
-(2) the memory of $s'$ is an extension of that of $s$, 
+if $(1)$ they are of the same kind, 
+$(2)$ the memory of $s'$ is an extension of that of $s$, 
 %\todo{jeehoon: do we need to explain lessdef and extends relations?}
-(3) their stacks are related by $\simStack$,
-(4) the respective function definitions are related by $\simFun$ (when applicable),
-(5) the stack pointer and program counter agree (when applicable), and
-(6) the registers/arguments/return value of $s$ is equal or less defined than that of $s'$. 
+$(3)$ their stacks are related by $\simStack$,
+$(4)$ the respective function definitions are related by $\simFun$ (when applicable),
+$(5)$ the stack pointer and program counter agree (when applicable), and
+$(6)$ the registers/arguments/return value of $s$ is equal or less defined than that of $s'$. 
 
 Finally, the two states are in the simulation relation $R$
 if they are related by $\simState$ and 
 the source state satisfies the value analysis invariant, $\soundstate(\vprg,s)$.
 This invariant basically says that the (concrete) value of each variable in the state $s$ is included in the variable's abstract value computed by the analysis at the current program point.
 The invariant depends on the program for two reasons:
-(1) so that it can calculate the global environment, $ge=\rtlgenv(\vprg)$, and
-(2) so that it can `run' the analysis on the program so as to be able to compare its results with the current state.
+$(1)$ so that it can calculate the global environment, $ge=\rtlgenv(\vprg)$, and
+$(2)$ so that it can `run' the analysis on the program so as to be able to compare its results with the current state.
 
 
 The basic soundness properties of the value analysis are
-(1) that the $\soundstate$ invariant holds for the initial state of a program, and
-(2) that it is preserved by execution steps.
+$(1)$ that the $\soundstate$ invariant holds for the initial state of a program, and
+$(2)$ that it is preserved by execution steps.
 Formally:
 \[
 \frac{s = \rtlload(\vprg)}{
@@ -532,9 +528,9 @@ Formally:
 }
 \]
 
-The CompCert proof then establishes (i) that
+The CompCert proof then establishes $(1)$ that
 \[(\mathrm{load}(\vprg),\mathrm{load}(\mathcal{T}_\mathrm{cp}(\vprg)))\in
-R\] and (ii) that $R$ is a simulation relation. As for (i), the
+R\] and $(2)$ that $R$ is a simulation relation. As for $(1)$, the
 initial states after loading satisfy $\simState$ by construction, and
 the initial source state satisfies $\soundstate$ thanks to the
 soundness of the value analysis above.

@@ -2,7 +2,7 @@
 \label{sec:sepcomp:overview}
 
 We begin by explaining our Level A and Level B notions of compositional correctness and our
-techniques for establishing them (\S\ref{sec:overview:LevelA} and \S\ref{sec:overview:LevelB}).  We
+techniques for establishing them (\Cref{sec:overview:LevelA} and \Cref{sec:overview:LevelB}).  We
 also briefly give some intuition as to why it is easy to adapt CompCert's verification to employ our
 new techniques, but we leave a more thorough explanation of this adaptation to subsequent sections.
 Throughout the section, we keep the presentation semi-formal, abstracting away unnecessary detail to
@@ -46,26 +46,31 @@ t = \mathrm{load}(\mathtt{t}_1\mathtt{.asm}\circ \ldots \circ \mathtt{t}_n\matht
 Here, $\circ$ represents simple \emph{syntactic} linking, \ie
 essentially concatenation of files (plus checks to make sure that
 externally declared variables/functions have the expected types).  See
-\S\ref{sec:adaptconstprop} for further details about syntactic
+\Cref{sec:sepcomp:constprop} for further details about syntactic
 linking.
-% \footnote{See \S\ref{??} for further details about syntactic
+% \footnote{See \Cref{??} for further details about syntactic
 %   linking.  Such a trivial notion of linking is no longer possible in
 %   the recently released CompCert 2.5, due to the introduction of
-%   support for \cd{static} variables.  See \S\ref{sec:related} for
+%   support for \code{static} variables.  See \Cref{sec:related} for
 %   further discussion of this point.}
+
+It is worth noting that the end-to-end correctness of whole-program copmilation defined in
+\Cref{sec:background:correctness} is just a degenerate case of the Level A correctness in which
+there is only one source code, \ie $i=1$.
 
 \newcommand{\mys}[1]{\mathtt{s}_{#1}}
 \newcommand{\myt}[1]{\mathtt{t}_{#1}}
 
 \paragraph{Per-Pass Correctness}
 
-To prove that compiler $\mathcal{C}$ satisfies Level A compositional correctness, we again want to
-reduce the problem to one of verifying the individual passes of $\mathcal{C}$.  The key idea here,
-as illustrated in Figure~\ref{fig:LevelA} where three separately-compiled modules go through two
-compiler passes $\mathcal{T}_1$ and $\mathcal{T}_2$, is that since we know that the source modules
-are all compiled via the exact same sequence of passes, we can verify their compilations in lock
-step as if each pass is applied to all modules simultaneously.  In other words, it suffices to
-verify that, for each pass $\mathcal{T}$ from $L_1$ to $L_2$, the following holds:
+To prove that compiler $\mathcal{C}$ satisfies Level A compositional correctness, we want to reduce
+the problem to one of verifying the individual passes of $\mathcal{C}$, as we did for the end-to-end
+correctness of whole-program compilation.  The key idea here, as illustrated in
+Figure~\ref{fig:LevelA} where three separately-compiled modules go through two compiler passes
+$\mathcal{T}_1$ and $\mathcal{T}_2$, is that since we know that the source modules are all compiled
+via the exact same sequence of passes, we can verify their compilations in lock step as if each pass
+is applied to all modules simultaneously.  In other words, it suffices to verify that, for each pass
+$\mathcal{T}$ from $L_1$ to $L_2$, the following holds:
 % Here, we show the case of three separately-compiled modules and two compiler passes,
 % $\mathcal{T}_1$ and $\mathcal{T}_2$.  Since the compilations march in lock step, we can verify
 % each pass as applied to all modules simultaneously.
@@ -86,61 +91,53 @@ As before, these per-pass correctness results can be transitively
 composed to immediately conclude end-to-end correctness of
 $\mathcal{C}$.
 
-\paragraph{Verifying Per-Pass Correctness}
-So how do we prove this Level A per-pass correctness condition?
-Assuming that we have already proven whole-program per-pass correctness
-and are trying to port the proof over, there are two cases.
+So how do we prove this Level A per-pass correctness condition?  Assuming that we have already
+proven whole-program per-pass correctness and are trying to port the proof over, there are two
+cases.
 
-\textbf{Trivial case:} Many compiler passes are inherently
+\paragraph{Verifying Per-Pass Correctness for Trivial Case}
+
+Many compiler passes are inherently
 compositional, transforming the code of each module independently, \ie
 in a way that is agnostic to the presence of other modules.  Put
 another way, such compiler passes commute with linking:
 \[
 \mathcal{T}(\mathtt{s}_1\mathtt{.l1})\circ \ldots \circ \mathcal{T}(\mathtt{s}_n\mathtt{.l1}) = \mathcal{T}(\mathtt{s}_1\mathtt{.l1}\circ \ldots \circ \mathtt{s}_n\mathtt{.l1})
 \]
-If this commutativity property holds for a pass $\mathcal{T}$, then
-Level A per-pass correctness becomes a trivial corollary of
-whole-program per-pass correctness, where we instantiate the \cd{s.l1}
-from \S\ref{sec:overview:compcert} with $\mathtt{s}_1\mathtt{.l1}\circ
-\ldots \circ \mathtt{s}_n\mathtt{.l1}$.  In verifying Level A
-correctness for CompCert 2.4, we found that 13 of its 19 passes fell
-into this trivial case.
+If this commutativity property holds for a pass $\mathcal{T}$, then Level A per-pass correctness
+becomes a trivial corollary of whole-program per-pass correctness, where we instantiate the
+\code{s.l1} from \Cref{sec:background:correctness} with
+$\mathtt{s}_1\mathtt{.l1}\circ \ldots \circ \mathtt{s}_n\mathtt{.l1}$.  In verifying Level A
+correctness for CompCert 2.4, we found that 13 of its 19 passes fell into this trivial case.
 
-\textbf{Non-trivial case:} If the trivial commutativity argument does
-not apply, then there is some new work to do to port a proof of
-whole-program per-pass correctness to Level A per-pass correctness.
+\paragraph{Verifying Per-Pass Correctness for Non-trivial Case}
 
-However, at least for CompCert, we found it very easy to perform this
-adaptation.  Why?  First of all, since Level A correctness assumes
-that all modules in the program are transformed in the same way, we
-can essentially reuse the simulation relation $R$ for pass
-$\mathcal{T}$ that was used in the original CompCert verification.
+If the trivial commutativity argument does not apply, then there is some
+new work to do to port a proof of whole-program per-pass correctness to Level A per-pass
+correctness.
 
-We do, however, have to worry about the soundness of the program
-analyses that the compiler performs, because the correctness of the
-compiler rests to a large extent on the correctness of these analyses.
-To prove Level A correctness of these analyses, we must prove that
-they remain sound even when they only have access to a single module
-in the program rather than the whole program.  Intuitively, this
-should follow easily if: (1) the analyses have been proven sound under
-the assumption that they are fed the whole program (CompCert has done
-that already), \emph{and} (2) the analyses are \emph{monotone},
-meaning that they only become \emph{more conservative} when given
-access to a smaller fragment of the program (as happens with separate
-compilation).
+However, at least for CompCert, we found it very easy to perform this adaptation.  Why?  First of
+all, since Level A correctness assumes that all modules in the program are transformed in the same
+way, we can essentially reuse the simulation relation $R$ for pass $\mathcal{T}$ that was used in
+the original CompCert verification.
 
-In adapting CompCert to Level A correctness, the main work was
-therefore in verifying that its program analyses were indeed monotone.
-This was largely straightforward, with one exception: the ``value
-analysis'' employed by several optimizations was not monotone.  It
-made an assumption about variables declared as \cd{extern const},
-which was valid for whole-program compilation, but not in the presence
-of separate compilation.  As we explain in detail in
-\S\ref{sec:adaptconstprop}, this manifested itself as a bug in
-constant propagation when linking separately-compiled files.  After we
-fixed this bug in value analysis, monotonicity became straightforward
-to show, and thus so did Level A correctness (for the remaining 6
-passes that did not fall into the trivial case).
+We do, however, have to worry about the soundness of the program analyses that the compiler
+performs, because the correctness of the compiler rests to a large extent on the correctness of
+these analyses.  To prove Level A correctness of these analyses, we must prove that they remain
+sound even when they only have access to a single module in the program rather than the whole
+program.  Intuitively, this should follow easily if: $(1)$ the analyses have been proven sound under
+the assumption that they are fed the whole program (CompCert has done that already), \emph{and}
+$(2)$ the analyses are \emph{monotone}, meaning that they only become \emph{more conservative} when
+given access to a smaller fragment of the program (as happens with separate compilation).
+
+In adapting CompCert to Level A correctness, the main work was therefore in verifying that its
+program analyses were indeed monotone.  This was largely straightforward, with one exception: the
+``value analysis'' employed by several optimizations was not monotone.  It made an assumption about
+variables declared as \code{extern const}, which was valid for whole-program compilation, but not in
+the presence of separate compilation.  As we explain in detail in \Cref{sec:sepcomp:constprop}, this
+manifested itself as a bug in constant propagation when linking separately-compiled files.  After we
+fixed this bug in value analysis, monotonicity became straightforward to show, and thus so did Level
+A correctness (for the remaining 6 passes that did not fall into the trivial case).
 
 
 
@@ -257,8 +254,8 @@ necessarily reflexive and thus does not necessarily relate the
 execution of code from $\mathtt{u}_i\mathtt{.rtl}$ (or
 $\mathtt{v}_j\mathtt{.rtl}$) with itself.  Instead, we must use an
 amended simulation $R'$, which accounts for two possibilities: either
-we are executing code from \cd{s} on one side of the simulation and
-code from \cd{t} on the other, in which case the proof that $R'$ is
+we are executing code from \code{s} on one side of the simulation and
+code from \code{t} on the other, in which case the proof that $R'$ is
 indeed a simulation proceeds essentially as did the proof that $R$
 was a simulation; or we are executing code from
 $\mathtt{u}_i\mathtt{.rtl}$ (or $\mathtt{v}_j\mathtt{.rtl}$), in which

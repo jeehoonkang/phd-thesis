@@ -43,7 +43,7 @@ foo(ptr p) {
 
 We will argue that at each line in the two versions of foo (source and target), the effects of the instruction executed (if any) are equivalent. To do so, we will assume an initial relationship between the memory of the source and target programs, and show that some variant of that relationship persists throughout the function, relying on any call to other functions to maintain a similar relationship. 
 
-This relationship will designate one section of each memory as \emph{public}, and require that related locations in the source and target public memories have equivalent values; it will also designate a \emph{private} section of each memory, such that the source program can make changes to its private memory when the target does not make corresponding changes and vice versa. For the technical details of this relation and our notion of equivalence, see \S\ref{reasoning:invariants}.
+This relationship will designate one section of each memory as \emph{public}, and require that related locations in the source and target public memories have equivalent values; it will also designate a \emph{private} section of each memory, such that the source program can make changes to its private memory when the target does not make corresponding changes and vice versa. For the technical details of this relation and our notion of equivalence, see \Cref{reasoning:invariants}.
 
 \begin{figure}
 \center
@@ -109,7 +109,7 @@ the private memories are untouched (see Figure~\ref{fig:invex}~(c)):
 \begin{description}
 \item[assume] (equivalent public memories) we have new public memories $m'_\textrm{pub:src}$ and
   $m'_\textrm{pub:tgt}$, which are \emph{evolved} from $m_\textrm{pub:src}$
-  and $m_\textrm{pub:tgt}$ (see \S\ref{reasoning:simulation} for the definition of memory evolution), and 
+  and $m_\textrm{pub:tgt}$ (see \Cref{reasoning:simulation} for the definition of memory evolution), and 
   are equivalent and publicly accessible;
 \item[assume] (source private memory) $m_\textrm{prv:src} \uplus
   {[l\mapsto 123]}$ is unchanged;
@@ -154,7 +154,7 @@ The idea of memory equivalence is a simplification of CompCert's
 memory injection \cite{Leroy-Appel-Blazy-Stewart-memory-v2}.  Our
 conditions for concrete blocks are inspired from CompCertTSO's support
 for finite memory \cite{vsevvcik2013compcerttso}.  See
-\S\ref{sec:discussion} for more comparisons.
+\Cref{sec:discussion} for more comparisons.
 
 %%  in the source and the
 %% target are exactly the same because optimizations like DAE may remove
@@ -186,7 +186,7 @@ they are logical addresses that are at the same offset in corresponding blocks
   \includegraphics[scale=0.25]{figure/logical-block.png} logical block\\
   \mbox{}
   \end{minipage}
-%% (1) for CompCert model, and (2) for our model
+%% $(1)$ for CompCert model, and $(2)$ for our model
 \caption{Memory Invariants for Quasi-Concrete Model}\label{fig:invariant}
 \end{figure}
 
@@ -201,9 +201,9 @@ coincide.
 
 The third case (\ie source: concrete, target: logical) should not be
 allowed. To allow this case would be to allow the source memory to contain more concrete
-blocks than the target, which leads to two problems: $(i)$ an arbitrary
+blocks than the target, which leads to two problems: $(1)$ an arbitrary
 concrete memory access may succeed in the source but fail in the
-target; and $(ii)$ a pointer-to-integer cast may raise out-of-memory
+target; and $(2)$ a pointer-to-integer cast may raise out-of-memory
 in the source but succeed in the target.  In both cases, the target
 may have more behaviors than the source, which is disallowed.  On the
 other hand, the final case (\ie source: logical, target: concrete) is
@@ -221,9 +221,9 @@ allowed in memory equivalence: the source memory should not contain
 more concrete blocks than the target memory.
 
 \paragraph{Memory Invariants}
-A memory invariant $\beta$ consists of $(i)$ a bijection $\alpha$ between their
-block identifiers, $(ii)$ the source's private memory
-$m_\textrm{prv:src}$, and $(iii)$ the target's private memory
+A memory invariant $\beta$ consists of $(1)$ a bijection $\alpha$ between their
+block identifiers, $(2)$ the source's private memory
+$m_\textrm{prv:src}$, and $(3)$ the target's private memory
 $m_\textrm{prv:tgt}$. 
 %% Recall that we call two memories equivalent when
 %% their public sections are equivalent up to the bijection between block
@@ -311,10 +311,10 @@ $\beta_\textrm{c}$ should include the bijection of ${\beta_\textrm{s}}$ because
 logical blocks cannot be removed during execution (a block
 becomes invalid rather than removed when it is freed).  Second, the other
 conditions on the public memories in ${\beta_\textrm{s}}$ and
-$\beta_\textrm{c}$ are that $(i)$ the size of a block does not change
-between ${\beta_\textrm{s}}$ and $\beta_\textrm{c}$, $(ii)$ an
+$\beta_\textrm{c}$ are that $(1)$ the size of a block does not change
+between ${\beta_\textrm{s}}$ and $\beta_\textrm{c}$, $(2)$ an
 invalid block in ${\beta_\textrm{s}}$ cannot become valid in
-$\beta_\textrm{c}$, and $(iii)$ a concrete block in
+$\beta_\textrm{c}$, and $(3)$ a concrete block in
 ${\beta_\textrm{s}}$ cannot become logical in $\beta_\textrm{c}$.
 However, it is important to note that the contents of public memories
 can change between ${\beta_\textrm{s}}$ and $\beta_\textrm{c}$ because
@@ -343,7 +343,7 @@ In this way, we construct a local simulation proof for the $\texttt{foo}$.
 \subsection{Examples}
 \label{sec:intptrcast:compiler-verification:examples}
 
-In this section, we show how to verify the examples shown in \S\ref{sec:quasi}.  All
+In this section, we show how to verify the examples shown in \Cref{sec:quasi}.  All
 results here are fully formalized in Coq.
 
 \paragraph{Arithmetic Optimization I}
@@ -388,7 +388,7 @@ execute it in the source.%  In this way, we can easily verify this
 
 Consider the transformation in Figure~\ref{code:ownership}.  This
 example is similar to the running example in
-\S\ref{reasoning:running}.
+\Cref{reasoning:running}.
 
 Assume that the first invariant below holds before the \texttt{malloc}.  After
 allocating blocks $l_\text{s}$ in the source and $l_\text{t}$ in
@@ -455,7 +455,7 @@ sections.
 \paragraph{Arithmetic Optimization II}
 
 We can easily verify the transformation in Figure~\ref{code:arith2}
-for the same reason as in \S\ref{ex:arith1}: because we can assume
+for the same reason as in \Cref{ex:arith1}: because we can assume
 that all integer variables contain integer values.
 
 % \begin{itemize}
