@@ -152,8 +152,8 @@ widely accepted in the systems programming community, \eg{} the Linux community 
 dialect of C that supports much less compiler optimizations and is closer to the assembly language
 than ISO C18.
 
-TODO: explain the problems in more details.  Too many undefined behaviors, conflicts among
-optimizations.  ISO C18 is English prose.
+\jeehoon{explain the problems in more details.  Too many undefined behaviors, conflicts among
+  optimizations.  ISO C18 is English prose.}
 
 
 \subsection{The Prior Art: Formal Semantics and Compiler Verification}
@@ -242,7 +242,7 @@ The key novel idea behind our semantics is the notion of concretization: when al
 block is not assigned a concrete address yet; only when it is required by a pointer-to-integer cast,
 the block is lazily assigned a concrete address, \ie{} the block is concretized.
 
-TODO: impact.
+\jeehoon{impact.}
 
 % The ISO C standard does not specify the semantics of many valid programs that use non-portable
 % idioms such as integer-pointer casts. Recent efforts at formal definitions and verified
@@ -276,7 +276,7 @@ write in the future, thus enabling other threads to read from that write out of 
 to prevent out-of-thin-air behaviors, a promise step requires a thread-local certification that it
 will be possible to execute the promised write even in the absence of the promise.
 
-TODO: impact.
+\jeehoon{impact.}
 
 This chapter draws heavily on the work and writing in the following paper:
 

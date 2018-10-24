@@ -3,14 +3,13 @@
 
 We begin by briefly reviewing the technical background that informs the rest of this dissertation,
 using CompCert as the learning material.  We first explain CompCert's correctness statement, as well
-as its closed-simulation verification method (\Cref{sec:background:correctness}).  To flesh out the
-details on formal semantics and compiler verification, we use constant propagation---one of
-CompCert's optimizations---as a running example.  Specifically, We review the RTL language on which
-constant propagation is performed (\Cref{sec:background:rtl}) and CompCert's memory model that is
-designed to verify compiler optimizations (\Cref{sec:background:memory}), and explain how constant
-propagation works and how CompCert verifies it (\Cref{sec:background:constprop}).  Throughout the
-section, we keep the presentation semi-formal, abstracting away unnecessary detail to get across the
-main ideas.
+as its simulation verification method (\Cref{sec:background:correctness}).  To flesh out the details
+on formal semantics and compiler verification, we use constant propagation---one of CompCert's
+optimizations---as a running example.  Specifically, We review the RTL language on which constant
+propagation is performed (\Cref{sec:background:rtl}) and CompCert's memory model that is designed to
+verify compiler optimizations (\Cref{sec:background:memory}), and explain how constant propagation
+works and how CompCert verifies it (\Cref{sec:background:constprop}).  Throughout this section, we
+keep the presentation semi-formal, abstracting away unnecessary detail to get across the main ideas.
 
 
 \subsection{Compiler Correctness}
@@ -41,65 +40,33 @@ target-level output of $\mathcal{C}$, \emph{refines} its source-level input, \co
 
 % The standard notion of compiler correctness is behavioral refinement, which states that \emph{the
 %   set of target program behaviors must be a subset of the set of source program behaviors}.
-We consider sets of behaviors as opposed to single behaviors because in general a program may have
-multiple behaviors due to nondeterminism.  Given a set of I/O events that the program may generate,
-a behavior is one of the following three forms:
-\begin{itemize}
-\item A terminating execution producing a finite sequence of I/O events,
-  $e_1, \cdots, e_n, \mathtt{term}$
-\item A diverging execution that has produced only a finite sequence of I/O events,
-  $e_1, \cdots, e_n, \mathtt{nonterm}$.
-\item A diverging execution producing an infinite sequence of I/O events,
-  $e_1, \cdots, e_n, \cdots$.
-\end{itemize}
+We consider sets of behaviors as opposed to single behaviors because a program may produce multiple
+behaviors due to nondeterminism.  Given a set of I/O events that programs may generate and users may
+observe, a behavior is one of the following three forms: $(1)$ a terminating execution producing a
+finite sequence of I/O events, $e_1, \cdots, e_n, \mathtt{term}$; $(2)$ a diverging execution that
+has produced only a finite sequence of I/O events, $e_1, \cdots, e_n, \mathtt{nonterm}$; and $(3)$ a
+diverging execution producing an infinite sequence of I/O events, $e_1, \cdots, e_n, \cdots$.
 
-We regard \emph{the undefined behavior as described in the ISO C standards as the set of all
-  behaviors}.  This captures the intuitive properties of compilers on undefined behavior: if the
-target program's behavior is undefined, then the source program's behavior is also undefined.  If
-the source program's behavior is undefined, then compiler can choose any program as its result.
-
-Then what is the set of behaviors of out of memory?\footnote{In ISO C18 Standard~\cite{iso2018iec},
-  \texttt{malloc} returns $0$ in case of out-of-memory [\S7.22.3 paragraph~1].  TODO: check.
-  However, this semantics does not justify dead allocation eliminations.  The reason is that, for
-  example, if a dead malloc is eliminated, then the source may have more allocated blocks than the
-  target has and thus a subsequent allocation may return 0 in the source but return a valid pointer
-  in the target.}
-  %% In C11
-  %% Standard~\cite{iso2011iec}, \texttt{malloc} returns $0$ when out of memory
-  %% (7.22.3 paragraph 1).  However, this semantics does not justify
-  %% memory optimizations, such as dead allocation eliminations, since
-  %% the a \texttt{malloc} in the target may return $0$ while the
-  %% corresponding \texttt{malloc} in the source may return a valid
-  %% pointer.
-%This question arises naturally,
-%since integer-pointer casts inherently introduce out of memory.
-We should allow the target program to run out of memory even if the source program does not, because
-important compiler transformations such as register allocation may increase the program's memory
-requirements.  Dually, since running out of memory is not that serious a problem for programmers as
-is genuine undefined behavior (\eg accessing freed memory), the target behavior of a source program
-running out of memory should not be arbitrary, but should match the source behavior and also run out
-of memory.  Thus we model \emph{out of memory as the empty set of behaviors}, or in other words, no
-behaviors, following CompCertTSO~\cite{vsevvcik2013compcerttso}.
-
-However, what happens if there were I/O events prior to the out-of-memory error?  Discarding I/O
-events before running out of memory is absurd: the target program should always perform a prefix of
-the events the source program could have performed.  To handle this, we also observes \emph{partial
-  behaviors}, possibly before discarding behavior due to running out of memory:
-
-
-\begin{itemize}
-\item A partial execution of the program that has produced a finite sequence
-of I/O events, $e_1, \cdots, e_n, \mathtt{partial}$.
-\end{itemize}
-As before, refinement is defined as inclusion of the set of (possibly partial) behaviors of the
-target program into that of the source program.
-% However, unlike CompCertTSO, where only the target language can run out of memory, our source
-% language can also run out of memory due to pointer-to-integer casts, as we explain below.
+Undefined behavior requires special attention in defining the set of behaviors, because the program
+states in the condition are neither terminated nor transitioning to other states, fitting into none
+of the behavioral categories.  Thus we assign \emph{the set of all behaviors} to the program states
+invoking undefined behavior in order to validate compiler optimizations: if the target program's
+behavior is undefined, then the source program's behavior should also be undefined; on the other
+hand, if the source program's behavior is undefined, then compiler can choose any program as its
+result.
+% We regard \emph{the undefined behavior as described in the ISO C standards as the set of all
+% behaviors}.  This captures the intuitive properties of compilers on undefined behavior.
 
 
 \paragraph{Per-Pass Correctness}
 
-TODO: organization?
+\begin{figure}[!t]
+\begin{center}
+\includegraphics[width=\textwidth]{compcert-diagram.png}
+\end{center}
+\caption{Organization of CompCert (from~\cite{compcert-web})  \jeehoon{too old, change it}}
+\label{fig:compcert-organization}
+\end{figure}
 
 To verify compilation correctness for the compiler $\mathcal{C}$, we verify each pass of
 $\mathcal{C}$ independently.  Specifically, for each pass (transformation) $\mathcal{T}$ from
@@ -119,6 +86,10 @@ That is, given the input \code{s.l1} and output \code{t.l2} of the $\mathcal{T}$
 show that the behaviors of \code{t.l2} are contained within those of \code{s.l1}.  Since subset
 inclusion is transitive, it easy to see that the proofs of the constituent passes of $\mathcal{C}$
 compose to establish the correctness of $\mathcal{C}$ as a whole.
+
+It is worth noting that CompCert consists of around a dozen optimization and transformation passes
+going through quite a few intermediate languages, as illustrated in
+\Cref{fig:compcert-organization}, and mainstream compilers typically have dozens of passes.
 
 
 \paragraph{Verifying Per-Pass Correctness}
@@ -148,14 +119,16 @@ simulation $R$ that relates $\mathrm{load}(\mathtt{s.l1})$ and $\mathrm{load}(\m
 \textbf{Note:} The verification approach described above, relying on ``backward'' simulations, is
 something of an oversimplification of what CompCert actually does.  In fact, to make the proofs more
 convenient, CompCert uses a mixture of forward and backward simulations.  We gloss over this point
-here because it is orthogonal to our high-level story, but we will return to it in
-\Cref{chap:sepcomp}.
+here because it is orthogonal to our story, but we will return to it in \Cref{chap:sepcomp}.
 
 
 
 
 \subsection{The RTL Language}
 \label{sec:background:rtl}
+
+\jeehoon{Revised up here}
+
 
 In the rest of this section, we will explain how to establish a simulation relation for optimization
 passes, using constant propagation as a running example.  We start with the syntax and semantics of
@@ -203,7 +176,7 @@ have duplicate entries.
 
 \paragraph{Semantics}
 
-TODO: defer memory model to the next subsection.
+\jeehoon{defer memory model to the next subsection.}
 
 % \input{rtl-semdom}
 % TODO
@@ -293,7 +266,7 @@ concurrency and do not discuss many of the orthogonal aspects of C semantics.  S
 $(1)$ assume a 32-bit architecture: words are 4 bytes wide, and the size of the address space is
 $2^{32}$, $(2)$ consider only integer and pointer values, and omit values of other types such as
 \texttt{float} or \texttt{char}, and $(3)$ omit subword arithmetic, and assume each address stores a
-32-bit value.  TODO: check it.
+32-bit value.  \jeehoon{check it.}
 % and take all addressing to be aligned at 4-byte boundaries.  \todo{gil: this is not quite
 % right. For example, we have a 4-byte word at 0x0000FFF0 and another 4-byte word at 0x0000FFF1,
 % ratherthan at 0x0000FFF4.  We used this just for simplicity anyway.}  $(l,i)$ points to the $i$-th
@@ -458,7 +431,7 @@ and can therefore assume that $\texttt{gv[0]}=0$.
 % \input{constprop-example}
 % TODO
 
-TODO: explain the examples in the intro.
+\jeehoon{explain the examples in the intro.}
 
 
 
@@ -553,8 +526,6 @@ states.  Also, the soundness of the new source state $s'$ follows
 from the soundness preservation property of the value analysis stated
 above.
 
-TODO: probably forward simulation story is better to be given in \Cref{chap:sepcomp}.
-
 Finally, we briefly discuss why CompCert establishes a forward
 rather than a backward simulation, even though the former implies that
 the source's behaviors refine the target's, which seems the wrong way
@@ -569,11 +540,8 @@ assembly (namely, that C is \emph{receptive} and assembly is
 \emph{determinate}). Finally, from this backward simulation, one can
 establish that the target's behaviors refine the source's.
 
-It is important to note that this approach of using forward
-simulations (when convenient) carries over without modification when
-porting CompCert to Level A and B compositional correctness, as we do
-in the next section.
-
+\jeehoon{explain backward simulation here, and defer discussion on forward simulation to
+  \Cref{chap:sepcomp}.}
 
 
 % Example language from intptrcast
@@ -600,6 +568,13 @@ in the next section.
 
 %Our language has two types of values, integers and pointers, where the latter is represented as a pair $(l, i)$ of block identifier and integer offset. As a convention, we will use $\texttt{a}, \texttt{b}, \texttt{c}...$ for integer variables and $\texttt{p}, \texttt{q}, \texttt{r}...$ for pointer variables. 
 
+
+
+\paragraph*{}
+
+\jeehoon{Transition.}  It is important to note that this approach of using forward simulations (when
+convenient) carries over without modification when porting CompCert to Level A and B compositional
+correctness, as we do in the next section.
 
 
 
