@@ -1,0 +1,60 @@
+%!TEX root=main.tex
+
+\begin{figure}
+\noindent
+\begin{minipage}{0.5\columnwidth}
+\begin{alltt}
+extern g(a,b);
+const gv[1] := \{ 0 \};
+
+f() \{
+  x, y;
+  sp[4];
+
+1: sp[0] := 0 jmp 2;
+2: x := 0 jmp 3;
+3: y := g(sp,x) jmp 4;
+4: sp[0] > 0 ? 
+     jmp 5 : jmp 6;
+5: x > 0 ? jmp 6 : jmp 7;
+6: return gv[0];
+7: return y;
+\}
+\end{alltt}
+\end{minipage}
+\begin{minipage}{0.05\columnwidth}
+\mbox{}\\[3.65cm]
+$\;\mapsto$\\
+$\;\mapsto$\\
+%% \raisebox{-1.9cm}{$\mapsto$}
+\end{minipage}
+\begin{minipage}{0.4\columnwidth}
+\begin{alltt}
+ extern g(a,b);
+ const gv[1] := \{ 0 \};
+ 
+ f() \{
+   x, y;
+   sp[4];
+ 
+ 1: sp[0] := 0 jmp 2;
+ 2: x := 0 jmp 3;
+ 3: y := g(sp,x) jmp 4;
+ 4: sp[0] > 0 ? 
+      jmp 5 : jmp 6;
+ {\color{red}5: jmp 7;}
+ {\color{red}6: return 0;}
+ 7: return y;
+ \}
+\end{alltt}
+\end{minipage}
+\caption{Example of constant propagation.}
+\label{fig:const-prop-example}
+\end{figure}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-PDF-mode: t
+%%% End: 
