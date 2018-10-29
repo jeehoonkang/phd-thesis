@@ -5,7 +5,247 @@
 \newcommand{\etal}{\emph{et. al.} }
 \newcommand{\optarrow}{\ensuremath{\rightsquigarrow}}
 
+
+%%% math
+
+\newcommand{\defop}[1]{\stackrel{\text{def}}{#1}}
+\newcommand{\defeq}{\defop{=}}
+\newcommand{\defiff}{\defop{\iff}}
+\newcommand{\disjoint}[2]{#1 \cap #2 = \emptyset} %{#1 \,\#\, #2}
+\newcommand{\ceil}[1]{\lceil#1\rceil}
+\newcommand{\floor}[1]{\lfloor#1\rfloor}
+\newcommand{\restrdom}[2]{#1\vert_{#2}}
+\newcommand{\finto}{\stackrel{\text{fin}}{\rightharpoonup}}
+% \newcommand{\Id}{\f{id}}
+\newcommand{\Dom}{\f{dom}}
+\newcommand{\Cod}{\f{cod}}
+\newcommand{\Rng}{\f{rng}}
+\newcommand{\powset}[1]{\mathbb{P}(#1)}
+\newcommand{\finpowset}[1]{\mathbb{P}_{\mathrm{fin}}(#1)}
+\newcommand{\tup}[1]{#1}
+\newcommand{\abs}[1]{{|#1|}}
+\newcommand{\maximum}{\mathrm{max}}
+\newcommand{\Nat}{\mathbb{N}}
+\newcommand{\mc}[1]{\mathcal{#1}}
+\newcommand{\llrrbrk}[1]{{\llbracket #1 \rrbracket}}
+\newcommand{\setof}[1]{\{\, #1 \,\}}
+\newcommand{\setofz}[1]{\{ #1 \}}
+\newcommand{\suchthat}{\;|\;}
+\newcommand{\intersect}{\cap}
+\newcommand{\union}{\cup}
+\newcommand{\Set}{\mathrm{Set}}
+\newcommand{\pfun}{\rightharpoonup}
+\newcommand{\fpfun}{\rightharpoonup_{\mathrm{fin}}\!}
+\newcommand{\funcomp}{\circ}
+\newcommand{\ltrue}{\top}
+\newcommand{\undefv}{\mathrm{undef}}
+\newcommand{\delete}[2]{#2\!\setminus\!#1}
+
+
+%%% lambda calculus
+
+\newcommand{\mydefeq}{\stackrel{\mathrm{def}}{=}}
+\newcommand{\estep}[1]{\stackrel{#1}{\hookrightarrow}}
+\newcommand{\step}{\hookrightarrow}
+%\newcommand{\steps}[1]{\stackrel{#1}{\hookrightarrow}}
+\newcommand{\steps}[1]{\hookrightarrow^{#1}}
+\DeclareMathOperator{\hookrightarrowcirc}{{\hspace*{4pt}{\circ}\hspace*{-8pt}{\hookrightarrow}}}
+\newcommand{\lsteps}[1]{\hookrightarrowcirc^{#1}}
+\newcommand{\terminates}{\!\downarrow}
+%\newcommand{\diverges}{\!\uparrow}
+\newcommand{\diverges}{\steps{\omega}}
+\newcommand{\FV}{\f{fv}}
+\newcommand{\FTV}{\f{ftv}}
+\newcommand{\FVV}{\f{fvv}}
+\newcommand{\FL}{\f{floc}}
+\newcommand{\FTN}{\f{names}}
+% \newcommand{\conf}[2]{\langle #1;#2 \rangle}
+\newcommand{\judg}[3]{{#1} \vdash {#2} \ifthenelse{\equal{#3}{}}{}{: {#3}}}
+\newcommand{\judge}[3]{{#1} \vdash {#2} \ifthenelse{\equal{#3}{}}{}{\div {#3}}}
+\newcommand{\termin}[1]{#1 \terminates}
+\newcommand{\terminw}[2]{\termin{#1} #2}
+\newcommand{\termink}[2]{#1\terminates^{#2}}
+\newcommand{\terminwk}[3]{#1\terminates^{#3} #2}
+\newcommand{\chole}{\bullet}
+\newcommand{\hextend}[3]{#1 \uplus \{#2{\mapsto}#3\}}
+\newcommand{\hupdate}[3]{#1[#2{\mapsto}#3]}
+%\newcommand{\pointsto}{\hookrightarrow}
+\newcommand{\pointsto}{\mapsto}
+\newcommand{\HLoc}{\mathrm{Loc}}
+\newcommand{\HExp}{\mathrm{Exp}}
+\newcommand{\HTExp}{\mathrm{Prog}}
+\newcommand{\HCExp}{\mathrm{CExp}}
+\newcommand{\HCLExp}{\mathrm{CLExp}}
+\newcommand{\LExp}{\mathrm{LExp}}
+\newcommand{\HVal}{\mathrm{Val}}
+\newcommand{\HCVal}{\mathrm{CVal}}
+\newcommand{\HCLVal}{\mathrm{CLVal}}
+\newcommand{\HLVal}{\mathrm{LVal}}
+\newcommand{\HCont}{\mathrm{Cont}}
+\newcommand{\HCCont}{\mathrm{CCont}}
+\newcommand{\LCont}{\mathrm{LCont}}
+\newcommand{\HHeap}{\mathrm{HHeap}}
+\newcommand{\freshloc}{\mathrm{freshloc}}
+\newcommand{\VRel}{\mathrm{VRel}}
+\newcommand{\VRelF}{\mathrm{VRelF}}
+\newcommand{\mkglob}[1]{[#1]}
+\newcommand{\ERel}{\mathrm{ERel}}
+\newcommand{\KRel}{\mathrm{KRel}}
+\newcommand{\CRel}{\mathrm{CRel}}
+\newcommand{\HRel}{\mathrm{HRel}}
+\newcommand{\ORel}{\mathrm{ORel}}
+\newcommand{\vrel}{\mathbf{V}}
+\newcommand{\vclos}[1]{\overline{#1}}
+\newcommand{\erel}{\mathbf{E}}
+\newcommand{\crel}{\mathbf{C}}
+\newcommand{\prel}{\mathbf{P}}
+\newcommand{\rsrel}{\mathbf{S}^\mathrm{ret}}
+\newcommand{\csrel}{\mathbf{S}^\mathrm{call}}
+\newcommand{\srel}{\mathbf{S}}
+\newcommand{\ereldef}{\mathbf{E}^\mathrm{def}}
+\newcommand{\rrel}{{\boldsymbol{\mathcal{R}}}}
+\newcommand{\krel}{\mathbf{K}}
+\newcommand{\kreldef}{\mathbf{K}^\mathrm{def}}
+\newcommand{\orel}{\mathbf{O}}
+\newcommand{\wval}{\mathsf{L}}
+\newcommand{\wknow}{\mathsf{L}}
+\newcommand{\wheap}{\mathsf{H}}
+\newcommand{\wini}{\mathsf{s_0}}
+\newcommand{\betared}[1]{\mathit{beta}({#1})}
+\newcommand{\bapp}{\mathit{app}}
+\newcommand{\binst}{\mathit{inst}}
+\newcommand{\fbetared}[2]{\betared{\Eapp{#1}{#2}}}
+\newcommand{\tybetared}[1]{\betared{\Einst{#1}{}}}
+\newcommand{\defined}{\mathrm{def}}
+\newcommand{\good}{\mathit{consistent}}
+\newcommand{\neis}{\mathrm{neis}}
+\newcommand{\local}{\mathit{nonref}}
+\newcommand{\stable}{\mathit{stable}}
+\newcommand{\wf}{\text{wf}}
+\newcommand{\TyEnv}{\mathrm{TyEnv}}
+\newcommand{\Env}{\mathrm{Env}}
+% \newcommand{\dom}{\mathrm{dom}}
+\newcommand{\wld}{W}
+\newcommand{\lwld}{w}
+\newcommand{\Wsingle}{\lwld_\mathrm{single}}
+\newcommand{\IW}{\lwld_\mathrm{id}}
+\newcommand{\GW}{\wld_\mathrm{ref}}
+\newcommand{\ErrEnc}{\mathbf{I}}
+\newcommand{\AbsEnc}{\mathbf{A}}
+\newcommand{\mediate}{\mathit{mediate}}
+\newcommand{\subp}[2]{#1_{(#2)}}
+\newcommand{\subr}[2]{#1_{\{#2\}}}
+\newcommand{\ssp}[3]{#1^{#2}_{(#3)}}
+\newcommand{\error}{\mathbf{error}}
+\newcommand{\domi}[2]{\dom_{[#2]}{(#1)}}
+\newcommand{\lguard}[1]{{\langle\!\langle}#1{\rangle\!\rangle}}
+\newcommand{\lk}{\mathcal{K}}
+\newcommand{\nlg}[1]{{#1^{\#}}}
+\newcommand{\kk}[1]{\langle #1 \rangle}
+\newcommand{\kv}[1]{(#1)}
+
+% \newcommand{\iso}{\approx}
+\newcommand{\Wext }{%
+  \ensuremath{\mathrel{%
+      \hbox{\ooalign{%
+          \hfil\raisebox{-3pt}{$\sim$}\hfil\cr%
+          \hfil\raisebox{2pt}{$\sqsupset$}\hfil}}}}}
+
+\newcommand{\GK}{\mathrm{GK}}
+\newcommand{\LK}{\mathrm{LK}}
+\newcommand{\WK}{\mathrm{WfKnow}}
+\newcommand{\Know}{\mathrm{Know}}
+\newcommand{\vr}{G}
+\newcommand{\lr}{L}
+\newcommand{\kn}{r}
+\newcommand{\kr}{R}
+\newcommand{\skn}{R}
+\newcommand{\gkn}{G}
+\newcommand{\krf}{R^{\mathrm{c}}}
+\newcommand{\vrf}{\vr^{\mathrm{c}}}
+\newcommand{\pv}[1]{#1_{\mathtt{v}}}
+\newcommand{\pk}[1]{#1_{\mathtt{k}}}
+
+\newcommand{\hf}{h^\mathrm{F}}
+
+\newcommand{\funres}[1]{\restr{#1}{\mathrm{fun}}}
+
+\newcommand{\Flat}{\mathrm{Flat}}
+
+
+%%% RTL
+
+\newcommand{\inttype}{\ensuremath{\mathtt{int32}}}
+
+\newcommand{\typhide}[1]{}
+\newcommand{\consthide}[1]{#1}
+
+\newcommand{\simFun}{\sim_{\mathrm{fdef}}}
+\newcommand{\simFrame}{\sim_{\mathrm{frame}}}
+\newcommand{\simStack}{\sim_{\mathrm{stack}}}
+\newcommand{\simState}{\sim_{\mathrm{state}}}
+
+
+\newcommand{\vpc}{\mathrm{pc}}
+\newcommand{\rtlextern}{\mathtt{extern}}
+\newcommand{\rtlconst}{\mathtt{const}}
+\newcommand{\rtlsp}{\mathtt{sp}}
+\newcommand{\rtljmp}{\mathtt{jmp}}
+\newcommand{\rtlreturn}{\mathtt{return}}
+\newcommand{\rtlundef}{\mathtt{undef}}
+\newcommand{\rtldef}{\mathtt{def}}
+\newcommand{\rtlvalid}{\mathtt{valid}}
+\newcommand{\rtlfreed}{\mathtt{freed}}
+\newcommand{\rtlist}{\mathtt{ist}}
+\newcommand{\rtlcst}{\mathtt{cst}}
+\newcommand{\rtlrst}{\mathtt{rst}}
+\newcommand{\rtlProg}{\mathit{Prog}}
+\newcommand{\rtlDecl}{\mathit{Decl}}
+\newcommand{\rtlInt}{\mathit{Int}}
+\newcommand{\rtlReg}{\mathit{Reg}}
+\newcommand{\rtlId}{\mathit{Id}}
+\newcommand{\rtlGVal}{\mathit{GVal}}
+\newcommand{\rtlFVal}{\mathit{FVal}}
+\newcommand{\rtlFSig}{\mathit{FSig}}
+\newcommand{\rtlFunc}{\mathit{FDef}}
+\newcommand{\rtlCode}{\mathit{Code}}
+\newcommand{\rtlNId}{\mathit{NId}}
+\newcommand{\rtlInstr}{\mathit{Instr}}
+\newcommand{\rtlop}{\mathit{op}}
+\newcommand{\rtlcondop}{{\mathit{cond}\text{-}\mathit{op}}}
+\newcommand{\rtlMem}{\mathit{Mem}}
+\newcommand{\rtlBId}{\mathit{BId}}
+\newcommand{\rtlBlock}{\mathit{Block}}
+\newcommand{\rtlVal}{\mathit{Val}}
+\newcommand{\rtlAddr}{\mathit{Addr}}
+\newcommand{\rtlGEnv}{\mathit{GEnv}}
+\newcommand{\rtlState}{\mathit{State}}
+\newcommand{\rtlIState}{\mathit{IState}}
+\newcommand{\rtlCState}{\mathit{CState}}
+\newcommand{\rtlRState}{\mathit{RState}}
+\newcommand{\rtlStkFrm}{\mathit{StkFrm}}
+\newcommand{\rtlgenv}{\mathit{get\text{-}genv}}
+\newcommand{\rtlload}{\mathit{load}}
+\newcommand{\rtlEvent}{\mathit{Event}}
+\newcommand{\vsf}{{s\hspace*{-1pt}f}}
+\newcommand{\vfd}{{f\hspace*{-1pt}d}}
+\newcommand{\vfs}{{f\hspace*{-1pt}s}}
+\newcommand{\vfds}{{f\hspace*{-1pt}ds}}
+\newcommand{\vargs}{{ar\hspace*{-1pt}g\hspace*{-1pt}s}}
+\newcommand{\vprg}{{pr\hspace*{-1pt}g}}
+\newcommand{\vsprg}{{spr\hspace*{-1pt}g}}
+\newcommand{\vevt}{\sigma}
+\newcommand{\soundstate}{\mathrm{sound\text{-}state}}
+
+\newcommand{\cminorReg}{\mathit{Reg}}
+\newcommand{\cminorExpr}{\mathit{Expr}}
+\newcommand{\cminorCont}{\mathit{Cont}}
+
+\newcommand{\NSmac}{\mathit{NS}}
+
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
 %%% End:

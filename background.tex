@@ -127,8 +127,7 @@ here because it is orthogonal to our story, but we will return to it in \Cref{ch
 \subsection{The RTL Language}
 \label{sec:background:rtl}
 
-\jeehoon{Revised up here}
-
+\jeehoon{We're beginning with C, but here we're discussing RTL.  Is it okay?}
 
 In the rest of this section, we will explain how to establish a simulation relation for optimization
 passes, using constant propagation as a running example.  We start with the syntax and semantics of
@@ -139,8 +138,7 @@ types and other unnecessary details.
 
 \paragraph{Syntax}
 
-% \input{rtl-syntax}
-% TODO
+\input{rtl-syntax}
 
 The syntax of the CompCert's RTL is given in Figure~\ref{fig:rtl-syntax}.  Programs are just a list
 of global declarations, which consist of $(1)$ declarations of external variables and functions
@@ -178,8 +176,7 @@ have duplicate entries.
 
 \jeehoon{defer memory model to the next subsection.}
 
-% \input{rtl-semdom}
-% TODO
+\input{rtl-semdom}
 
 We move on to the semantics of RTL.  Figure~\ref{fig:rtl-semdom} defines the necessary semantic
 domains.
