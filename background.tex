@@ -5,14 +5,14 @@ We begin by briefly reviewing the technical background that informs the rest of 
 using CompCert as the learning material.  We first explain CompCert's correctness statement, as well
 as its simulation verification method (\Cref{sec:background:correctness}).  To flesh out the details
 on formal semantics and compiler verification, we use constant propagation---one of CompCert's
-optimizations---as a running example.  Specifically, We first review the RTL language on which
-constant propagation and most of the other optimizations are performed in the CompCert's compilation
-pipeline (\Cref{sec:background:rtl}).  Then we explain CompCert's memory model that underlies not
-only RTL but also C and CompCert's other internal languages (\Cref{sec:background:memory}).
-CompCert's memory model, which defines which value(s) a process can read from a memory location, is
-designed so as to verify compiler optimizations.  Then we explain how constant propagation works and
+optimization---as a running example.  Specifically, We first review CompCert's memory model that is
+designed so as to verify compiler optimizations (\Cref{sec:background:memory}).  Then we explain the
+RTL language on which constant propagation and most of the other optimizations are performed in the
+CompCert's compilation pipeline (\Cref{sec:background:rtl}), and how constant propagation works and
 how CompCert verifies it (\Cref{sec:background:constprop}).  Throughout this section, we keep the
 presentation semi-formal, abstracting away unnecessary detail to get across the main ideas.
+
+\jeehoon{Refer CompCert and CompCert memory model papers.}
 
 
 \subsection{Compiler Correctness}
@@ -128,160 +128,47 @@ here because it is orthogonal to our story, but we will return to it in \Cref{ch
 
 
 
-
-\subsection{The RTL Language}
-\label{sec:background:rtl}
-
-In the rest of this section, we will explain how to establish a simulation relation for optimization
-passes, using constant propagation as a running example.  We start with the syntax and semantics of
-CompCert's register transfer language (RTL), the compiler's internal language where constant
-propagation takes place.  For presentation purposes, we simplify the language a bit by removing
-types and other unnecessary details.
-
-
-\paragraph{Syntax}
-
-\input{rtl-syntax}
-
-The syntax of the CompCert's RTL is given in Figure~\ref{fig:rtl-syntax}.  Programs are just a list
-of global declarations, which consist of $(1)$ declarations of external variables and functions
-provided by different compilation units, and $(2)$ definitions of variables and functions provided
-by the current compilation unit.  For global variable declarations and definitions, we also specify
-a (positive) integer number denoting the size of the declared block in bytes.
-
-Function declarations only contain the function signature, which is a list of parameters, but
-function definitions additionally contain a list of local registers, the size of their stack frame,
-and the code.  The code is essentially a control-flow graph of three-address code: it is represented
-as a mapping from node identifiers to instructions, where instructions either
-%
-do some local computation (\eg write a constant to a register, or perform some arithmetic
-computation),
-%
-load from a memory address, 
-%
-store to memory,
-%
-do a comparison,
-%
-call a function, 
-%
-or exit the function and return a result. 
-%
-Each instruction also stores the node identifier(s) of its successor instruction(s).
-
-Throughout we assume that programs satisfy some basic well-formedness properties: there cannot be
-multiple definitions for the same global variable, declarations and definitions of the same variable
-should have matching signatures, and the parameter and local variable lists for each function do not
-have duplicate entries.
-
-
-\paragraph{Semantics}
-
-\input{rtl-semdom}
-
-We move on to the semantics of RTL.  Figure~\ref{fig:rtl-semdom} defines the necessary semantic
-domains.
-
-Memory, $m\in\rtlMem$, is represented as a finite collection of allocation blocks (a mapping from
-block identifiers to blocks), each of which is a contiguous portion of memory that may be either
-valid to access or already deallocated (freed) and therefore invalid to access.  CompCert values,
-$v\in\rtlVal$, can be either 32-bit integers, logical addresses (pairs of a block identifier
-together with an offset within the block), or the special $\rtlundef$ value used to represent
-uninitialized data.  We will discuss the memory model in more details in
-\Cref{sec:background:memory}.
-
-A global environment, $ge=(g,d)\in\rtlGEnv$, maps each global variable name to a logical block
-identifier, and each logical block identifier corresponding to some function's code to either the
-corresponding function signature for external functions or the corresponding function definition for
-functions defined in the program.
-
-Program states can be of three kinds: normal instruction states ($\rtlist$), call states ($\rtlcst$)
-just before passing control to an invoked function, and return states ($\rtlrst$), just after
-returning from an invoked function.  Instruction states store the memory ($m$), the sequence of
-parent stack frames ($s$), the definition of the function whose body is currently executed ($\vfd$),
-the current stack pointer ($sp$), the program counter ($pc$), and the contents of the local
-registers ($rs$).  Call states record the memory, the stack, and the function to be called ($\vfds$)
-with its arguments ($args$).  The function to be called can be either an internal function, in which
-case we record its definition, or an external one, in which case we record its signature.  Return
-states record just the memory, the stack, and the value that was returned by the function.  A stack
-$s$ is a list of stack frames, each of which records the same information as normal instruction
-states, except with the addition of a register name $r$ where its return value should be stored, and
-minus the memory ($m$) and stack ($s$) components.
-
-The meaning of programs is described by three definitions:
-\[
-\begin{array}{r@{~~}c@{~~}l}
-\rtlgenv &\in& \rtlProg \to \rtlGEnv \\
-\rtlload &\in& \rtlProg \pfun \rtlState\\
-\estep{} &\in& \powset{\rtlGEnv\times\rtlState\times\rtlEvent\times\rtlState}\\
-\end{array}
-\]
-The first function, $\rtlgenv(\vprg)$, returns the global environment corresponding to the program:
-it ``allocates'' the global variables of the program sequentially in blocks 1, 2, 3, and so on, and
-maps the blocks corresponding to function symbols to the relevant function definition or signature.
-Similarly, $\rtlload(\vprg)$ returns the initial state obtained by loading a program into memory: it
-initializes the memory $m$ with the initial values of the global variables at the appropriate
-addresses generated by $\rtlgenv(\vprg)$, and returns a call state, $\rtlcst~m~[\,]~\vfd~[\,]$,
-where $\vfd$ is the function definition corresponding to \texttt{main()}.  Loading is a partial
-function because it is undefined for programs without a \texttt{main()} function.
-
-\input{rtl-opsem}
-
-The $\estep{}$ relation is a small-step reduction relation describing how program states evolve
-during the computation.  For clarity, we write $s \estep{\vevt}_{ge} s'$ instead of
-$(ge,s,\vevt,s')\in {\estep{}}$.  The operational semantics for RTL is fairly standard and shown in
-Figure~\ref{fig:rtl-opsem}: there is a rule for each of the various basic instructions of the
-language.  Starting from normal instruction states, the instruction at the node pointed to by the
-program counter is scrutinized ($\vfd@pc$).  Depending on what instruction is there, only one rule
-is applicable.  The corresponding rule calculates the new values of the registers, the memory (for
-store instructions), and the next program counter.  Calls and returns are treated a bit differently:
-they do not directly transition from an instruction state to the next instruction state---they go
-through an intermediate call/return state.
-
-In more detail, calling a function (rule \textsc{call1}) looks up the function in the global
-environment, evaluates its arguments, creates a new stack frame corresponding to the current
-instruction state, and transitions to a call state.  From a call state, there are two possible
-execution steps.  If the function to be called is internal, \ie we have its function definition
-$\vfd\in\rtlFunc$, rule \textsc{internal-call2} applies.  It allocates the necessary stack space for
-the called function, initializes the parameter registers with the values passed as arguments, sets
-the program counter to point to the first node of the called function, and moves to the appropriate
-instruction state of the called function.  If the function to be called is external, \ie we have a
-function signature $\vfs\in\rtlFSig$, rule \textsc{external-call2} goes directly to the return state,
-and generates an event $\vevt$ indicating that it called an external function.
-
-Conversely, returning from a function (rule \textsc{return1}) evaluates the result to be returned,
-deallocates the stack space used by the function, and transitions to the return state.  The only
-possible step form a return state (rule \textsc{return2}) then pops the top-most stack frame and
-transitions to a normal instruction state thereby restoring the registers, program counter, and
-stack pointers of the calling function.
-
-
-
-\subsection{The Memory Model}
+\subsection{Memory Model}
 \label{sec:background:memory}
 
-\jeehoon{revised up here}
+\newcommand{\usize}{\ensuremath{\mathtt{uint32}}}
 
-\paragraph{Specification}
+The semantics of a memory model is described by those of its operations:
+\[
+\begin{array}{r@{~~}c@{~~}l}
+  \memLoad &\in& \rtlMem \to \rtlAddr \to \powset{\rtlVal} \\
+  \memStore &\in& \rtlMem \to \rtlAddr \to \rtlVal \to \powset{\rtlMem} \\
+  \memMalloc &\in& \rtlMem \to \usize \to \powset{\rtlAddr \times \rtlMem} \\
+  \memFree &\in& \rtlMem \to \rtlAddr \to \powset{\rtlMem} \\
+\end{array}
+\]
 
-Four operations: alloc, free, load, store
+Memory, $m\in\rtlMem$, supports four operations: load, store, malloc, and free.  Note that all
+operations may produce multiple results due to the nondeterminism arising from \eg{} concurrency.  A
+load operation reads the value, $v\in\rtlVal$, of an address, $a\in\rtlAddr$, and a store operation
+writes a value to an address in the memory.  If a load or store operation access an illegal address,
+then there are no valid results.  A malloc operation allocates a memory object of the specified size
+of type $\usize$, returning the new memory and the address of the allocated object, and a free
+operation deallocates an allocated memory object.
 
+To simplify the presentation, we focus on handling integer-pointer casts, relaxed-memory
+concurrency, and separate compilatin and do not discuss many of the orthogonal aspects of C
+semantics.  Specifically, we $(1)$ assume a 32-bit architecture: words are 4 bytes wide and the size
+of the address space is $2^{32}$, as eminent from the signature of $\memMalloc$, $(2)$ consider only
+integer and pointer values, and omit values of other types such as \texttt{float} or \texttt{char},
+and $(3)$ omit subword arithmetic, and assume each address stores a 32-bit value.
 
-\paragraph{}
-
-To simplify the presentation, we focus on handling integer-pointer casts and relaxed-memory
-concurrency and do not discuss many of the orthogonal aspects of C semantics.  Specifically, we
-$(1)$ assume a 32-bit architecture: words are 4 bytes wide, and the size of the address space is
-$2^{32}$, $(2)$ consider only integer and pointer values, and omit values of other types such as
-\texttt{float} or \texttt{char}, and $(3)$ omit subword arithmetic, and assume each address stores a
-32-bit value.  \jeehoon{check it.}
 % and take all addressing to be aligned at 4-byte boundaries.  \todo{gil: this is not quite
 % right. For example, we have a 4-byte word at 0x0000FFF0 and another 4-byte word at 0x0000FFF1,
 % ratherthan at 0x0000FFF4.  We used this just for simplicity anyway.}  $(l,i)$ points to the $i$-th
 % cell of 4 byte data in the logical block $l$).
 
+% Roughly speaking, a memory model defines which value(s) a load operation can read from
+
 
 \paragraph{Concrete Model}
+
+\jeehoon{revised up here}
 
 Concrete memory consists of a $2^{32}$-sized array of values, and a
 list of allocated blocks, 
@@ -386,6 +273,136 @@ pointer values in special cases.  More specifically, for instance,
 the addition of an integer to an address, the
 subtraction between addresses when they are in the same logical block,
 and the equality test between an address and \texttt{NULL} are well-defined.
+
+
+
+\subsection{The RTL Language}
+\label{sec:background:rtl}
+
+In the rest of this section, we will explain how to establish a simulation relation for optimization
+passes, using constant propagation as a running example.  We start with the syntax and semantics of
+CompCert's register transfer language (RTL), the compiler's internal language where constant
+propagation takes place.  For presentation purposes, we simplify the language a bit by removing
+types and other unnecessary details.
+
+
+\paragraph{Syntax}
+
+\input{rtl-syntax}
+
+The syntax of the CompCert's RTL is given in Figure~\ref{fig:rtl-syntax}.  Programs are just a list
+of global declarations, which consist of $(1)$ declarations of external variables and functions
+provided by different compilation units, and $(2)$ definitions of variables and functions provided
+by the current compilation unit.  For global variable declarations and definitions, we also specify
+a (positive) integer number denoting the size of the declared block in bytes.
+
+Function declarations only contain the function signature, which is a list of parameters, but
+function definitions additionally contain a list of local registers, the size of their stack frame,
+and the code.  The code is essentially a control-flow graph of three-address code: it is represented
+as a mapping from node identifiers to instructions, where instructions either
+%
+do some local computation (\eg write a constant to a register, or perform some arithmetic
+computation),
+%
+load from a memory address, 
+%
+store to memory,
+%
+do a comparison,
+%
+call a function, 
+%
+or exit the function and return a result. 
+%
+Each instruction also stores the node identifier(s) of its successor instruction(s).
+
+Throughout we assume that programs satisfy some basic well-formedness properties: there cannot be
+multiple definitions for the same global variable, declarations and definitions of the same variable
+should have matching signatures, and the parameter and local variable lists for each function do not
+have duplicate entries.
+
+
+\paragraph{Semantics}
+
+\input{rtl-semdom}
+
+We move on to the semantics of RTL.  Figure~\ref{fig:rtl-semdom} defines the necessary semantic
+domains.
+
+We will discuss the memory model in more details in \Cref{sec:background:memory}, but here we just
+explain its types.  Memory, $m\in\rtlMem$, is represented as a finite collection of allocation
+blocks (a mapping from block identifiers to blocks), each of which is a contiguous portion of memory
+that may be either valid to access or already deallocated (freed) and therefore invalid to access.
+CompCert values, $v\in\rtlVal$, can be either 32-bit integers, logical addresses (pairs of a block
+identifier together with an offset within the block), or the special $\rtlundef$ value used to
+represent uninitialized data.
+
+
+
+A global environment, $ge=(g,d)\in\rtlGEnv$, maps each global variable name to a logical block
+identifier, and each logical block identifier corresponding to some function's code to either the
+corresponding function signature for external functions or the corresponding function definition for
+functions defined in the program.
+
+Program states can be of three kinds: normal instruction states ($\rtlist$), call states ($\rtlcst$)
+just before passing control to an invoked function, and return states ($\rtlrst$), just after
+returning from an invoked function.  Instruction states store the memory ($m$), the sequence of
+parent stack frames ($s$), the definition of the function whose body is currently executed ($\vfd$),
+the current stack pointer ($sp$), the program counter ($pc$), and the contents of the local
+registers ($rs$).  Call states record the memory, the stack, and the function to be called ($\vfds$)
+with its arguments ($args$).  The function to be called can be either an internal function, in which
+case we record its definition, or an external one, in which case we record its signature.  Return
+states record just the memory, the stack, and the value that was returned by the function.  A stack
+$s$ is a list of stack frames, each of which records the same information as normal instruction
+states, except with the addition of a register name $r$ where its return value should be stored, and
+minus the memory ($m$) and stack ($s$) components.
+
+The meaning of programs is described by three definitions:
+\[
+\begin{array}{r@{~~}c@{~~}l}
+\rtlgenv &\in& \rtlProg \to \rtlGEnv \\
+\rtlload &\in& \rtlProg \pfun \rtlState\\
+\estep{} &\in& \powset{\rtlGEnv\times\rtlState\times\rtlEvent\times\rtlState}\\
+\end{array}
+\]
+The first function, $\rtlgenv(\vprg)$, returns the global environment corresponding to the program:
+it ``allocates'' the global variables of the program sequentially in blocks 1, 2, 3, and so on, and
+maps the blocks corresponding to function symbols to the relevant function definition or signature.
+Similarly, $\rtlload(\vprg)$ returns the initial state obtained by loading a program into memory: it
+initializes the memory $m$ with the initial values of the global variables at the appropriate
+addresses generated by $\rtlgenv(\vprg)$, and returns a call state, $\rtlcst~m~[\,]~\vfd~[\,]$,
+where $\vfd$ is the function definition corresponding to \texttt{main()}.  Loading is a partial
+function because it is undefined for programs without a \texttt{main()} function.
+
+\input{rtl-opsem}
+
+The $\estep{}$ relation is a small-step reduction relation describing how program states evolve
+during the computation.  For clarity, we write $s \estep{\vevt}_{ge} s'$ instead of
+$(ge,s,\vevt,s')\in {\estep{}}$.  The operational semantics for RTL is fairly standard and shown in
+Figure~\ref{fig:rtl-opsem}: there is a rule for each of the various basic instructions of the
+language.  Starting from normal instruction states, the instruction at the node pointed to by the
+program counter is scrutinized ($\vfd@pc$).  Depending on what instruction is there, only one rule
+is applicable.  The corresponding rule calculates the new values of the registers, the memory (for
+store instructions), and the next program counter.  Calls and returns are treated a bit differently:
+they do not directly transition from an instruction state to the next instruction state---they go
+through an intermediate call/return state.
+
+In more detail, calling a function (rule \textsc{call1}) looks up the function in the global
+environment, evaluates its arguments, creates a new stack frame corresponding to the current
+instruction state, and transitions to a call state.  From a call state, there are two possible
+execution steps.  If the function to be called is internal, \ie we have its function definition
+$\vfd\in\rtlFunc$, rule \textsc{call2-internal} applies.  It allocates the necessary stack space for
+the called function, initializes the parameter registers with the values passed as arguments, sets
+the program counter to point to the first node of the called function, and moves to the appropriate
+instruction state of the called function.  If the function to be called is external, \ie we have a
+function signature $\vfs\in\rtlFSig$, rule \textsc{call2-external} goes directly to the return
+state, and generates an event $\vevt$ indicating that it called an external function.
+
+Conversely, returning from a function (rule \textsc{return1}) evaluates the result to be returned,
+deallocates the stack space used by the function, and transitions to the return state.  The only
+possible step form a return state (rule \textsc{return2}) then pops the top-most stack frame and
+transitions to a normal instruction state thereby restoring the registers, program counter, and
+stack pointers of the calling function.
 
 
 

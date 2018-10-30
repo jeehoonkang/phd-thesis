@@ -73,7 +73,7 @@ vs = \sem{\vargs}(rs) \\
 \rtlcst~m~((res,\vfd,sp,pc',rs){::}s)~\vfds'~vs
 }
 
-\inferrule[(internal-call2)]{
+\inferrule[(call2-internal)]{
 \begin{array}{c}
 (m',l) = \mathrm{alloc}(m, \mathrm{stacksize}(\vfd))\\
 pc = \mathrm{entrynode}(\vfd)\\
@@ -85,7 +85,7 @@ rs = \mathrm{init\text{-}regs}(\mathrm{params}(\vfd),vs)\\
 \rtlist~m'~s~\vfd~(l,0)~pc~rs
 }
 
-\inferrule[(external-call2)]{
+\inferrule[(call2-external)]{
 \begin{array}{c}
 (\vevt,v,m') \in \mathrm{extcall\text{-}sem}(\vfs,ge,vs,m) \\
 \end{array}
