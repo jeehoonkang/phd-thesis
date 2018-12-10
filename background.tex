@@ -2,17 +2,18 @@
 \label{sec:background}
 
 We begin by briefly reviewing the technical background that informs the rest of this dissertation,
-using CompCert as the learning material.  We first explain CompCert's correctness statement, as well
-as its simulation verification method (\Cref{sec:background:correctness}).  To flesh out the details
-on formal semantics and compiler verification, we use constant propagation---one of CompCert's
-optimization---as a running example.  Specifically, We first review CompCert's memory model that is
-designed so as to verify compiler optimizations (\Cref{sec:background:memory}).  Then we explain the
-RTL language on which constant propagation and most of the other optimizations are performed in the
-CompCert's compilation pipeline (\Cref{sec:background:rtl}), and how constant propagation works and
-how CompCert verifies it (\Cref{sec:background:constprop}).  Throughout this section, we keep the
-presentation semi-formal, abstracting away unnecessary detail to get across the main ideas.
-
-\jeehoon{Refer CompCert and CompCert memory model papers.}
+using CompCert as the learning material.  The technical ideas and results presented in this section
+apply not only to CompCert but also to other compilers as well.  We first explain CompCert's
+correctness statement, as well as its simulation verification method
+(\Cref{sec:background:correctness}).  To flesh out the details on formal semantics and compiler
+verification, we use constant propagation---one of CompCert's optimization---as a running example.
+Specifically, We first review CompCert's memory model that is specifically designed so as to verify
+compiler optimizations (\Cref{sec:background:memory}).  Then we explain the RTL language on which
+constant propagation and most of the other optimizations are performed in the CompCert's compilation
+pipeline (\Cref{sec:background:rtl}), and how constant propagation works and how CompCert verifies
+it (\Cref{sec:background:constprop}).  Throughout this section, we keep the presentation
+semi-formal, abstracting away unnecessary detail to get across the main ideas.  For more details, we
+refer the reader to \cite{compcert, compcert-memory-model}.
 
 
 \subsection{Compiler Correctness}
@@ -53,10 +54,9 @@ diverging execution producing an infinite sequence of I/O events, $e_1, \cdots, 
 Undefined behavior requires special attention in defining the set of behaviors, because the program
 states in the condition are neither terminated nor transitioning to other states, fitting into none
 of the behavioral categories.  We assign \emph{the set of all behaviors} to the program states
-invoking undefined behavior in order to validate compiler optimizations: if the target program's
-behavior is undefined, then the source program's behavior should also be undefined; on the other
-hand, if the source program's behavior is undefined, then compiler can choose any program as its
-result.
+invoking undefined behavior in order to validate compiler optimizations: if the source program's
+behavior is undefined, then compiler can choose any program as its result; on the other hand, if the
+target program's behavior is undefined, then the source program's behavior should also be undefined.
 % We regard \emph{the undefined behavior as described in the ISO C standards as the set of all
 % behaviors}.  This captures the intuitive properties of compilers on undefined behavior.
 
@@ -119,13 +119,14 @@ R~\mbox{is a simulation} \qquad
 \]
 Thus, to establish the verification condition for pass $\mathcal{T}$, it suffices to exhibit a
 simulation $R$ that relates $\mathrm{load}(\mathtt{s.l1})$ and $\mathrm{load}(\mathtt{t.l2})$.
-\jeehoon{Maybe we need to define simulation more precisely.}
 
-\textbf{Note:} The verification approach described above, relying on ``backward'' simulations, is
-something of an oversimplification of what CompCert actually does.  In fact, to make the proofs more
-convenient, CompCert uses a mixture of forward and backward simulations.  We gloss over this point
-here because it is orthogonal to our story, but we will return to it in \Cref{chap:sepcomp}.
 
+
+\paragraph*{}
+
+In the rest of this section, we flesh out the details on how to verify a compiler optimization in
+CompCert, using constant propagation as the running example.  Since constant propagation is a
+transformation that optimizes memory operations, we will first review their semantics in CompCert.
 
 
 \subsection{Memory Model}
@@ -133,7 +134,8 @@ here because it is orthogonal to our story, but we will return to it in \Cref{ch
 
 \newcommand{\usize}{\ensuremath{\mathtt{uint32}}}
 
-The semantics of a memory model is described by those of its operations:
+
+CompCert supports the following memory operations:
 \[
 \begin{array}{r@{~~}c@{~~}l}
   \memLoad &\in& \rtlMem \to \rtlAddr \to \powset{\rtlVal} \\
@@ -142,20 +144,20 @@ The semantics of a memory model is described by those of its operations:
   \memFree &\in& \rtlMem \to \rtlAddr \to \powset{\rtlMem} \\
 \end{array}
 \]
+%
+\noindent Memory, $m\in\rtlMem$, supports four operations: load, store, malloc, and free.  Note that
+all operations may produce multiple results due to the nondeterminism arising from \eg{}
+concurrency.  A load operation reads the value, $v\in\rtlVal$, of an address, $a\in\rtlAddr$, and a
+store operation writes a value to an address in the memory.  If a load or store operation access an
+illegal address, then there are no valid results.  A malloc operation allocates a memory object of
+the specified size of type $\usize$, returning the new memory and the address of the allocated
+object, and a free operation deallocates an allocated memory object.
 
-Memory, $m\in\rtlMem$, supports four operations: load, store, malloc, and free.  Note that all
-operations may produce multiple results due to the nondeterminism arising from \eg{} concurrency.  A
-load operation reads the value, $v\in\rtlVal$, of an address, $a\in\rtlAddr$, and a store operation
-writes a value to an address in the memory.  If a load or store operation access an illegal address,
-then there are no valid results.  A malloc operation allocates a memory object of the specified size
-of type $\usize$, returning the new memory and the address of the allocated object, and a free
-operation deallocates an allocated memory object.
-
-To simplify the presentation, we focus on handling integer-pointer casts, relaxed-memory
-concurrency, and separate compilatin and do not discuss many of the orthogonal aspects of C
+To simplify the presentation, we focus on supporting integer-pointer casts, relaxed-memory
+concurrency, and separate compilation and do not discuss many of the orthogonal aspects of C
 semantics.  Specifically, we $(1)$ assume a 32-bit architecture: words are 4 bytes wide and the size
-of the address space is $2^{32}$, as eminent from the signature of $\memMalloc$, $(2)$ consider only
-integer and pointer values, and omit values of other types such as \texttt{float} or \texttt{char},
+of the address space is $2^{32}$, as eminent from the signature of $\memMalloc$; $(2)$ consider only
+integer and pointer values, and omit values of other types such as \texttt{float} or \texttt{char};
 and $(3)$ omit subword arithmetic, and assume each address stores a 32-bit value.
 
 % and take all addressing to be aligned at 4-byte boundaries.  \todo{gil: this is not quite
@@ -168,7 +170,7 @@ and $(3)$ omit subword arithmetic, and assume each address stores a 32-bit value
 
 \paragraph{Concrete Model}
 
-\jeehoon{revised up here}
+The most intuitive and ... \jeehoon{revised up here}
 
 Concrete memory consists of a $2^{32}$-sized array of values, and a
 list of allocated blocks, 
@@ -208,17 +210,14 @@ part of memory, thereby assuming that unknown code can read and
 update the contents of every allocated memory cell.
 
 
-\paragraph{CompCert's Logical Model}
+\paragraph{Logical Model}
 
-In CompCert's logical model
-\cite{leroy:compcert,Leroy-Appel-Blazy-Stewart-memory-v2}, memory
-consists of a finite set of logical blocks with unique block
-identifiers.  Each block is a fixed-sized array of values together
-with a validity flag $v$ that indicates whether the block is accessible or
-has been freed. As before, accessing a freed block raises an error.
-Values are either 32-bit integers or logical addresses.  Here, a
-logical address $(l,i)$ consists of a block identifier $l$ and an
-offset $i$ inside the block.
+In CompCert's logical model \cite{leroy:compcert,Leroy-Appel-Blazy-Stewart-memory-v2}, memory
+consists of a finite set of logical blocks with unique block identifiers.  Each block is a
+fixed-sized array of values together with a validity flag $v$ that indicates whether the block is
+accessible or has been freed. As before, accessing a freed block raises an error.  Values are either
+32-bit integers or logical addresses.  Here, a logical address $(l,i)$ consists of a block
+identifier $l$ and an offset $i$ inside the block.
 % (For simplicity, throughout this paper, we assume pointers
 %are aligned at 4-byte boundaries and $(l,i)$ represents the 4-byte chunk at
 %offset $4i$. \todo{This is not right for the same reason as before.})
@@ -566,6 +565,14 @@ establish that the target's behaviors refine the source's.
 
 \jeehoon{explain backward simulation here, and defer discussion on forward simulation to
   \Cref{chap:sepcomp}.}
+
+\jeehoon{Maybe we need to define simulation more precisely.}
+
+\textbf{Note:} The verification approach described above, relying on ``backward'' simulations, is
+something of an oversimplification of what CompCert actually does.  In fact, to make the proofs more
+convenient, CompCert uses a mixture of forward and backward simulations.  We gloss over this point
+here because it is orthogonal to our story, but we will return to it in \Cref{chap:sepcomp}.
+
 
 
 % Example language from intptrcast

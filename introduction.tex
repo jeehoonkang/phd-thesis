@@ -54,9 +54,9 @@ but also over compiler optimizations.
 % These days the mainstream compilers are becoming so aggressive in these days that they are
 % performing even subtle optimizations that cannot be immediately justified.
 
-Unfortunately, some compiler optimizations are so subtle that they cannot be justified without an
-artifact.  For example, consider the following optimization that is actually performed by the
-mainstream compilers such as GCC~\cite{gcc} and LLVM~\cite{llvm}:
+Unfortunately, designing an abstraction over both hardware assembly languages and compiler
+optimizations is a subtle task.  For example, consider the following optimization that is actually
+performed by the mainstream compilers such as GCC~\cite{gcc} and LLVM~\cite{llvm}:
 
 \[\begin{array}{rcl}
 \begin{minipage}{0.27\textwidth}
@@ -126,20 +126,31 @@ fly out of your nose''~\cite{nasal-demons}.  Specifically, \code{g()} invokes un
 the ISO C18 standard~\cite{c18} because the pointer \code{guess} is derived from the memory
 allocation of \code{anchor} and yet is outside of the valid range of \code{anchor}, rendering itself
 invalid as an address~\cite{c11-6.5.6p8}.  In other words, compilers may safely assume that all the
-pointers derived from \code{anchor} \emph{shall} point to \code{anchor}, because a failure to
-conform with such an assumption invokes undefined behavior.
+pointers derived from \code{anchor} \emph{shall} point to \code{anchor}, and a failure to conform
+with such an assumption invokes undefined behavior.
 
-What is particularly interesting about C is the widespread use of undefined behavior in defining
-language semantics.  The constant propagation example above shows that the low-level control over
-memory layout via pointer manipulation conflicts with a simple compiler optimization, and C resolves
-the conflict by marking the accesses to the outside of a memory allocation's valid range as invoking
-undefined behavior.  C typically applies this strategy for resolving the conflicts between control
-over various low-level details of hardware and various compiler optimizations implemented in
-mainstream C compilers, introducing a lot of undefined behavior instances in the language semantics.
+% The constant propagation example above shows that the low-level control over memory layout via
+% pointer manipulation conflicts with a simple compiler optimization, and C resolves the conflict by
+% marking the accesses to the outside of a memory allocation's valid range as invoking undefined
+% behavior.
+
+This kind of conflicts and resolutions (using undefined behavior) are common in the design of the C
+programming language semantics.  For example, the example above shows that low-level control over
+memory layout via pointer manipulation in C conflicts with a simple compiler optimization, and the
+conflict is resolved by marking the accesses to the outside of a memory allocation's valid range as
+invoking undefined behavior.  More generally, the C language has many conflicts between control over
+various low-level details of hardware and various compiler optimizations implemented in mainstream C
+compilers, and these conflicts are usually resolved by marking some unintended usage of language
+features as invoking undefined behavior.
+
 It is worth comparing C with higher-level languages---such as Java, C\#, OCaml, Haskell---that do
 not need undefined behaviors to justify compiler optimizations thanks to their lack of precise
 control over low-level details of hardware, \eg{} constant propagation is immediately justified in
 Haskell without resorting to undefined behavior thanks to its lack of raw pointer.
+
+% Indeed, C has a lot of undefined behavior instances in the language semantics.  The C language is
+% particularly interesting in that..  the widespread use of undefined behavior for resolving
+
 
 
 \subsection{The Problem: Reckless Development of Semantics and Compilers}
@@ -181,7 +192,7 @@ generated machine code behaves as prescribed by the semantics of the source prog
 CompCert guarantees that program analyses and verifications performed on its input carry over
 soundly to its machine-level output.  It has served as a fundamental building block in academic work
 on end-to-end verified software~\cite{TODO}, as well as receiving significant interest from the
-avionics industry~\cite{TODO}.
+avionics industry~\cite{TODO}. \jeehoon{say nuclear power plant}
 
 % Over ten years ago, Xavier Leroy initiated the CompCert
 % project~\cite{compcert:CACM,leroy:compcert}, a landmark effort that
@@ -223,6 +234,9 @@ linking.  Because of these simplifications, they are currently suitable only for
 as safety-critical embedded systems.
 
 \jeehoon{More acutely articulate the problem of the previous projects.}
+
+\jeehoon{There's a more broad problem and contribution, I think.}
+
 
 
 \subsection{Our Contribution: Towards Formalization of C in the Wild}
