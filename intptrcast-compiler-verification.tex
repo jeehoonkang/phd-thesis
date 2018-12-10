@@ -14,7 +14,8 @@ performed by ``clang -O2''.  This transformation involves four different optimiz
 \begin{center}
 \begin{tabular}{@{}l@{}l@{}l@{}}
 %\small
-\begin{lstlisting}
+\begin{minipage}{0.37\textwidth}
+\begin{minted}{c}
    foo(ptr p) {
      var ptr q, int a;
 1:   q = malloc (1);
@@ -23,12 +24,14 @@ performed by ``clang -O2''.  This transformation involves four different optimiz
 4:   a = *q;
 5:   *p = a;
    }
-\end{lstlisting}
+\end{minted}
+\end{minipage}
 &
 $\quad\rightarrow\quad$
 &
 %\small
-\begin{lstlisting}
+\begin{minipage}{0.37\textwidth}
+\begin{minted}{c}
 foo(ptr p) {
 
             // DAE
@@ -37,7 +40,8 @@ foo(ptr p) {
             // DLE
   *p = 123; // CP
 }
-\end{lstlisting}
+\end{minted}
+\end{minipage}
 \end{tabular}
 \end{center}
 
@@ -49,13 +53,13 @@ This relationship will designate one section of each memory as \emph{public}, an
 \center
 \begin{tabular}{l@{}l@{$\qquad\quad$}l@{}l}
 \begin{minipage}{0.5cm}\vspace*{-.8cm}(a)\end{minipage} & 
-\fbox{\includegraphics[height=1cm]{figure/memory-0.png}} &
+\fbox{\includegraphics[height=1cm]{intptrcast-figure/memory-0.png}} &
 \begin{minipage}{0.5cm}\vspace*{-.8cm}(b)\end{minipage} & 
-\fbox{\includegraphics[height=1cm]{figure/memory-1.png}} \\[2mm]
+\fbox{\includegraphics[height=1cm]{intptrcast-figure/memory-1.png}} \\[2mm]
 \begin{minipage}{0.5cm}\vspace*{-.8cm}(c)\end{minipage} & 
-\fbox{\includegraphics[height=1cm]{figure/memory-2.png}} &
+\fbox{\includegraphics[height=1cm]{intptrcast-figure/memory-2.png}} &
 \begin{minipage}{0.5cm}\vspace*{-.8cm}(d)\end{minipage} & 
-\fbox{\includegraphics[height=1cm]{figure/memory-3.png}}
+\fbox{\includegraphics[height=1cm]{intptrcast-figure/memory-3.png}}
 \end{tabular}
 %
 \caption{Memory Invariants for the Running Example}\label{fig:invex}
@@ -179,11 +183,11 @@ they are logical addresses that are at the same offset in corresponding blocks
 \center
   %% \fbox{\includegraphics[scale=0.25]{figure/relation-compcert.png}}
   \begin{minipage}[b]{0.28\textwidth}
-  \fbox{\includegraphics[scale=0.25]{figure/relation.png}}
+  \fbox{\includegraphics[scale=0.25]{intptrcast-figure/relation.png}}
   \end{minipage}
   \begin{minipage}[b]{0.14\textwidth}
-  \includegraphics[scale=0.25]{figure/physical-block.png} concrete block\\[2mm]
-  \includegraphics[scale=0.25]{figure/logical-block.png} logical block\\
+  \includegraphics[scale=0.25]{intptrcast-figure/physical-block.png} concrete block\\[2mm]
+  \includegraphics[scale=0.25]{intptrcast-figure/logical-block.png} logical block\\
   \mbox{}
   \end{minipage}
 %% $(1)$ for CompCert model, and $(2)$ for our model
@@ -264,7 +268,7 @@ simulated if it satisfies the following conditions.  First, consider
 a typical lifecycle of the source and target functions:
 \begin{center}
 \begin{minipage}{0.475\textwidth}
-\begin{lstlisting}
+\begin{lstlisting} % TODO
 foo(|..|) {        foo(|..|) {  //|\fbox{${\beta_\text{s}}$}|
   ...              ...      //|\hspace*{3pt}$\beta_\text{c}\quad{\beta_\text{s}}\!\sqsubseteq\!\beta_\text{c}$|
   bar(..);         bar(..); //|\fbox{${\beta_\text{r}}\quad\beta_\text{c}\!\sqsubseteq\!{\beta_\text{r}} \,\land\, \beta_\text{c}\!=_{\textrm{prv}}\!{\beta_\text{r}}$}|
@@ -414,10 +418,10 @@ because the future invariant relation ($\sqsubseteq$) requires
 only the bijection to be non-decreasing, not the private
 sections.
 \begin{center}
-\fbox{\includegraphics[scale=0.25]{figure/ownership-0.png}}\hfill
-\fbox{\includegraphics[scale=0.25]{figure/ownership-1.png}}\hfill
-\fbox{\includegraphics[scale=0.25]{figure/ownership-2.png}}\hfill
-\fbox{\includegraphics[scale=0.25]{figure/ownership-3.png}}
+\fbox{\includegraphics[scale=0.25]{intptrcast-figure/ownership-0.png}}\hfill
+\fbox{\includegraphics[scale=0.25]{intptrcast-figure/ownership-1.png}}\hfill
+\fbox{\includegraphics[scale=0.25]{intptrcast-figure/ownership-2.png}}\hfill
+\fbox{\includegraphics[scale=0.25]{intptrcast-figure/ownership-3.png}}
 \end{center}
 
 % \begin{lstlisting}
@@ -504,10 +508,10 @@ concrete and $l_\text{t}$ is logical, which would be an invalid invariant.  Afte
 source private section because we do not use it, yielding the fourth
 invariant below. Then we can proceed to verify the rest of the code.
 \[
-\fbox{\includegraphics[height=.95cm]{figure/deadcast-0.png}}\,
-\fbox{\includegraphics[height=.95cm]{figure/deadcast-1.png}}\,
-\fbox{\includegraphics[height=.95cm]{figure/deadcast-2.png}}\,
-\fbox{\includegraphics[height=.95cm]{figure/deadcast-3.png}}
+\fbox{\includegraphics[height=.95cm]{intptrcast-figure/deadcast-0.png}}\,
+\fbox{\includegraphics[height=.95cm]{intptrcast-figure/deadcast-1.png}}\,
+\fbox{\includegraphics[height=.95cm]{intptrcast-figure/deadcast-2.png}}\,
+\fbox{\includegraphics[height=.95cm]{intptrcast-figure/deadcast-3.png}}
 \]
 
 \paragraph{Identity Compilers}

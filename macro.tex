@@ -260,6 +260,66 @@
 \newcommand{\NSmac}{\mathit{NS}}
 
 
+
+%%% sepcomp-spec
+
+\newcommand{\sepcomp}{SepCompCert}
+
+\newcommand{\halt}{\mathit{halt}}
+\newcommand{\fail}{\mathit{fail}}
+\newcommand{\running}{\mathit{running}}
+\newcommand{\diverge}{\mathit{diverge}}
+
+\newcommand{\Spec}{\mathrm{LinkSpec}}
+\newcommand{\Prog}{\mathrm{Prog}}
+\newcommand{\observe}{\mathrm{observe}}
+\newcommand{\link}{\mathrm{link}}
+\newcommand{\load}{\mathrm{load}}
+
+\newcommand{\LSpec}{\mathrm{LangSpec}}
+% \newcommand{\Config}{\mathrm{Conf}}
+\newcommand{\Val}{\mathrm{Val}}
+\newcommand{\Com}{\mathrm{Com}}
+\newcommand{\Cont}{\mathrm{Cont}}
+\newcommand{\Mem}{\mathrm{Mem}}
+\newcommand{\CodeToMem}[1]{\{#1\}_\mathrm{code}}
+\newcommand{\HeapToMem}[1]{\{#1\}_\mathrm{heap}}
+\newcommand{\plugv}{\mathrm{plugv}}
+\newcommand{\plugc}{\mathrm{plugc}}
+\newcommand{\mdisj}{\mathrm{mdisj}}
+\newcommand{\mdisjlist}{\mathrm{mdisjlist}}
+\newcommand{\mdom}{\mathrm{mdom}}
+\newcommand{\observek}{\mathrm{obsk}}
+\newcommand{\stepf}{\mathrm{step}}
+\newcommand{\oftype}{\mathrm{oftype}}
+\newcommand{\nil}{\cdot}
+\newcommand{\LA}{\mc{L}_1}
+\newcommand{\LB}{\mc{L}_2}
+\newcommand{\WSpec}{\mathrm{WorldSpec}}
+\newcommand{\World}{\mathrm{World}}
+\newcommand{\DepWorld}{\mathrm{DepWorld}}
+\newcommand{\LWorld}{\mathrm{LWorld}}
+\newcommand{\InitWorld}{\mathrm{InitWorld}}
+\newcommand{\wlevel}{\mathrm{lev}}
+\newcommand{\wlater}[1]{{\later #1}}
+\newcommand{\wbij}{\mc{B}}
+\newcommand{\wmem}{\mc{M}}
+\newcommand{\wobs}{\Orel}
+\newcommand{\wext}{\extends}
+\newcommand{\txew}{\sqsubseteq}
+\newcommand{\wextpub}{\extends_\mathrm{pub}}
+\newcommand{\txewpub}{\sqsubseteq_\mathrm{pub}}
+\newcommand{\wextstrict}{\sqsupset_{\later}}
+\newcommand{\future}[1]{\square #1}
+\newcommand{\restrict}[2]{{#1_{\wextstrict #2}}}
+\newcommand{\ValRel}{\mathrm{WVRel}}
+\newcommand{\WR}[2]{\overline{(#1,#2)}}
+\newcommand{\pbij}[1]{#1~\mathrm{pbijective}}
+% \newcommand{\List}[1]{\mathrm{List}~#1}
+\DeclareMathOperator{\appendl}{{+\!\!+}}
+\newcommand{\wtransit}[3]{#1[#2 \rightsquigarrow #3]}
+
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "main"

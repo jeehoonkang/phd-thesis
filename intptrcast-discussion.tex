@@ -115,10 +115,12 @@ even if \texttt{q} points to the block
 pointed to by~\texttt{p}, loading or storing a double value in the
 block will fail since the block is not big enough to contain double
 values.
-\begin{lstlisting}
-int* p = malloc(sizeof(int));
-double* q = foo(p);    // no alias between p and q
-\end{lstlisting}
+\begin{center}
+  \begin{minted}{c}
+    int* p = malloc(sizeof(int));
+    double* q = foo(p);    // no alias between p and q
+  \end{minted}
+\end{center}
 
 It also justifies %(modulo the effects of cast)
 \textit{freshness-based alias analysis}, which assumes that the result of
@@ -140,7 +142,8 @@ they still point to different blocks as pointer values.
 \begin{center}
 \begin{tabular}{@{}l@{}l@{~~}l}
 %\small
-\begin{lstlisting}
+\begin{minipage}{0.37\textwidth}
+\begin{minted}{c}
 foo(ptr p) {
   var ptr q, int a,b,r;
   q = malloc (1);
@@ -149,12 +152,14 @@ foo(ptr p) {
   *q = 123;
   r = *p;
 }
-\end{lstlisting}
+\end{minted}
+\end{minipage}
 &
 $~\rightarrow$
 &
 %\small
-\begin{lstlisting}
+\begin{minipage}{0.37\textwidth}
+\begin{minted}{c}
 foo(ptr p) {
   var ptr q, int a,b,r;
   q = malloc (1);
@@ -163,7 +168,8 @@ foo(ptr p) {
   *q = 123;
   r = b;         // CP
 }
-\end{lstlisting}
+\end{minted}
+\end{minipage}
 \end{tabular}
 \end{center}
 
