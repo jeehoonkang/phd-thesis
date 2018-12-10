@@ -6,14 +6,15 @@ using CompCert as the learning material.  The technical ideas and results presen
 apply not only to CompCert but also to other compilers as well.  We first explain CompCert's
 correctness statement, as well as its simulation verification method
 (\Cref{sec:background:correctness}).  To flesh out the details on formal semantics and compiler
-verification, we use constant propagation---one of CompCert's optimization---as a running example.
-Specifically, We first review CompCert's memory model that is specifically designed so as to verify
-compiler optimizations (\Cref{sec:background:memory}).  Then we explain the RTL language on which
-constant propagation and most of the other optimizations are performed in the CompCert's compilation
-pipeline (\Cref{sec:background:rtl}), and how constant propagation works and how CompCert verifies
-it (\Cref{sec:background:constprop}).  Throughout this section, we keep the presentation
-semi-formal, abstracting away unnecessary detail to get across the main ideas.  For more details, we
-refer the reader to \cite{compcert, compcert-memory-model}.
+verification, we use RTL---one of CompCert's internal representations---and constant
+propagation---one of CompCert's optimizations---as a running example.  Specifically, We first review
+CompCert's memory model that is specifically designed so as to verify compiler optimizations
+(\Cref{sec:background:memory}).  Then we explain the RTL language on which constant propagation and
+most of the other optimizations are performed in the CompCert's compilation pipeline
+(\Cref{sec:background:rtl}), and how constant propagation works and how CompCert verifies it
+(\Cref{sec:background:constprop}).  Throughout this section, we keep the presentation semi-formal,
+abstracting away unnecessary detail to get across the main ideas.  For more details, we refer the
+reader to \cite{compcert, compcert-memory-model}.
 
 
 \subsection{Compiler Correctness}
@@ -124,9 +125,10 @@ simulation $R$ that relates $\mathrm{load}(\mathtt{s.l1})$ and $\mathrm{load}(\m
 
 \paragraph*{}
 
-In the rest of this section, we flesh out the details on how to verify a compiler optimization in
-CompCert, using constant propagation as the running example.  Since constant propagation is a
+In the rest of this section, we flesh out the details on formal semantics and compiler verification
+in CompCert, using constant propagation as the running example.  Since constant propagation is a
 transformation that optimizes memory operations, we will first review their semantics in CompCert.
+
 
 
 \subsection{Memory Model}
@@ -167,18 +169,18 @@ and $(3)$ omit subword arithmetic, and assume each address stores a 32-bit value
 
 % Roughly speaking, a memory model defines which value(s) a load operation can read from
 
+Now we define the semantic domain for and the semantics of those memory operations, or in other
+words, define the memory model.
+
 
 \paragraph{Concrete Model}
 
-The most intuitive and ... \jeehoon{revised up here}
-
-Concrete memory consists of a $2^{32}$-sized array of values, and a
-list of allocated blocks, 
-represented as pairs $(p,n)$ of the block's starting address and its size.
-Loading from or storing to an unallocated address raises
-an error (\ie undefined behavior).  Values are just 32-bit integers,
-since pointers are merely integers in the concrete model.
-As a result, \emph{the concrete model natively supports integer-pointer casts}.
+A naive approach to defining memory model is identifying pointers and integers as in the
+\emph{concrete} memory model.  In this model, memory consists of a $2^{32}$-sized array of values,
+and a list of allocated blocks, represented as pairs $(p,n)$ of the block's starting address and its
+size.  Loading from or storing to an unallocated address raises an error (\ie undefined behavior).
+Values are just 32-bit integers, since pointers are merely integers in the concrete model.  As a
+result, \emph{the concrete model natively supports integer-pointer casts}.
 \[
 \begin{array}{@{}l@{~}c@{~}l@{}}
 \mathrm{Mem} &\defeq& (\inttype \to \mathrm{Val}) \times \mathtt{list}\ \mathrm{Alloc} \\
@@ -191,7 +193,7 @@ Memory allocation inserts a block into the list of allocated blocks,
 whereas deallocation removes one.  Overall, the list of allocated 
 blocks should be \emph{consistent}:\footnote{These are a subset of 
   \texttt{malloc}'s properties according to the C11 Standard~\cite{iso2011iec}. 
-  For more details, see \S7.22.3 paragraph~1 and \S6.5.8 paragraph~5.}
+  For more details, see \S7.22.3 paragraph~1 and \S6.5.8 paragraph~5. \jeehoon{Update to C18}}
 \begin{itemize}
 \item If $(p, n)$ is allocated, then $\emptyset \neq [p,p+n) \subseteq
   (0,2^{32}-1)$.
@@ -201,23 +203,22 @@ blocks should be \emph{consistent}:\footnote{These are a subset of
   are disjoint.
 \end{itemize}
 
-As we have seen, however, the concrete model \emph{does not support 
-standard compiler optimizations} such as constant propagation and 
-dead allocation elimination in the presence of external function
-calls.  This is because the model does not provide 
-a mechanism for ensuring that a module has exclusive control over some
-part of memory, thereby assuming that unknown code can read and 
+As we have seen in \Cref{sec:introduction:context}, however, the concrete model \emph{does not
+  support standard compiler optimizations} such as constant propagation in the presence of external
+function calls.  This is because the model does not provide a mechanism for ensuring that a module
+has exclusive control over some part of memory, thereby assuming that unknown code can read and
 update the contents of every allocated memory cell.
 
 
-\paragraph{Logical Model}
+\paragraph{CompCert's Logical Model}
 
-In CompCert's logical model \cite{leroy:compcert,Leroy-Appel-Blazy-Stewart-memory-v2}, memory
-consists of a finite set of logical blocks with unique block identifiers.  Each block is a
-fixed-sized array of values together with a validity flag $v$ that indicates whether the block is
-accessible or has been freed. As before, accessing a freed block raises an error.  Values are either
-32-bit integers or logical addresses.  Here, a logical address $(l,i)$ consists of a block
-identifier $l$ and an offset $i$ inside the block.
+In order to support standard compiler optimizations, CompCert is based on the \emph{logical} memory
+model~\cite{leroy:compcert,Leroy-Appel-Blazy-Stewart-memory-v2} rather than the naive concrete
+model.  In the logical model, memory consists of a finite set of logical blocks with unique block
+identifiers.  Each block is a fixed-sized array of values together with a validity flag $v$ that
+indicates whether the block is accessible or has been freed. As before, accessing a freed block
+raises an error.  Values are either 32-bit integers or logical addresses.  Here, a logical address
+$(l,i)$ consists of a block identifier $l$ and an offset $i$ inside the block.
 % (For simplicity, throughout this paper, we assume pointers
 %are aligned at 4-byte boundaries and $(l,i)$ represents the 4-byte chunk at
 %offset $4i$. \todo{This is not right for the same reason as before.})
@@ -277,6 +278,8 @@ and the equality test between an address and \texttt{NULL} are well-defined.
 
 \subsection{The RTL Language}
 \label{sec:background:rtl}
+
+\jeehoon{Revised up here}
 
 In the rest of this section, we will explain how to establish a simulation relation for optimization
 passes, using constant propagation as a running example.  We start with the syntax and semantics of
