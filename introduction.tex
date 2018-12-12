@@ -38,6 +38,8 @@ Objective C, Swift, and Rust---largely follow the design of C and are often call
 
 \paragraph{Compiler Optimization}
 
+\jeehoon{Need to say about concrete memory model.  See intptrcast paper.}
+
 However, C is not just a thin wrapper around assembly languages because of compiler optimizations.
 They have been so crucial for the performance of systems since the early days that every system
 programmer expect a compiler to perform, \eg{} register promotion~\cite{reg-prom} and register
@@ -288,7 +290,7 @@ This chapter draws heavily on the work and writing in the following paper:
 
 Despite many years of research, it has proven very difficult to develop a formal semantics for
 concurrent programming languages that adequately balances the conflicting desiderata of programmers,
-compilers, and hardware.  In \Cref{chap:promising}, we propose the first formal semantics of
+compilers, and hardware.  In \Cref{chap:relaxed}, we propose the first formal semantics of
 relaxed-memory concurrency that $(1)$ accounts for a broad spectrum of low-level concurrency
 features in C, $(2)$ is implementable, in the sense that it provably validates many standard
 compiler optimizations and reorderings, as well as standard compilation schemes to x86-TSO and

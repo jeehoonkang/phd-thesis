@@ -40,6 +40,9 @@ $\mathtt{s.c}$ into memory, $\mathrm{Behav}(s)$ to denote the observable behavio
 of $s$, and analogously for $t$ and $\mathtt{t.asm}$.)  Hence, we say that \code{t.asm}, the
 target-level output of $\mathcal{C}$, \emph{refines} its source-level input, \code{s.c}.
 
+The compiler correctness statement presented here will be generalized to support separate
+compilation in \Cref{chap:sepcomp}.
+
 
 \paragraph{Set of Behaviors}
 
@@ -126,15 +129,14 @@ simulation $R$ that relates $\mathrm{load}(\mathtt{s.l1})$ and $\mathrm{load}(\m
 \paragraph*{}
 
 In the rest of this section, we flesh out the details on formal semantics and compiler verification
-in CompCert, using constant propagation as the running example.  Since constant propagation is a
-transformation that optimizes memory operations, we will first review their semantics in CompCert.
+in CompCert, using constant propagation as the running example.  Constant propagation is a
+transformation that essentially optimizes memory operations, so we will first review their semantics
+in CompCert.
 
 
 
 \subsection{Memory Model}
 \label{sec:background:memory}
-
-\newcommand{\usize}{\ensuremath{\mathtt{uint32}}}
 
 
 CompCert supports the following memory operations:
@@ -155,12 +157,17 @@ illegal address, then there are no valid results.  A malloc operation allocates 
 the specified size of type $\usize$, returning the new memory and the address of the allocated
 object, and a free operation deallocates an allocated memory object.
 
-To simplify the presentation, we focus on supporting integer-pointer casts, relaxed-memory
-concurrency, and separate compilation and do not discuss many of the orthogonal aspects of C
-semantics.  Specifically, we $(1)$ assume a 32-bit architecture: words are 4 bytes wide and the size
-of the address space is $2^{32}$, as eminent from the signature of $\memMalloc$; $(2)$ consider only
-integer and pointer values, and omit values of other types such as \texttt{float} or \texttt{char};
-and $(3)$ omit subword arithmetic, and assume each address stores a 32-bit value.
+Now we define the semantic domain for and the semantics of those memory operations, or in other
+words, define the \emph{memory model}.  The memory model presented here will be generalized to
+support integer-pointer casts and relaxed-memory concurrency in \Cref{chap:intptrcast} and
+\Cref{chap:relaxed}, respectively.
+
+To simplify the presentation, we do not discuss many aspects of C memory models that are orthogonal
+to the contributions of this dissertation.  Specifically, we $(1)$ assume a 32-bit architecture:
+words are 4 bytes wide and the size of the address space is $2^{32}$, as eminent from the signature
+of $\memMalloc$; $(2)$ consider only integer and pointer values, and omit values of other types such
+as \texttt{float} or \texttt{char}; and $(3)$ omit subword arithmetic, and assume each address
+stores a 32-bit value.
 
 % and take all addressing to be aligned at 4-byte boundaries.  \todo{gil: this is not quite
 % right. For example, we have a 4-byte word at 0x0000FFF0 and another 4-byte word at 0x0000FFF1,
@@ -169,23 +176,21 @@ and $(3)$ omit subword arithmetic, and assume each address stores a 32-bit value
 
 % Roughly speaking, a memory model defines which value(s) a load operation can read from
 
-Now we define the semantic domain for and the semantics of those memory operations, or in other
-words, define the memory model.
 
 
 \paragraph{Concrete Model}
 
-A naive approach to defining memory model is identifying pointers and integers as in the
-\emph{concrete} memory model.  In this model, memory consists of a $2^{32}$-sized array of values,
+A naive approach to defining a memory model is identifying pointers and integers as in the
+\emph{concrete memory model}.  In this model, memory consists of a $2^{32}$-sized array of values,
 and a list of allocated blocks, represented as pairs $(p,n)$ of the block's starting address and its
 size.  Loading from or storing to an unallocated address raises an error (\ie undefined behavior).
 Values are just 32-bit integers, since pointers are merely integers in the concrete model.  As a
 result, \emph{the concrete model natively supports integer-pointer casts}.
 \[
 \begin{array}{@{}l@{~}c@{~}l@{}}
-\mathrm{Mem} &\defeq& (\inttype \to \mathrm{Val}) \times \mathtt{list}\ \mathrm{Alloc} \\
+\mathrm{Mem} &\defeq& (\inttype \to \rtlVal) \times \mathtt{list}\ \mathrm{Alloc} \\
 \mathrm{Alloc} &\defeq& \setof{(p,n) \suchthat p \in \inttype \land n \in \inttype} \\
-\mathrm{Val} &\defeq& \setof{i\in\inttype}
+\rtlVal &\defeq& \setof{i\in\inttype}
 \end{array}
 \]
 
@@ -212,13 +217,15 @@ update the contents of every allocated memory cell.
 
 \paragraph{CompCert's Logical Model}
 
-In order to support standard compiler optimizations, CompCert is based on the \emph{logical} memory
+In order to support standard compiler optimizations, CompCert is based on a \emph{logical} memory
 model~\cite{leroy:compcert,Leroy-Appel-Blazy-Stewart-memory-v2} rather than the naive concrete
-model.  In the logical model, memory consists of a finite set of logical blocks with unique block
-identifiers.  Each block is a fixed-sized array of values together with a validity flag $v$ that
-indicates whether the block is accessible or has been freed. As before, accessing a freed block
-raises an error.  Values are either 32-bit integers or logical addresses.  Here, a logical address
-$(l,i)$ consists of a block identifier $l$ and an offset $i$ inside the block.
+model.  In the logical model, memory is a finite collection of logical blocks with unique block
+identifiers, together with the maximum of the allocated block identifiers.  Each block is a
+contiguous, fixed-sized array of values annotated with a validity flag $v$ that indicates whether
+the block is accessible or has been freed. As before, accessing a freed block raises an error.
+Values are either 32-bit integers, logical addresses, or the special \emph{undefined value} that
+represents uninitialized data.  Here, a logical address $(l,i)$ consists of a block identifier $l$
+and an offset $i$ inside the block.
 % (For simplicity, throughout this paper, we assume pointers
 %are aligned at 4-byte boundaries and $(l,i)$ represents the 4-byte chunk at
 %offset $4i$. \todo{This is not right for the same reason as before.})
@@ -226,11 +233,12 @@ $(l,i)$ consists of a block identifier $l$ and an offset $i$ inside the block.
 %block $l$ for the block with identifier $l$.
 \[
 \begin{array}{@{}l@{~}c@{~}l@{}}
-\mathrm{Mem} &\defeq& \mathrm{BlockID} \fpfun \mathrm{Block} \\
-\mathrm{Block} &\defeq&
+\rtlMem &\defeq& \setof{(nb,bs)\suchthat nb\in\rtlBId\land bs \in \rtlBId \fpfun \rtlBlock} \\
+\rtlBlock &\defeq&
 \setof{(v, n, c) \suchthat
-  v \in \mathtt{bool} \land n \in \Nat \land c \in \mathrm{Val}^n } \\
-\mathrm{Val} &\defeq& \setof{i\in\mathtt{int32}} \uplus \setof{(l,i) \in \mathrm{BlockID}\times \mathtt{int32}}
+  v \in \setofz{\rtlvalid,\rtlfreed} \land n \in \Nat \land c \in \rtlVal^n } \\
+\rtlVal &\defeq& \setof{i\in\isize} \uplus \rtlAddr \uplus \setofz{\rtlundef} \\
+\rtlAddr &\defeq& \setof{(l,i) \in \rtlBId\times \isize}
 \end{array}
 \]
 
@@ -251,41 +259,36 @@ compilers to remove dead allocations.
 %amount of memory, ... (\todo{Viktor, please say something about this
 % :)})
 
-Apart from that logical models have a slightly more complicated
-semantics, their main disadvantage is that \emph{they do not support
-  integer-to-pointer casts} very well.
-%% The main disadvantages of logical models are that they have a slightly
-%% more complicated semantics and, most importantly, that \emph{they do
-%%   not support integer-to-pointer casts} very well.  
-As a result,
-CompCert has very weak support for integer-pointer casts.  Generally,
-they are treated as \texttt{nop}s (\ie the identity function) rather
-than undefined (\ie erroneous), and thus variables of integer (or
-pointer) types can contain both integers and logical addresses.  In
-CompCert's higher-level languages (CompCert C and Clight), once a
-pointer is cast into an integer, any arithmetic on that integer
-returns an unspecified value.  In its lower-level languages (Cminor,
-RTL, \emph{etc.}), however, some of the integer operations (namely,
-addition, subtraction, and equality tests) are also well-defined for
-pointer values in special cases.  More specifically, for instance,
-%% subtraction and equality test are well defined for pointer values in
-%special cases: \eg 
-the addition of an integer to an address, the
-subtraction between addresses when they are in the same logical block,
-and the equality test between an address and \texttt{NULL} are well-defined.
+Apart from that logical models have a slightly more complicated semantics, their main disadvantage
+is that \emph{they do not support integer-to-pointer casts} very well.  As a result, CompCert does
+not support real-world use cases of integer-pointer casts well.
+%% The main disadvantages of logical models are that they have a slightly more complicated semantics
+%% and, most importantly, that \emph{they do not support integer-to-pointer casts} very well.
+Specifically, they are treated as \texttt{nop}s (\ie the identity function), and thus variables of
+integer (or pointer) types can contain both integers and logical addresses.  This conflicts with the
+intention of integer-pointer casts to freely manipulated pointers as if they are integer values.  We
+will address this disadvantage in \Cref{chap:intptrcast}.
 
+% In CompCert's higher-level languages (CompCert C and Clight), once a pointer is cast into an
+% integer, any arithmetic on that integer returns an unspecified value.  In its lower-level languages
+% (Cminor, RTL, \emph{etc.}), however, some of the integer operations (namely, addition, subtraction,
+% and equality tests) are also well-defined for pointer values in special cases.  More specifically,
+% for instance,
+% %% subtraction and equality test are well defined for pointer values in
+% % special cases: \eg
+% the addition of an integer to an address, the subtraction between addresses when they are in the
+% same logical block, and the equality test between an address and \texttt{NULL} are well-defined.
 
 
 \subsection{The RTL Language}
 \label{sec:background:rtl}
 
-\jeehoon{Revised up here}
+So far we reviewed CompCert's logical memory model.  To provide a more concrete context for formal
+semantics compiler verification, we explain the syntax and semantics of CompCert's register transfer
+language (RTL), the compiler's internal language where most of its optimizations take place.  For
+presentation purposes, we simplify the language a bit by removing types and other unnecessary
+details.
 
-In the rest of this section, we will explain how to establish a simulation relation for optimization
-passes, using constant propagation as a running example.  We start with the syntax and semantics of
-CompCert's register transfer language (RTL), the compiler's internal language where constant
-propagation takes place.  For presentation purposes, we simplify the language a bit by removing
-types and other unnecessary details.
 
 
 \paragraph{Syntax}
@@ -328,18 +331,15 @@ have duplicate entries.
 
 \input{rtl-semdom}
 
-We move on to the semantics of RTL.  Figure~\ref{fig:rtl-semdom} defines the necessary semantic
-domains.
+The semantic domain used in CompCert's RTL is given in Figure~\ref{fig:rtl-semdom}.
 
-We will discuss the memory model in more details in \Cref{sec:background:memory}, but here we just
-explain its types.  Memory, $m\in\rtlMem$, is represented as a finite collection of allocation
-blocks (a mapping from block identifiers to blocks), each of which is a contiguous portion of memory
-that may be either valid to access or already deallocated (freed) and therefore invalid to access.
-CompCert values, $v\in\rtlVal$, can be either 32-bit integers, logical addresses (pairs of a block
-identifier together with an offset within the block), or the special $\rtlundef$ value used to
-represent uninitialized data.
-
-
+% We will discuss the memory model in more details in \Cref{sec:background:memory}, but here we just
+% explain its types.  Memory, $m\in\rtlMem$, is represented as a finite collection of allocation
+% blocks (a mapping from block identifiers to blocks), each of which is a contiguous portion of memory
+% that may be either valid to access or already deallocated (freed) and therefore invalid to access.
+% CompCert values, $v\in\rtlVal$, can be either 32-bit integers, logical addresses (pairs of a block
+% identifier together with an offset within the block), or the special $\rtlundef$ value used to
+% represent uninitialized data.
 
 A global environment, $ge=(g,d)\in\rtlGEnv$, maps each global variable name to a logical block
 identifier, and each logical block identifier corresponding to some function's code to either the

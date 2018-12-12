@@ -2,12 +2,12 @@
 
 \begin{figure}
 \[\begin{array}{@{}l@{~}c@{~}l@{}}
-\rtlMem &\defeq& \setof{(nb,bs)\suchthat nb\in\rtlBId\land bs \in \rtlBId \fpfun \rtlBlock} \\
-\rtlBlock &\defeq&
-\setof{(p, n, c) \suchthat
-  p \in \setofz{\rtlvalid,\rtlfreed} \land n \in \Nat \land c \in \rtlVal^n \!} \\
-\rtlVal &\defeq& \rtlInt \uplus \rtlAddr \uplus \setofz{\rtlundef} \\
-\rtlAddr &\defeq& \setof{(l,i) \in \rtlBId\times \rtlInt} \\
+% \rtlMem &\defeq& \setof{(nb,bs)\suchthat nb\in\rtlBId\land bs \in \rtlBId \fpfun \rtlBlock} \\
+% \rtlBlock &\defeq&
+% \setof{(p, n, c) \suchthat
+%   p \in \setofz{\rtlvalid,\rtlfreed} \land n \in \Nat \land c \in \rtlVal^n \!} \\
+% \rtlVal &\defeq& \rtlInt \uplus \rtlAddr \uplus \setofz{\rtlundef} \\
+% \rtlAddr &\defeq& \setof{(l,i) \in \rtlBId\times \rtlInt} \\
 \rtlGEnv &\defeq& \setof{(g,d)\suchthat g\in \rtlId \fpfun \rtlBId {}\land{}\\
 &&\qquad\quad~~~ d \in \rtlBId \fpfun \rtlFSig\uplus\rtlFunc}\\
 \rtlState &\defeq& \rtlIState\uplus\rtlCState\uplus\rtlRState\\
