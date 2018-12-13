@@ -1,0 +1,91 @@
+%!TEX root=main.tex
+
+\begin{figure}[h]
+$$\vprg \vdash \vfd \simFun \vfd' ~\defeq~ \vfd' = \mathrm{transfun}(\vprg,\vfd)$$
+
+\[
+ \frac{
+\begin{array}{c}
+\vprg \vdash \vfd \simFun \vfd' \qquad
+ rs \le_\rtldef rs'
+\end{array}
+ }
+ {
+\vprg \vdash (r,\vfd,sp,pc,rs) \simFrame (r,\vfd',sp,pc,rs')
+ }
+\]
+
+\[
+\frac{
+}{
+\vprg \vdash  [\,] \simStack [\,]
+}
+\qquad
+\frac{
+\vprg \vdash  sf \simFrame sf' \qquad s \simStack s'
+}{
+\vprg \vdash  sf{::}s \simStack sf{::}s'
+}
+\]
+
+
+\[
+ \frac{
+\begin{array}{c}
+ m \sqsubseteq_\mathrm{ext}  m' \quad
+ s \simStack s' \quad
+\vprg \vdash \vfd \simFun \vfd' \quad
+ rs \le_\rtldef rs'
+\end{array}
+ }
+ {
+\vprg \vdash
+\rtlist~m~s~\vfd~sp~pc~rs \simState
+\rtlist~m'~s'~\vfd'~sp~pc~rs'
+ }
+\]
+
+
+\[
+ \frac{
+\begin{array}{@{}c@{}}
+m \sqsubseteq_\mathrm{ext}  m' \quad
+s \simStack s' \quad
+\vprg \vdash \vfd \simFun \vfd' \quad
+\vargs \le_\rtldef \vargs' 
+\end{array}
+ }
+ {
+\vprg \vdash
+\rtlcst~m~s~\vfd~\vargs \simState 
+\rtlcst~m'~s'~\vfd'~\vargs'
+ }
+\]
+
+\[
+ \frac{
+\begin{array}{c}
+ m \sqsubseteq_\mathrm{ext}  m' \qquad
+ s \simStack s' \qquad
+ v \le_\rtldef v'
+\end{array}
+ }
+ {
+\vprg \vdash
+\rtlrst~m~s~v \simState
+\rtlrst~m'~s'~v'
+ }
+\]
+
+\[
+(s,s') \in R(\vprg) ~\defeq~  \vprg \vdash s \simState s' \land \soundstate(\vprg, s)
+\]
+\caption{Definition of CompCert's simulation relation for the constant propagation pass.}
+\label{fig:part0-rel}
+\end{figure}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

@@ -4,7 +4,7 @@
 We begin by briefly reviewing the technical background that informs the rest of this dissertation,
 using CompCert as the learning material.  The technical ideas and results presented in this section
 apply not only to CompCert but also to other compilers as well.  We first explain CompCert's
-correctness statement, as well as its simulation verification method
+correctness statement, as well as its simulation verification technique
 (\Cref{sec:background:correctness}).  To flesh out the details on formal semantics and compiler
 verification, we use RTL---one of CompCert's internal representations---and constant
 propagation---one of CompCert's optimizations---as a running example.  Specifically, We first review
@@ -284,10 +284,10 @@ will address this disadvantage in \Cref{chap:intptrcast}.
 \label{sec:background:rtl}
 
 So far we reviewed CompCert's logical memory model.  To provide a more concrete context for formal
-semantics compiler verification, we explain the syntax and semantics of CompCert's register transfer
-language (RTL), the compiler's internal language where most of its optimizations take place.  For
-presentation purposes, we simplify the language a bit by removing types and other unnecessary
-details.
+semantics and compiler verification, we explain the syntax and semantics of CompCert's register
+transfer language (RTL), the compiler's internal language where most of its optimizations take
+place.  For presentation purposes, we simplify the language a bit by removing types and other
+unnecessary details.
 
 
 
@@ -359,6 +359,8 @@ $s$ is a list of stack frames, each of which records the same information as nor
 states, except with the addition of a register name $r$ where its return value should be stored, and
 minus the memory ($m$) and stack ($s$) components.
 
+\paragraph*{}
+
 The meaning of programs is described by three definitions:
 \[
 \begin{array}{r@{~~}c@{~~}l}
@@ -389,27 +391,29 @@ store instructions), and the next program counter.  Calls and returns are treate
 they do not directly transition from an instruction state to the next instruction state---they go
 through an intermediate call/return state.
 
-In more detail, calling a function (rule \textsc{call1}) looks up the function in the global
-environment, evaluates its arguments, creates a new stack frame corresponding to the current
-instruction state, and transitions to a call state.  From a call state, there are two possible
-execution steps.  If the function to be called is internal, \ie we have its function definition
-$\vfd\in\rtlFunc$, rule \textsc{call2-internal} applies.  It allocates the necessary stack space for
-the called function, initializes the parameter registers with the values passed as arguments, sets
-the program counter to point to the first node of the called function, and moves to the appropriate
-instruction state of the called function.  If the function to be called is external, \ie we have a
-function signature $\vfs\in\rtlFSig$, rule \textsc{call2-external} goes directly to the return
-state, and generates an event $\vevt$ indicating that it called an external function.
+In more detail, if the next instruction is a call instruction, rule (\textsc{call1}) looks up the
+function in the global environment, evaluates its arguments, creates a new stack frame corresponding
+to the current instruction state, and transitions to a call state.  From a call state, there are two
+possible execution steps.  If the function to be called is internal, \ie we have its function
+definition $\vfd\in\rtlFunc$, rule (\textsc{call2-internal}) applies.  It allocates the necessary
+stack space for the called function, initializes the parameter registers with the values passed as
+arguments, sets the program counter to point to the first node of the called function, and moves to
+the appropriate instruction state of the called function.  If the function to be called is external,
+\ie we have a function signature $\vfs\in\rtlFSig$, rule (\textsc{call2-external}) goes directly to
+the return state, and generates an event $\vevt$ indicating that it called an external function.
 
-Conversely, returning from a function (rule \textsc{return1}) evaluates the result to be returned,
-deallocates the stack space used by the function, and transitions to the return state.  The only
-possible step form a return state (rule \textsc{return2}) then pops the top-most stack frame and
-transitions to a normal instruction state thereby restoring the registers, program counter, and
-stack pointers of the calling function.
+Conversely, rule (\textsc{return1}) returns from a function byevaluating the result to be returned,
+deallocating the stack space used by the function, and transitioning to the return state.  Then rule
+(\textsc{return2}) pops the top-most stack frame and transitions to a normal instruction state
+thereby restoring the registers, program counter, and stack pointers of the calling function.
 
 
 
 \subsection{Constant Propagation}
 \label{sec:background:constprop}
+
+Now we explain how CompCert's constant propagation works, and how it verifies the optimization using
+the simulation technique.
 
 \paragraph{Algorithm}
 
@@ -439,7 +443,13 @@ The transformation part itself is straightforward:
 at each node $n$ of the function's CFG, if the analysis has determined that a variable has a constant value at node $n$,
 then the use of that variable is replaced by the constant it holds, and the instruction is suitably simplified.
 
-As an example, 
+For example, the algorithms works for the constant propagation example presented in
+\Cref{sec:introduction:context} as follows (albeit presented for a different language).  First, the
+analysis result for \code{x} is the constant number $42$ after line 10, and it continues to be $42$
+after line 20 because the address of \code{x} is not leaked to the external function.  Then based on
+this analysis result, CompCert replaces \code{x} with $42$ at line 30.
+
+As a more illustrative example, 
 Figure~\ref{fig:const-prop-example} shows the effect of constant propagation applied to a simple program.
 The program contains one internal function, \texttt{f}, which calls an external function, \texttt{g},
 and three zero-initialized variables: 
@@ -456,8 +466,6 @@ and can therefore assume that $\texttt{gv[0]}=0$.
 
 
 \input{background-constprop-ex}
-
-\jeehoon{explain the examples in the intro.}
 
 
 
@@ -486,8 +494,7 @@ the stack pointer and program counters agree, and
 the registers of $\vsf'$ hold equal or more defined values than those of $\vsf$.
 Two stacks are related, $\vprg \vdash s\simStack s'$, if they have the same length and their stack frames are related elementwise.
 
-% \input{part0-simrel}
-% TODO
+\input{background-simrel}
 
 Two states are related, $\vprg \vdash s \simState s'$
 if $(1)$ they are of the same kind, 
@@ -533,6 +540,8 @@ R\] and $(2)$ that $R$ is a simulation relation. As for $(1)$, the
 initial states after loading satisfy $\simState$ by construction, and
 the initial source state satisfies $\soundstate$ thanks to the
 soundness of the value analysis above.
+
+\jeehoon{Revised up here}
 
 It remains to show that $R$ is indeed a simulation.  Specifically,
 CompCert shows that it is a ``forward'' simulation, meaning that for

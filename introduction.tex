@@ -57,9 +57,9 @@ but also over compiler optimizations.
 % These days the mainstream compilers are becoming so aggressive in these days that they are
 % performing even subtle optimizations that cannot be immediately justified.
 
-Unfortunately, designing an abstraction over both hardware assembly languages and compiler
-optimizations is a subtle task.  For example, consider the following optimization that is actually
-performed by the mainstream compilers such as GCC~\cite{gcc} and LLVM~\cite{llvm}:
+Designing an abstraction over both hardware assembly languages and compiler optimizations is a
+challenging task.  In order to see the difficulty, consider the following optimization example that
+is actually performed by the mainstream compilers such as GCC~\cite{gcc} and LLVM~\cite{llvm}:
 
 \[\begin{array}{rcl}
 \begin{minipage}{0.27\textwidth}
