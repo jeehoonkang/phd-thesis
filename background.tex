@@ -283,11 +283,11 @@ will address this disadvantage in \Cref{chap:intptrcast}.
 \subsection{The RTL Language}
 \label{sec:background:rtl}
 
-So far we reviewed CompCert's logical memory model.  To provide a more concrete context for formal
-semantics and compiler verification, we explain the syntax and semantics of CompCert's register
-transfer language (RTL), the compiler's internal language where most of its optimizations take
-place.  For presentation purposes, we simplify the language a bit by removing types and other
-unnecessary details.
+So far we discussed CompCert's logical memory model and its advanrages.  To provide a more concrete
+context for formal semantics and compiler verification, we explain the syntax and semantics of
+CompCert's register transfer language (RTL), the compiler's internal language where most of its
+optimizations take place.  For presentation purposes, we simplify the language a bit by removing
+types and other unnecessary details.
 
 
 
@@ -534,66 +534,44 @@ Formally:
 }
 \]
 
-The CompCert proof then establishes that:
+The CompCert proof then establishes the following two properties for $R$, which collectively imply
+compiler correctness, \ie{} the target's behaviors refine the source's:
 %
 \begin{enumerate}[{(1)}]
 
-\item $(\mathrm{load}(\vprg),\mathrm{load}(\mathcal{T}_\mathrm{cp}(\vprg)))\in R$; and
+\item $(\mathrm{load}(\vprg),\mathrm{load}(\mathcal{T}_\mathrm{cp}(\vprg)))\in R$.
 
 \item $R$ is indeed a simulation relation.  Specifically, it is a ``backward'' simulation, meaning
   that for any related states $(s,t)\in R$, if the target state $t$ takes a step to $t'$ with an
   event $\sigma$, the source $s$ also takes a step to \emph{some} state $s'$ with the same event
   $\sigma$, such that $(s',t') \in R$.
 
-\end{enumearte}
+\end{enumerate}
 %
-\noindent Then it is straightforward to prove that these two conditions imply compiler correctness,
-\ie{} the target's behaviors refine the source's.
-
-As for $(1)$, the initial states after loading satisfy $\simState$ by construction, and the initial
-source state satisfies $\soundstate$ thanks to the soundness of the value analysis above.
-
-As for $(2)$, The relation $R$ given in \Cref{fig:background-simrel} is indeed a backward simulation
-for the following reasons.
-From $(s,t)\in R$, we know that we are executing the
-instructions at the same $\vpc$. Thus by the definition of constant
-propagation, the target instruction is either identical to the source
-instruction or obtained by replacing a variable with a constant or
-converting a conditional jump to an unconditional jump, depending on
-the value analysis result.  Here, thanks to the soundness of the
-current state w.r.t.\ the analysis result and the relation between the
-two states specified by $\simState$, we can easily deduce that
-executing the source and target instructions results in related
-states.  Also, the soundness of the new source state $s'$ follows
-from the soundness preservation property of the value analysis stated
-above.
-
-\jeehoon{Revised up here}
+\vskip 0.2cm \noindent As for $(1)$, the initial states after loading satisfy $\simState$ by
+construction, and the initial source state satisfies $\soundstate$ thanks to the soundness of the
+value analysis above.  As for $(2)$, $R$ is indeed a backward simulation for the following reasons.
+From $(s,t)\in R$, we know that we are executing the instructions at the same $\vpc$. Thus by the
+definition of constant propagation, the target instruction is either identical to the source
+instruction or obtained by replacing a variable with a constant or converting a conditional jump to
+an unconditional jump, depending on the value analysis result.  Here, thanks to the soundness of the
+current state w.r.t.\ the analysis result and the relation between the two states specified by
+$\simState$, we can easily deduce that executing the source and target instructions results in
+related states.  Also, the soundness of the new source state $s'$ follows from the soundness
+preservation property of the value analysis stated above.
 
 \textbf{Note:} The verification approach described above, relying on backward simulations, is
 something of an oversimplification of what CompCert actually does.  In fact, to make the proofs more
-convenient, CompCert uses a mixture of forward and backward simulations.  We gloss over this point
-here because it is orthogonal to our story, but we will return to it in \Cref{chap:sepcomp}.
-
-
-Finally, we briefly discuss why CompCert establishes a forward
-rather than a backward simulation, even though the former implies that
-the source's behaviors refine the target's, which seems the wrong way
-around.
-
-First, a forward simulation is easier to establish than a
-backward one because a single instruction in the source may be
-compiled down to several instructions in the target. Second, CompCert
-composes forward simulations of all passes using the transitivity of
-forward simulations, which is not hard to show. Then it converts the
-composed forward simulation between C and assembly to a backward
-simulation between them using some technical properties of C and
-assembly (namely, that C is \emph{receptive} and assembly is
-\emph{determinate}). Finally, from this backward simulation, one can
-establish that the target's behaviors refine the source's.
-
-\jeehoon{explain backward simulation here, and defer discussion on forward simulation to
-  \Cref{chap:sepcomp}.}
+convenient, CompCert uses ``forward'' simulations for the backend passes.  We briefly discuss why
+CompCert uses forward simulation, even though it implies that the source's behaviors refine the
+target's, which seems the wrong way around.  First, a forward simulation is easier to establish than
+a backward one because a single instruction in the source may be compiled down to several
+instructions in the target. Second, CompCert composes forward simulations of backend passes using
+the transitivity of forward simulations, which is not hard to show. Then it converts the composed
+forward simulation between an IR and assembly to a backward simulation between them using some
+technical properties of the IR and assembly (namely, that the IR is ``receptive'' and assembly is
+``determinate''). Finally, from this backward simulation, one can establish that the target's
+behaviors refine the source's.
 
 \jeehoon{Maybe we need to define simulation more precisely.}
 
@@ -627,10 +605,9 @@ establish that the target's behaviors refine the source's.
 
 \paragraph*{}
 
-\jeehoon{Transition.}  It is important to note that this approach of using forward simulations (when
-convenient) carries over without modification when porting CompCert to Level A and B compositional
-correctness, as we do in the next section.
-
+So far we discussed the technical background that is needed to understand the main contributions of
+this dissertation, which we will present from now on.  We will start with a formal semantics of
+casts beween integers and pointers.
 
 
 %%% Local Variables:

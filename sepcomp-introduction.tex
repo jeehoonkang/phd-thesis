@@ -1,6 +1,10 @@
 \section{Introduction}
 \label{sec:sepcomp:introduction}
 
+\jeehoon{It is important to note that this approach of using forward simulations (when convenient)
+  carries over without modification when porting CompCert to Level A and B compositional
+  correctness, as we do in the next section.}
+
 There was a key dimension in which the verification of CompCert is not realistic---namely that, for
 simplicity, it only establishes the correctness of \emph{whole-program} compilation: if CompCert is
 used to compile a self-contained C program consisting of a single file, then the output of CompCert
