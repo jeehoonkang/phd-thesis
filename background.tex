@@ -22,9 +22,10 @@ reader to \cite{compcert, compcert-memory-model}.
 
 \paragraph{End-to-End Correctness}
 
-Roughly speaking, the correctness result of CompCert can be understood to assert the following.
-Suppose \code{s.c} is a ``source'' file (in C), \code{t.asm} is a ``target'' file (in assembly), and
-$\mathcal{C}$ is a verified compiler (represented as a function from C files to assembly files).
+Roughly speaking, the correctness result of CompCert can be understood to assert \emph{semantic
+  preservation}, which in turn means the following.  Suppose \code{s.c} is a ``source'' file (in C),
+\code{t.asm} is a ``target'' file (in assembly), and $\mathcal{C}$ is a verified compiler
+(represented as a function from C files to assembly files).
 \[
 \frac{
 \mathcal{C}(\mathtt{s.c}) = \mathtt{t.asm} \qquad
@@ -183,14 +184,14 @@ each address stores a 32-bit value.
 
 \paragraph{Concrete Model}
 
-The most straightforward way to define a memory model is closely following what the machine is
-actually doing: pointers have the same representation as integer values of the appropriate width,
-and they simply index into a single flat array representing memory.  In such a \emph{concrete memory
-  model}, memory consists of a $2^{32}$-sized array of values, and a list of allocated blocks,
-represented as pairs $(p,n)$ of the block's starting address and its size.  Loading from or storing
-to an unallocated address raises an error (\ie undefined behavior).  Values are just 32-bit
-integers, since pointers are merely integers in the concrete model.  As a result, \emph{the concrete
-  model natively supports integer-pointer casts}.
+The most straightforward way to define a memory model is closely following the hardware assembly
+language: pointers have the same representation as integer values of the appropriate width, and they
+simply index into a single flat array representing memory.  In such a \emph{concrete memory model},
+memory consists of a $2^{32}$-sized array of values, and a list of allocated blocks, represented as
+pairs $(p,n)$ of the block's starting address and its size.  Loading from or storing to an
+unallocated address raises an error (\ie undefined behavior).  Values are just 32-bit integers,
+since pointers are merely integers in the concrete model.  As a result, \emph{the concrete model
+  natively supports integer-pointer casts}.
 \[
 \begin{array}{@{}l@{~}c@{~}l@{}}
 \mathrm{Mem} &\defeq& (\usize \to \rtlVal) \times \mathtt{list}\ \mathrm{Alloc} \\
@@ -217,6 +218,97 @@ As we have seen in \Cref{sec:introduction:context}, however, the concrete model 
 function calls.  This is because the model does not provide a mechanism for ensuring that a module
 has exclusive control over some part of memory, thereby assuming that unknown code can read and
 update the contents of every allocated memory cell.
+
+\jeehoon{The concrete model also invalidates dead allocation elimination optimizations.  Connect it
+  to the logical memory model's advantages.}
+
+\jeehoon{In the above example, the first optimization is allowed since there is no way to forge the
+  logical address of the variable \texttt{a} from those of other blocks. Also, the second one is
+  allowed since the memory is infinitely large.}
+
+\jeehoon{where typically the set of valid allocation block identifiers is infinite.  While logical
+  models allow most compiler optimizations, the problem is that}
+
+\jeehoon{Connect logical model and C18.  What's C18, actually?}
+
+Consider, for example, a function \code{f} that initializes a local variable \code{a} and then calls
+some unknown external function~\code{g}. We might expect the compiler to deduce that the value of
+\code{a} is unaffected by the call to \code{g} and perform constant propagation:
+%% On the formal side, there are two types of memory models for C\@.
+% On the one hand, we have \emph{concrete} models.
+% These represent pointers as 32-bit (or 64-bit) integers,
+% which is close to what programmers expect, but do not support
+% some of even the most basic optimizations that compilers perform.
+% As a simple illustration, consider the following function \texttt{f} that
+% initializes a local variable \texttt{a} and then calls some unknown external
+% function \texttt{g}.
+% The compiler might perform constant propagation and optimize this program
+% as follows by assuming that the value of \texttt{a} is unaffected by the call to \texttt{g}.
+\begin{center}
+\begin{tabular}{@{}l@{}l@{}l@{}l@{}l@{}}
+%% \small
+\multicolumn{5}{c}{\small \mintinline{c}{extern void g();} \\}
+\\
+\begin{minipage}{0.2\textwidth}
+\small
+\begin{minted}{c}
+int f(void) {
+  int a = 0;
+  g();
+  return a;
+}
+\end{minted}
+\end{minipage}
+&
+$\quad\rightarrow\quad$
+&
+%% \small
+\begin{minipage}{0.2\textwidth}
+\small
+\begin{minted}{c}
+int f(void) {
+  int a = 0;
+  g();
+  return 0;
+}
+\end{minted}
+\end{minipage}
+&
+$\quad\rightarrow\quad$
+&
+%% \small
+\begin{minipage}{0.2\textwidth}
+\small
+\begin{minted}{c}
+int f(void) {
+
+  g();
+  return 0;
+}
+\end{minted}
+\end{minipage}
+\\
+\end{tabular}
+\end{center}
+
+\vskip 0.3cm Using a simple concrete memory model, however, we have to consider the possibility that
+\texttt{g} is able to ``guess'' the location of \texttt{a} in memory and changes its value. This can
+happen if, for instance, our semantics allocates memory deterministically and the caller
+of~\texttt{f} sets up the state of memory appropriately for \texttt{g}.
+
+% We note, however, that this reasoning is not valid in the concrete model.
+% The variable \texttt{a} is allocated somewhere in memory, and the external
+% function might `guess' the address at which it is allocated and overwrite
+% its value.
+%
+
+The compiler may further optimize the program by completely removing
+the now unused local variable \texttt{a}. This latter transformation is again
+disallowed by concrete models because it might change the behavior of
+the program:
+by virtue of there being one fewer memory cells allocated, the call to \texttt{g}
+might succeed where initially it exhausted memory.
+
 
 
 \paragraph{CompCert's Logical Model}
@@ -299,7 +391,7 @@ types and other unnecessary details.
 
 \input{rtl-syntax}
 
-The syntax of the CompCert's RTL is given in Figure~\ref{fig:rtl-syntax}.  Programs are just a list
+The syntax of the CompCert's RTL is given in \Cref{fig:rtl-syntax}.  Programs are just a list
 of global declarations, which consist of $(1)$ declarations of external variables and functions
 provided by different compilation units, and $(2)$ definitions of variables and functions provided
 by the current compilation unit.  For global variable declarations and definitions, we also specify
@@ -335,7 +427,7 @@ have duplicate entries.
 
 \input{rtl-semdom}
 
-The semantic domain used in CompCert's RTL is given in Figure~\ref{fig:rtl-semdom}.
+The semantic domain used in CompCert's RTL is given in \Cref{fig:rtl-semdom}.
 
 % We will discuss the memory model in more details in \Cref{sec:background:memory}, but here we just
 % explain its types.  Memory, $m\in\rtlMem$, is represented as a finite collection of allocation
@@ -387,7 +479,7 @@ function because it is undefined for programs without a \code{main()} function.
 The $\estep{}$ relation is a small-step reduction relation describing how program states evolve
 during the computation.  For clarity, we write $s \estep{\vevt}_{ge} s'$ instead of
 $(ge,s,\vevt,s')\in {\estep{}}$.  The operational semantics for RTL is fairly standard and shown in
-Figure~\ref{fig:rtl-opsem}: there is a rule for each of the various basic instructions of the
+\Cref{fig:rtl-opsem}: there is a rule for each of the various basic instructions of the
 language.  Starting from normal instruction states, the instruction at the node pointed to by the
 program counter is scrutinized ($\vfd@pc$).  Depending on what instruction is there, only one rule
 is applicable.  The corresponding rule calculates the new values of the registers, the memory (for
@@ -454,7 +546,7 @@ after line 20 because the address of \code{x} is not leaked to the external func
 this analysis result, CompCert replaces \code{x} with $42$ at line 30.
 
 As a more interesting example, 
-Figure~\ref{fig:const-prop-example} shows the effect of constant propagation applied to a simple program.
+\Cref{fig:const-prop-example} shows the effect of constant propagation applied to a simple program.
 The program contains one internal function, \code{f}, which calls an external function, \code{g},
 and three zero-initialized variables: 
 a local variable (a register), \code{x}, 
@@ -482,7 +574,7 @@ there exists a simulation $R(\vprg)$ such that
 $(\mathrm{load}(\vprg),\mathrm{load}(\mathcal{T}_\mathrm{cp}(\vprg)))\in R(\vprg)$.
 
 The simulation relation, $R$, used for the constant propagation pass is given in
-Figure~\ref{fig:background-simrel}.  It is defined in terms of matching relations on states, stack frames,
+\Cref{fig:background-simrel}.  It is defined in terms of matching relations on states, stack frames,
 and stacks and function definitions ($\simState$, $\simFrame$, $\simStack$, and $\simFun$
 respectively).  These relations take as a parameter the source program, $\vprg$, which is used to
 relate the function definitions of the source and target programs.\footnote{The version shown here

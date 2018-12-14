@@ -1,8 +1,65 @@
 \section{Compiler Verification}
 \label{sec:intptrcast:compiler-verification}
 
-In this section, we give a high-level overview of our reasoning principles
-with a running example.
+In this section, we present a compiler verification technique for proving semantic preservation
+under our semantics, and apply the technique to verify a number of standard optimizations.
+
+
+\subsection{TODO: Set of Behaviors}
+
+On the other hand, we regard \emph{out of memory as the empty set of behaviors} (\ie no
+behaviors).\footnote{CompCert does not need to define the behaviors of out of memory because it uses
+  a purely \emph{logical memory model} and out of memory does not occur.  We regard out of memory in
+  this dissertation because it is unavoidable in the presence of integer-pointer casts.  See
+  \Cref{chap:intptrcast} for more details.}  We should allow the target program to run out of memory
+even if the source program does not, because register allocation---one of the most important
+compiler optimizations---may increase the program's memory requirements.  Dually, since running out
+of memory is not that serious a problem for programmers as is genuine undefined behavior (\eg
+accessing freed memory), the target behavior of a source program running out of memory should not be
+arbitrary.\footnote{Our semantics of out of memory, following
+  CompCertTSO~\cite{vsevvcik2013compcerttso}, is not entirely satisfactory because certain
+  optimizations---such as register promotion and dead allocation elimination---reduce memory
+  consumption instead of increasing it.
+
+  Furthermore, in ISO C18 Standard~\cite{iso2018iec}, \texttt{malloc} returns zero in case of
+  out-of-memory [\S7.22.3 paragraph~1].  TODO: check.  However, this semantics does not justify dead
+  allocation eliminations.  The reason is that, for example, if a dead malloc is eliminated, then
+  the source may have more allocated blocks than the target has and thus a subsequent allocation may
+  return 0 in the source but return a valid pointer in the target.}
+  %% In C11
+  %% Standard~\cite{iso2011iec}, \texttt{malloc} returns $0$ when out of memory
+  %% (7.22.3 paragraph 1).  However, this semantics does not justify
+  %% memory optimizations, such as dead allocation eliminations, since
+  %% the a \texttt{malloc} in the target may return $0$ while the
+  %% corresponding \texttt{malloc} in the source may return a valid
+  %% pointer.
+%This question arises naturally,
+%since integer-pointer casts inherently introduce out of memory.
+
+% but should match the source behavior and also run out of memory.
+
+% Thus we model \emph{out of memory as the empty set of behaviors}, or in other words, no behaviors.
+
+% Then what is the set of behaviors of out of memory?
+
+
+However, what happens if there were I/O events prior to the out-of-memory error?  Discarding I/O
+events before running out of memory is absurd: the target program should always perform a prefix of
+the events the source program could have performed.  To handle this, we also observes \emph{partial
+  behaviors}, possibly before discarding behavior due to running out of memory:
+
+
+\begin{itemize}
+\item A partial execution of the program that has produced a finite sequence
+of I/O events, $e_1, \cdots, e_n, \mathtt{partial}$.
+\end{itemize}
+As before, refinement is defined as inclusion of the set of (possibly partial) behaviors of the
+target program into that of the source program.
+% However, unlike CompCertTSO, where only the target language can run out of memory, our source
+% language can also run out of memory due to pointer-to-integer casts, as we explain below.
+
+
+
 
 \subsection{Running Example \& Informal Verification}
 \label{reasoning:running}
@@ -66,7 +123,7 @@ This relationship will designate one section of each memory as \emph{public}, an
 \end{figure}
 
 We begin at line 1 by assuming the
-following conditions on the memory of the source and target programs (see Figure~\ref{fig:invex}~(a)):
+following conditions on the memory of the source and target programs (see \Cref{fig:invex}~(a)):
 \begin{description}
 \item[assume] (equivalent arguments) the parameter \texttt{p} contains
   \emph{equivalent} arguments $v_\textrm{src} $ in the source and $v_\textrm{tgt}$ in the target;
@@ -88,7 +145,7 @@ After executing line 1, we add the newly allocated block (call it~$l$) to
 the private source memory $m_\textrm{prv:src}$. It is important to note that we can add the
 block $l$ to the private source memory because it is a fresh logical
 block and thus exclusively owned by \texttt{foo}.  After executing
-line 2, the block $l$ contains $123$ (see Figure~\ref{fig:invex}~(b)).
+line 2, the block $l$ contains $123$ (see \Cref{fig:invex}~(b)).
 
 At line 3, we guarantee that the function calls to \texttt{bar} are
 \emph{equivalent} as follows:
@@ -109,7 +166,7 @@ At line 3, we guarantee that the function calls to \texttt{bar} are
 When the calls to \texttt{bar} return,
 we can assume that the new public
 memories are equivalent to each other (though they may not be the same as the previous public memories), and
-the private memories are untouched (see Figure~\ref{fig:invex}~(c)):
+the private memories are untouched (see \Cref{fig:invex}~(c)):
 \begin{description}
 \item[assume] (equivalent public memories) we have new public memories $m'_\textrm{pub:src}$ and
   $m'_\textrm{pub:tgt}$, which are \emph{evolved} from $m_\textrm{pub:src}$
@@ -130,7 +187,7 @@ values at equivalent locations $v_\texttt{src}$ and $v_\texttt{tgt}$,
 we will have equivalent public memories $m''_\textrm{pub:src}$ and
 $m''_\textrm{pub:tgt}$, while leaving the private memories unchanged.
 
-Finally, we return to the callers of \texttt{foo} with (see Figure~\ref{fig:invex}~(d))
+Finally, we return to the callers of \texttt{foo} with (see \Cref{fig:invex}~(d))
 \begin{description}
 \item[guarantee] (equivalent public memories) 
   $m''_\textrm{pub:src}$ and $m''_\textrm{pub:tgt}$
@@ -191,13 +248,13 @@ they are logical addresses that are at the same offset in corresponding blocks
   \mbox{}
   \end{minipage}
 %% $(1)$ for CompCert model, and $(2)$ for our model
-\caption{Memory Invariants for Quasi-Concrete Model}\label{fig:invariant}
+\caption{Memory Invariants for Hybrid Model}\label{fig:invariant}
 \end{figure}
 
 The condition on the concrete addresses of corresponding blocks
 merits further explanation. We have four possible cases
 regarding whether two corresponding blocks are concrete or logical (see the
-\emph{public} side of Figure~\ref{fig:invariant}).  The first case in
+\emph{public} side of \Cref{fig:invariant}).  The first case in
 the figure (\ie source: logical, target: logical) obviously should be
 allowed. The second case (\ie source: concrete, target: concrete)
 should also be allowed but only when the concrete addresses
@@ -218,7 +275,7 @@ have more behaviors than the target, which is allowed.
 For blocks in private memories, we have four possible cases
 regarding whether the block is in the source or the target, and
 whether the block is concrete or logical (see \emph{private} side of
-Figure~\ref{fig:invariant}).  All the cases are allowed except for
+\Cref{fig:invariant}).  All the cases are allowed except for
 source private memory blocks that are concrete, for the same reason
 that blocks that are concrete in the source and logical in the target are not
 allowed in memory equivalence: the source memory should not contain
@@ -332,7 +389,7 @@ returns. We can assume that the memories at return time also satisfy some
 assume that the function \texttt{bar} does not change the private
 memories in $\beta_\textrm{c}$ (denoted $\beta_\textrm{c}
 =_{\textrm{prv}} {\beta_\textrm{r}}$) because there is no way
-for \texttt{bar} to access them in our quasi-concrete model.
+for \texttt{bar} to access them in our hybrid model.
 
 We continue through the function, evolving our invariant at non-call steps and performing similar reasoning at other call sites
 such as $\texttt{gee(..)}$.  Finally, when \texttt{foo} returns to its caller, we have to
@@ -352,20 +409,20 @@ results here are fully formalized in Coq.
 
 \paragraph{Arithmetic Optimization I}
 
-Consider the transformation in Figure~\ref{code:arith1}. If we assume that integer variables only contain integer
+Consider the transformation in \Cref{code:arith1}. If we assume that integer variables only contain integer
 values, not logical addresses, the instruction \texttt{a = (a
   - b) + (2 * b - b)} has no effect on the value of \texttt{a} and is equivalent to no
 operation, so the optimization is trivially correct. 
 
 How do we know that integer variables only contain
 integer values? The straightforward answer is that our language is statically type-checked, as in the LLVM IR. However, the key reason why this is possible
-is that in the quasi-concrete model we actually turn logical addresses into integers
+is that in the hybrid model we actually turn logical addresses into integers
 when they are cast to \texttt{int}, rather than placing logical addresses in integer
 variables. Also, when we load a value from memory to an integer 
 variable (resp. a pointer variable), 
 if the loaded value is a logical address (resp. an integer value), we raise undefined
 behavior (\ie \emph{error}).
-In other words, the quasi-concrete model induces a form of dynamic type
+In other words, the hybrid model induces a form of dynamic type
 checking in languages that use it. This allows us to verify integer
 arithmetic optimizations as in this example.
 %% and is only a minor
@@ -378,7 +435,7 @@ arithmetic optimizations as in this example.
 
 \paragraph{Dead Code Elimination}
 
-Consider the transformation in Figure~\ref{code:dce}.  This example
+Consider the transformation in \Cref{code:dce}.  This example
 is similar to the previous one.  Since we can assume that integer-typed
 variables contain only integers, the execution of the call
 \texttt{foo(a)} does not have any side effects.
@@ -390,7 +447,7 @@ execute it in the source.%  In this way, we can easily verify this
 
 \paragraph{Ownership Transfer}
 
-Consider the transformation in Figure~\ref{code:ownership}.  This
+Consider the transformation in \Cref{code:ownership}.  This
 example is similar to the running example in
 \Cref{reasoning:running}.
 
@@ -458,7 +515,7 @@ sections.
 
 \paragraph{Arithmetic Optimization II}
 
-We can easily verify the transformation in Figure~\ref{code:arith2}
+We can easily verify the transformation in \Cref{code:arith2}
 for the same reason as in \Cref{ex:arith1}: because we can assume
 that all integer variables contain integer values.
 
@@ -484,8 +541,8 @@ that all integer variables contain integer values.
 
 \paragraph{Dead Cast Elimination}
 
-Consider the transformation in Figure~\ref{code:deadcast}, in the case in which
-the source uses the quasi-concrete model and the target uses the
+Consider the transformation in \Cref{code:deadcast}, in the case in which
+the source uses the hybrid model and the target uses the
 concrete model.
 
 We begin by assuming that the first invariant below holds before the call to
@@ -501,7 +558,7 @@ would be concrete, which would invalidate our proof.
 
 After the cast, the block $l_\text{s}$ becomes concrete, yielding the third
 invariant below.  Here it is important to note that if the target
-language was using the quasi-concrete model and $l_\text{t}$ were logical,
+language was using the hybrid model and $l_\text{t}$ were logical,
 then we would produce an invariant in which $l_\text{s}$ is
 concrete and $l_\text{t}$ is logical, which would be an invalid invariant.  After
 \texttt{foo} returns, we simply drop the block $l'_\text{s}$ from the
@@ -515,8 +572,8 @@ invariant below. Then we can proceed to verify the rest of the code.
 \]
 
 \paragraph{Identity Compilers}
-As a sanity check for our reasoning principles, we wrote an identity compiler from our language with the quasi-concrete
-model to itself, and a simple compiler from our language with the quasi-concrete
+As a sanity check for our reasoning principles, we wrote an identity compiler from our language with the hybrid
+model to itself, and a simple compiler from our language with the hybrid
 model to the same language with the concrete model. The latter compiler just eliminates
 dead casts of the form ${\texttt{\_ = (int) p}}$. We successfully verified these two compilers in Coq using our reasoning principles.
 

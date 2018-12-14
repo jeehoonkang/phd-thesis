@@ -66,7 +66,7 @@ there is only one source code, \ie $i=1$.
 To prove that compiler $\mathcal{C}$ satisfies Level A compositional correctness, we want to reduce
 the problem to one of verifying the individual passes of $\mathcal{C}$, as we did for the end-to-end
 correctness of whole-program compilation.  The key idea here, as illustrated in
-Figure~\ref{fig:LevelA} where three separately-compiled modules go through two compiler passes
+\Cref{fig:LevelA} where three separately-compiled modules go through two compiler passes
 $\mathcal{T}_1$ and $\mathcal{T}_2$, is that since we know that the source modules are all compiled
 via the exact same sequence of passes, we can verify their compilations in lock step as if each pass
 is applied to all modules simultaneously.  In other words, it suffices to verify that, for each pass
@@ -216,7 +216,7 @@ perform these same passes in the same order.  However, for the RTL
 optimizations, we must do something different because at the RTL level
 the various $\mathcal{C}_i$'s do not all march in lock step.
 
-The key idea for handling the RTL optimizations, as illustrated in Figure~\ref{fig:LevelB} where
+The key idea for handling the RTL optimizations, as illustrated in \Cref{fig:LevelB} where
 each module is compiled with different optimization passes, is to pad the $\mathcal{C}_i$'s with
 extra dummy identity passes (which do not affect their end-to-end functionality) so that, whenever
 one compiler is performing an RTL optimization pass, the other compilers will for that step perform
@@ -243,7 +243,7 @@ a form of \emph{contextual refinement}: the output of $\mathcal{T}$
 must refine its input when linked with a context consisting of some
 arbitrary other RTL modules (the $\mathtt{u}_i$'s and
 $\mathtt{v}_j$'s).  If we can prove this, it should be clear from
-Figure~\ref{fig:LevelB} how the per-pass proofs link up transitively.
+\Cref{fig:LevelB} how the per-pass proofs link up transitively.
 
 \paragraph{Verifying Per-Pass Correctness}
 

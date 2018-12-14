@@ -38,8 +38,6 @@ Objective C, Swift, and Rust---largely follow the design of C and are often call
 
 \paragraph{Compiler Optimization}
 
-\jeehoon{Need to say about concrete memory model.  See intptrcast paper.}
-
 However, C is not just a thin wrapper around assembly languages because of compiler optimizations.
 They have been so crucial for the performance of systems since the early days that every system
 programmer expect a compiler to perform, \eg{} register promotion~\cite{reg-prom} and register
@@ -58,14 +56,14 @@ but also over compiler optimizations.
 % performing even subtle optimizations that cannot be immediately justified.
 
 Designing an abstraction over both hardware assembly languages and compiler optimizations is a
-challenging task.  In order to see the difficulty, consider the following optimization example that
-is actually performed by the mainstream compilers such as GCC~\cite{gcc} and LLVM~\cite{llvm}:
+challenging task.  In order to understand the challenge, consider the following optimization example
+that is actually performed by the mainstream compilers such as GCC~\cite{gcc} and LLVM~\cite{llvm}:
 
 \[\begin{array}{rcl}
 \begin{minipage}{0.27\textwidth}
 \begin{minted}{c}
 void f() {
-  10: int x = 42;
+  10: int a = 42;
   20: g();
   30: print(x);
 }
@@ -77,7 +75,7 @@ void f() {
 \begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
 void f() {
-  10: int x = 42;
+  10: int a = 42;
   20: g();
   30: print(42); // const. prop.
 }
@@ -86,15 +84,17 @@ void f() {
 \end{array}\]
 
 \noindent Suppose \code{g()} is an external function whose body is unknown to the compiler, and
-\code{print(x)} prints the value of $x$ to the screen.  The function \code{f()} first assigns
-\code{42} to \code{x} (line \code{10}), calls \code{g()} (line \code{20}), and then prints \code{x}
-(line \code{30}).  As an optimization, mainstream compilers replace \code{x} with \code{42} at line
-\code{30}, effectively propagating the constant \code{42} at line \code{10} to line \code{30}.  Such
-a \emph{constant propagation} optimization is valid, at least in the viewpoint of compilers, because
-the variable \code{x} is accessible only within the function \code{f()}---since its address is not
-leaked to elsewhere---and thus \code{g()} cannot modify the content of \code{x}.
+\code{print(a)} prints the value of \code{a} to the screen.  The function \code{f()} first assigns
+\code{42} to the local variable \code{a} (line \code{10}), calls some unknown external function
+\code{g()} (line \code{20}), and then prints \code{a} (line \code{30}).  As an optimization,
+mainstream compilers deduce that the value of \code{a} is unaffected by the call to \code{g} and
+replace \code{a} with \code{42} at line \code{30}, effectively propagating the constant \code{42} at
+line \code{10} to line \code{30}.  Such a \emph{constant propagation} optimization is valid, at
+least in the viewpoint of compilers, because the variable \code{a} is accessible only within the
+function \code{f()}---since its address is not leaked to elsewhere---and thus \code{g()} cannot
+modify the content of \code{a}.
 
-But what if an adversarial \code{g()} tries to \emph{guess} the address of \code{x} as follows?
+But what if \code{g()} is adversarially trying to \emph{guess} the address of \code{a} as follows?
 %
 \[
 \begin{minipage}{0.8\textwidth}
@@ -108,15 +108,15 @@ void g() {
 \end{minipage}
 \]
 %
-\noindent The function \code{g()} tries to guess the address of \code{x} by exploiting the fact that
+\noindent The function \code{g()} tries to guess the address of \code{a} by exploiting the fact that
 stack usually grows downwards with a fixed offset: it first declares a variable \code{anchor} and
-guesses that \code{x} is located 10 words later than than \code{anchor} is.  Sometimes the guess
+guesses that \code{a} is located 10 words later than than \code{anchor} is.  Sometimes the guess
 happens to be correct: when the adversarial \code{g()} is separately compiled with GCC 8.2.1 and
 then linked with the original \code{f()}, \code{f()} will surprisingly print the evil value 666; on
 the other hand, when \code{g()} is linked with the optimized \code{f()}, \code{f()} will print the
 propagated value 42.\footnote{We got this result with GCC 8.2.1 and compile option
   \code{-fno-stack-protector} in Linux 4.18.} This example invalidates the compiler's analysis that
-\code{x} is accessible only within the function \code{f()}, putting the soundness of the
+\code{a} is accessible only within the function \code{f()}, putting the soundness of the
 optimization in danger.
 
 
@@ -131,6 +131,12 @@ allocation of \code{anchor} and yet is outside of the valid range of \code{ancho
 invalid as an address~\cite{c11-6.5.6p8}.  In other words, compilers may safely assume that all the
 pointers derived from \code{anchor} \emph{shall} point to \code{anchor}, and a failure to conform
 with such an assumption invokes undefined behavior.
+
+It is worth noting that in the course of rescuing the soundness of constant propagation, the ISO C18
+standard is intentionally deviating from the hardware assembly language, where pointers have the
+same representation as integer values of the appropriate width, and they simply index into a single
+flat array representing memory.\footnote{This ``concrete'', flat memory model is supported via
+  virtual page mapping in the operating systems.}
 
 % The constant propagation example above shows that the low-level control over memory layout via
 % pointer manipulation conflicts with a simple compiler optimization, and C resolves the conflict by
