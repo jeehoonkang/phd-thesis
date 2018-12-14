@@ -37,7 +37,7 @@ reasoning about even single-threaded programs non-trivial.
 One popular extension of the standard C memory model that has not
 previously been formalized is the \emph{unrestricted} manipulation of
 pointers as integer values. While the language definition provides an integer
-type \texttt{uintptr\_t} that may be legally cast to and from pointer
+type $\mathtt{uintptr\_t}$ that may be legally cast to and from pointer
 types, it does not require anything of the resulting values~\cite[\S7.20.1.4p1]{iso2011iec}. 
 Nevertheless, there are many important use cases for manipulating
 the representation of pointers in low-level code.
@@ -85,20 +85,13 @@ This is useful since taking a pointer is a cheap way to get a unique key.
 % I'm also hesitant to make claims about what C programmers expect of
 % the memory model.
 
-The most straightforward way to support bit-level pointer 
-manipulation is to adopt what is often called a \emph{concrete} memory
-model. This approach most closely resembles what the machine is
-actually doing: pointers have the same representation as integer
-values of the appropriate width, and they simply index into a single
-flat array representing memory.
-
-However, the combination of finite memory and allowing casts
-of arbitrary integers to pointers invalidates many basic compiler
-optimizations. Consider, for example, a function \texttt{f} that
-initializes a local variable \texttt{a} and then calls some unknown
-external function~\texttt{g}. We might expect the compiler to deduce
-that the value of \texttt{a} is unaffected by the call to \texttt{g}
-and perform constant propagation:
+The most straightforward way to support bit-level pointer manipulation is to adopt the
+\emph{concrete} memory model presented in \Cref{sec:background:memory}, but this model invalidates
+many basic compiler optimizations due to the combination of finite memory and casts of arbitrary
+integers to pointers.  Consider, for example, a function \code{f} that initializes a local variable
+\code{a} and then calls some unknown external function~\code{g}. We might expect the compiler to
+deduce that the value of \code{a} is unaffected by the call to \code{g} and perform constant
+propagation:
 %% On the formal side, there are two types of memory models for C\@.
 % On the one hand, we have \emph{concrete} models.
 % These represent pointers as 32-bit (or 64-bit) integers,
@@ -112,46 +105,53 @@ and perform constant propagation:
 \begin{center}
 \begin{tabular}{@{}l@{}l@{}l@{}l@{}l@{}}
 %% \small
-\multicolumn{5}{c}{\texttt{extern void g();}}
+\multicolumn{5}{c}{\small \mintinline{c}{extern void g();} \\}
 \\
-\begin{lstlisting}
+\begin{minipage}{0.2\textwidth}
+\small
+\begin{minted}{c}
 int f(void) {
   int a = 0;
   g();
   return a;
 }
-\end{lstlisting}
+\end{minted}
+\end{minipage}
 &
 $\quad\rightarrow\quad$
 &
 %% \small
-\begin{lstlisting}
+\begin{minipage}{0.2\textwidth}
+\small
+\begin{minted}{c}
 int f(void) {
   int a = 0;
   g();
   return 0;
 }
-\end{lstlisting}
+\end{minted}
+\end{minipage}
 &
 $\quad\rightarrow\quad$
 &
 %% \small
-\begin{lstlisting}
+\begin{minipage}{0.2\textwidth}
+\small
+\begin{minted}{c}
 int f(void) {
 
   g();
   return 0;
 }
-\end{lstlisting}
+\end{minted}
+\end{minipage}
 \end{tabular}
 \end{center}
 
-Using a simple concrete memory model, however, we have to consider the
-possibility that \texttt{g} is able to ``guess'' the location of
-\texttt{a} in memory and changes its value. This can happen if, for
-instance, our semantics allocates memory deterministically and 
-the caller of~\texttt{f} sets up the state of memory appropriately for
-\texttt{g}.
+\vskip 0.3cm Using a simple concrete memory model, however, we have to consider the possibility that
+\texttt{g} is able to ``guess'' the location of \texttt{a} in memory and changes its value. This can
+happen if, for instance, our semantics allocates memory deterministically and the caller
+of~\texttt{f} sets up the state of memory appropriately for \texttt{g}.
 
 % We note, however, that this reasoning is not valid in the concrete model.
 % The variable \texttt{a} is allocated somewhere in memory, and the external

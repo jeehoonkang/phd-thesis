@@ -4,8 +4,8 @@
 \rtlProg &::=& \overline{\rtlDecl}
 \\
 \rtlDecl &::=& 
-\multicolumn{2}{@{}l@{}}{\rtlextern~\consthide{[\rtlconst]~}\typhide{\typhide{\mathit{Typ}~}}\rtlId[Int]} &\text{// External Variable} \\
-&|&\multicolumn{2}{@{}l@{}}{\consthide{[\rtlconst]~}\typhide{\mathit{Typ}~}\rtlId[Int] := \{~\overline{\rtlGVal}~\}} & \text{// Variable}\\
+\multicolumn{2}{@{}l@{}}{\rtlextern~\consthide{[\rtlconst]~}\typhide{\typhide{\mathit{Typ}~}}\rtlId[\usize]} &\text{// External Variable} \\
+&|&\multicolumn{2}{@{}l@{}}{\consthide{[\rtlconst]~}\typhide{\mathit{Typ}~}\rtlId[\usize] := \{~\overline{\rtlGVal}~\}} & \text{// Variable}\\
 &|&\multicolumn{2}{@{}l@{}}{\rtlextern~\typhide{\mathit{Typ}~}\rtlId~\rtlFSig} & \text{// External Function}\\
 &|&\multicolumn{2}{@{}l@{}}{\typhide{\mathit{Typ}~}\rtlId~\rtlFunc} & \text{// Function}
 \\
@@ -15,7 +15,7 @@
 \\
 \rtlFunc &::=& 
 \multicolumn{2}{@{}l@{}}{(\overline{\typhide{\mathit{Typ}~}\rtlReg})~
-\setof{\overline{\typhide{\mathit{Typ}~}\rtlReg};~\rtlsp[\rtlInt]~;~\rtlCode}}
+\setof{\overline{\typhide{\mathit{Typ}~}\rtlReg};~\rtlsp[\usize]~;~\rtlCode}}
 &\text{// Function Definition}
 \\
 \typhide{\mathit{Typ} &::=& \mathtt{int}~|~\mathtt{float}~|~\ldots\\}
@@ -27,8 +27,8 @@
 \begin{array}{@{}l@{~}c@{~}l@{~~}l@{}r@{}}
 \rtlInstr &::=& \rtlReg := \rtlFVal&\rtljmp~\rtlNId&\text{// Immediate Value}
 \\&|&\rtlReg := \rtlop~\overline{\rtlReg}&\rtljmp~\rtlNId&\text{// Operation}
-\\&|&\rtlReg :=\rtlFVal[Int]&\rtljmp~\rtlNId&\text{// Load}
-\\&|&\rtlFVal[Int] :=\rtlReg&\rtljmp~\rtlNId&\text{// Store}
+\\&|&\rtlReg :=\rtlFVal[\usize]&\rtljmp~\rtlNId&\text{// Load}
+\\&|&\rtlFVal[\usize] :=\rtlReg&\rtljmp~\rtlNId&\text{// Store}
 \\&|&\multicolumn{2}{@{}l@{}}{\rtlcondop~\overline{\rtlReg}~?~\rtljmp~\rtlNId:\rtljmp~\rtlNId}&\text{// Conditional}
 \\&|& \rtlReg := \rtlFVal(\overline{\rtlReg})&\rtljmp~\rtlNId&\text{// Call}
 \\&|&\multicolumn{2}{@{}l@{}}{\rtlreturn~\rtlReg} &\text{// Return}
@@ -38,9 +38,9 @@
 \vspace{-1ex}
 \[
 \begin{array}{@{}l@{~}c@{~}l@{~~}lr@{}}
-\rtlGVal&::=&\multicolumn{2}{@{}l@{}}{\rtlId ~|~ \rtlInt ~|~ \rtlundef}\\
+\rtlGVal&::=&\multicolumn{2}{@{}l@{}}{\rtlId ~|~ \usize ~|~ \rtlundef}\\
 \rtlFVal&::=&\multicolumn{2}{@{}l@{}}{\rtlGVal ~|~ \rtlReg ~|~ \rtlsp}\\
-\rtlInt&::=&\multicolumn{2}{@{}l@{}}{\text{the set of 32-bit integers}}\\
+  \usize&::=&\multicolumn{2}{@{}l@{}}{\text{the set of 32-bit unsigned integers}}\\
 \rtlId&::=&\multicolumn{2}{@{}l@{}}{\text{the set of identifiers for variables and functions \qquad\qquad\qquad}}\\
 \rtlReg&::=&\multicolumn{2}{@{}l@{}}{\text{the set of register names}}\\
 \rtlNId&::=&\multicolumn{2}{@{}l@{}}{\text{the set of node labels}}\\

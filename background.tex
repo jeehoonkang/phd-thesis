@@ -129,10 +129,12 @@ simulation $R$ that relates $\mathrm{load}(\mathtt{s.l1})$ and $\mathrm{load}(\m
 \paragraph*{}
 
 In the rest of this section, we flesh out the details on formal semantics and compiler verification
-in CompCert, using constant propagation as the running example.  Constant propagation is a
-transformation that essentially optimizes memory operations, so we will first review their semantics
-in CompCert.
+in CompCert, using constant propagation as the running example.  Constant propagation is essentially
+a transformation that optimizes memory operations, so we will first review their semantics in
+CompCert.
 
+% At the essence of the compiler optimization is memory operations, so we will first review their
+% semantics in CompCert.
 
 
 \subsection{Memory Model}
@@ -154,8 +156,9 @@ all operations may produce multiple results due to the nondeterminism arising fr
 concurrency.  A load operation reads the value, $v\in\rtlVal$, of an address, $a\in\rtlAddr$, and a
 store operation writes a value to an address in the memory.  If a load or store operation access an
 illegal address, then there are no valid results.  A malloc operation allocates a memory object of
-the specified size of type $\usize$, returning the new memory and the address of the allocated
-object, and a free operation deallocates an allocated memory object.
+the specified size of type $\usize$ (the set of 32-bit unsigned integers), returning the new memory
+and the address of the allocated object, and a free operation deallocates an allocated memory
+object.
 
 Now we define the semantic domain for and the semantics of those memory operations, or in other
 words, define the \emph{memory model}.  The memory model presented here will be generalized to
@@ -165,9 +168,9 @@ support integer-pointer casts and relaxed-memory concurrency in \Cref{chap:intpt
 To simplify the presentation, we do not discuss many aspects of C memory models that are orthogonal
 to the contributions of this dissertation.  Specifically, we $(1)$ assume a 32-bit architecture:
 words are 4 bytes wide and the size of the address space is $2^{32}$, as eminent from the signature
-of $\memMalloc$; $(2)$ consider only integer and pointer values, and omit values of other types such
-as \texttt{float} or \texttt{char}; and $(3)$ omit subword arithmetic, and assume each address
-stores a 32-bit value.
+of $\memMalloc$; $(2)$ consider only unsigned integer and pointer values, and omit values of other
+types such as \isize, \code{float} or \code{char}; and $(3)$ omit subword arithmetic, and assume
+each address stores a 32-bit value.
 
 % and take all addressing to be aligned at 4-byte boundaries.  \todo{gil: this is not quite
 % right. For example, we have a 4-byte word at 0x0000FFF0 and another 4-byte word at 0x0000FFF1,
@@ -180,25 +183,26 @@ stores a 32-bit value.
 
 \paragraph{Concrete Model}
 
-A naive approach to defining a memory model is identifying pointers and integers as in the
-\emph{concrete memory model}.  In this model, memory consists of a $2^{32}$-sized array of values,
-and a list of allocated blocks, represented as pairs $(p,n)$ of the block's starting address and its
-size.  Loading from or storing to an unallocated address raises an error (\ie undefined behavior).
-Values are just 32-bit integers, since pointers are merely integers in the concrete model.  As a
-result, \emph{the concrete model natively supports integer-pointer casts}.
+The most straightforward way to define a memory model is closely following what the machine is
+actually doing: pointers have the same representation as integer values of the appropriate width,
+and they simply index into a single flat array representing memory.  In such a \emph{concrete memory
+  model}, memory consists of a $2^{32}$-sized array of values, and a list of allocated blocks,
+represented as pairs $(p,n)$ of the block's starting address and its size.  Loading from or storing
+to an unallocated address raises an error (\ie undefined behavior).  Values are just 32-bit
+integers, since pointers are merely integers in the concrete model.  As a result, \emph{the concrete
+  model natively supports integer-pointer casts}.
 \[
 \begin{array}{@{}l@{~}c@{~}l@{}}
-\mathrm{Mem} &\defeq& (\inttype \to \rtlVal) \times \mathtt{list}\ \mathrm{Alloc} \\
-\mathrm{Alloc} &\defeq& \setof{(p,n) \suchthat p \in \inttype \land n \in \inttype} \\
-\rtlVal &\defeq& \setof{i\in\inttype}
+\mathrm{Mem} &\defeq& (\usize \to \rtlVal) \times \mathtt{list}\ \mathrm{Alloc} \\
+\mathrm{Alloc} &\defeq& \setof{(p,n) \suchthat p \in \usize \land n \in \usize} \\
+\rtlVal &\defeq& \setof{i\in\usize}
 \end{array}
 \]
 
-Memory allocation inserts a block into the list of allocated blocks, 
-whereas deallocation removes one.  Overall, the list of allocated 
-blocks should be \emph{consistent}:\footnote{These are a subset of 
-  \texttt{malloc}'s properties according to the C11 Standard~\cite{iso2011iec}. 
-  For more details, see \S7.22.3 paragraph~1 and \S6.5.8 paragraph~5. \jeehoon{Update to C18}}
+Memory allocation inserts a block into the list of allocated blocks, whereas deallocation removes
+one.  Overall, the list of allocated blocks should be \emph{consistent}:\footnote{These are a subset
+  of \code{malloc}'s properties according to the C11 Standard~\cite{iso2011iec}.  For more details,
+  see \S7.22.3 paragraph~1 and \S6.5.8 paragraph~5. \jeehoon{Update to C18}}
 \begin{itemize}
 \item If $(p, n)$ is allocated, then $\emptyset \neq [p,p+n) \subseteq
   (0,2^{32}-1)$.
@@ -237,8 +241,8 @@ and an offset $i$ inside the block.
 \rtlBlock &\defeq&
 \setof{(v, n, c) \suchthat
   v \in \setofz{\rtlvalid,\rtlfreed} \land n \in \Nat \land c \in \rtlVal^n } \\
-\rtlVal &\defeq& \setof{i\in\isize} \uplus \rtlAddr \uplus \setofz{\rtlundef} \\
-\rtlAddr &\defeq& \setof{(l,i) \in \rtlBId\times \isize}
+\rtlVal &\defeq& \setof{i\in\usize} \uplus \rtlAddr \uplus \setofz{\rtlundef} \\
+\rtlAddr &\defeq& \setof{(l,i) \in \rtlBId\times \usize}
 \end{array}
 \]
 
@@ -264,7 +268,7 @@ is that \emph{they do not support integer-to-pointer casts} very well.  As a res
 not support real-world use cases of integer-pointer casts well.
 %% The main disadvantages of logical models are that they have a slightly more complicated semantics
 %% and, most importantly, that \emph{they do not support integer-to-pointer casts} very well.
-Specifically, they are treated as \texttt{nop}s (\ie the identity function), and thus variables of
+Specifically, they are treated as \code{nop}s (\ie the identity function), and thus variables of
 integer (or pointer) types can contain both integers and logical addresses.  This conflicts with the
 intention of integer-pointer casts to freely manipulated pointers as if they are integer values.  We
 will address this disadvantage in \Cref{chap:intptrcast}.
@@ -277,7 +281,7 @@ will address this disadvantage in \Cref{chap:intptrcast}.
 % %% subtraction and equality test are well defined for pointer values in
 % % special cases: \eg
 % the addition of an integer to an address, the subtraction between addresses when they are in the
-% same logical block, and the equality test between an address and \texttt{NULL} are well-defined.
+% same logical block, and the equality test between an address and \code{NULL} are well-defined.
 
 
 \subsection{The RTL Language}
@@ -299,7 +303,7 @@ The syntax of the CompCert's RTL is given in Figure~\ref{fig:rtl-syntax}.  Progr
 of global declarations, which consist of $(1)$ declarations of external variables and functions
 provided by different compilation units, and $(2)$ definitions of variables and functions provided
 by the current compilation unit.  For global variable declarations and definitions, we also specify
-a (positive) integer number denoting the size of the declared block in bytes.
+a (non-negative) integer number denoting the size of the declared block in bytes.
 
 Function declarations only contain the function signature, which is a list of parameters, but
 function definitions additionally contain a list of local registers, the size of their stack frame,
@@ -375,8 +379,8 @@ maps the blocks corresponding to function symbols to the relevant function defin
 Similarly, $\rtlload(\vprg)$ returns the initial state obtained by loading a program into memory: it
 initializes the memory $m$ with the initial values of the global variables at the appropriate
 addresses generated by $\rtlgenv(\vprg)$, and returns a call state, $\rtlcst~m~[\,]~\vfd~[\,]$,
-where $\vfd$ is the function definition corresponding to \texttt{main()}.  Loading is a partial
-function because it is undefined for programs without a \texttt{main()} function.
+where $\vfd$ is the function definition corresponding to \code{main()}.  Loading is a partial
+function because it is undefined for programs without a \code{main()} function.
 
 \input{rtl-opsem}
 
@@ -423,7 +427,7 @@ This in turn runs a ``value analysis'' to determine which variables (whether glo
 and then, based on that information, simplifies the program.
 
 The analysis consists of two parts: 
-(a) the global part, which detects which global variables cannot be updated (\ie those declared with the \texttt{const} qualifier), and
+(a) the global part, which detects which global variables cannot be updated (\ie those declared with the \code{const} qualifier), and
 (b) the local part, which analyzes the code of a function and calculates an abstract value for each register and stack variable.
 The abstract value of a variable can be either $\bot$ if the variable holds $\tt undef$, 
 or a constant number, 
@@ -449,20 +453,20 @@ analysis result for \code{x} is the constant number $42$ after line 10, and it c
 after line 20 because the address of \code{x} is not leaked to the external function.  Then based on
 this analysis result, CompCert replaces \code{x} with $42$ at line 30.
 
-As a more illustrative example, 
+As a more interesting example, 
 Figure~\ref{fig:const-prop-example} shows the effect of constant propagation applied to a simple program.
-The program contains one internal function, \texttt{f}, which calls an external function, \texttt{g},
+The program contains one internal function, \code{f}, which calls an external function, \code{g},
 and three zero-initialized variables: 
-a local variable (a register), \texttt{x}, 
-an address-taken variable on the stack, \texttt{sp[0]},
-and a global variable, \texttt{gv[0]}.
+a local variable (a register), \code{x}, 
+an address-taken variable on the stack, \code{sp[0]},
+and a global variable, \code{gv[0]}.
 After the external function call, 
-constant propagation can safely assume that $\texttt{x}=0$ and thereby simplify the conditional at node 5,
-but cannot do the same for \texttt{sp[0]} at node 4
+constant propagation can safely assume that $\code{x}=0$ and thereby simplify the conditional at node 5,
+but cannot do the same for \code{sp[0]} at node 4
 because its address was passed to the external function and its value might therefore have changed.
 Further, at node 6, 
-constant propagation notes that the global variable \texttt{gv[0]} has been declared with the \texttt{const} qualifier,
-and can therefore assume that $\texttt{gv[0]}=0$.
+constant propagation notes that the global variable \code{gv[0]} has been declared with the \code{const} qualifier,
+and can therefore assume that $\code{gv[0]}=0$.
 
 
 \input{background-constprop-ex}
@@ -534,7 +538,7 @@ Formally:
 }
 \]
 
-The CompCert proof then establishes the following two properties for $R$, which collectively imply
+The CompCert proof then establishes the following two properties of $R$, which collectively imply
 compiler correctness, \ie{} the target's behaviors refine the source's:
 %
 \begin{enumerate}[{(1)}]
@@ -582,24 +586,24 @@ behaviors refine the source's.
 % For concreteness, we consider the following simple C-like language:
 % \[
 % \begin{array}{@{}l@{~}c@{~}l@{}}
-% \mathit{Typ} &::=& \texttt{int}~|~\texttt{ptr}\\
-% \mathit{Bop} &::=& \texttt{+}~|~\texttt{-}~|~\texttt{*}~|~\texttt{\&\&}~|~\texttt{=}\\
+% \mathit{Typ} &::=& \code{int}~|~\code{ptr}\\
+% \mathit{Bop} &::=& \code{+}~|~\code{-}~|~\code{*}~|~\code{\&\&}~|~\code{=}\\
 % \mathit{Exp} &::=& \mathit{Int}~|~\mathit{Var}~|~\mathit{Global}~|~\mathit{Exp}\ \mathit{Bop}\ \mathit{Exp}\\
-% \mathit{RExp} &::=& \mathit{Exp}~|~\texttt{malloc}(\mathit{Exp})~|~\texttt{free}(\mathit{Exp})~|~\texttt{(}\mathit{Typ}\texttt{)}\ \mathit{Exp}\\&&|~\texttt{input()}~|~\texttt{output}(\mathit{Exp})\\
+% \mathit{RExp} &::=& \mathit{Exp}~|~\code{malloc}(\mathit{Exp})~|~\code{free}(\mathit{Exp})~|~\code{(}\mathit{Typ}\code{)}\ \mathit{Exp}\\&&|~\code{input()}~|~\code{output}(\mathit{Exp})\\
 % \mathit{Instr} &::=& \mathit{Fid}(\mathit{Exp}, \ldots, \mathit{Exp});
-% ~|~\mathit{Var}\ \texttt{=}\ \mathit{RExp}
-% ~|~\mathit{Var}\ \texttt{=}\ \texttt{*}\mathit{Exp}
-% \\&&|~\texttt{*}\mathit{Exp}\ \texttt{=}\ \mathit{Exp}
-% ~|~\texttt{if}\ \texttt{(}\mathit{Exp}\texttt{)}\ \overline{\mathit{Instr}}\ \texttt{else}\ \overline{\mathit{Instr}}
-% \\&&|~\texttt{while}~\texttt{(}\mathit{Exp}\texttt{)}\ \overline{\mathit{Instr}}\\
-% \mathit{Decl} &::=& \mathit{Fid}(\mathit{Typ}\ \mathit{Var}, \ldots, \mathit{Typ}\ \mathit{Var})\\&&\texttt{\{}\texttt{var}~\overline{\mathit{Typ}\ \mathrm{Var}};\,\overline{\mathit{Instr}}\texttt{\}}
+% ~|~\mathit{Var}\ \code{=}\ \mathit{RExp}
+% ~|~\mathit{Var}\ \code{=}\ \code{*}\mathit{Exp}
+% \\&&|~\code{*}\mathit{Exp}\ \code{=}\ \mathit{Exp}
+% ~|~\code{if}\ \code{(}\mathit{Exp}\code{)}\ \overline{\mathit{Instr}}\ \code{else}\ \overline{\mathit{Instr}}
+% \\&&|~\code{while}~\code{(}\mathit{Exp}\code{)}\ \overline{\mathit{Instr}}\\
+% \mathit{Decl} &::=& \mathit{Fid}(\mathit{Typ}\ \mathit{Var}, \ldots, \mathit{Typ}\ \mathit{Var})\\&&\code{\{}\code{var}~\overline{\mathit{Typ}\ \mathrm{Var}};\,\overline{\mathit{Instr}}\code{\}}
 % \end{array}
 % \]
-% The \texttt{input} and \texttt{output} operations produce externally visible events; all other operations are intended to model the corresponding operations in C.
+% The \code{input} and \code{output} operations produce externally visible events; all other operations are intended to model the corresponding operations in C.
 % By $\overline{T}$ we mean a list of $T$.
-% For simplicity, we omit \texttt{return} instructions and instead return values via pointer-valued arguments to functions.
+% For simplicity, we omit \code{return} instructions and instead return values via pointer-valued arguments to functions.
 
-%Our language has two types of values, integers and pointers, where the latter is represented as a pair $(l, i)$ of block identifier and integer offset. As a convention, we will use $\texttt{a}, \texttt{b}, \texttt{c}...$ for integer variables and $\texttt{p}, \texttt{q}, \texttt{r}...$ for pointer variables. 
+%Our language has two types of values, integers and pointers, where the latter is represented as a pair $(l, i)$ of block identifier and integer offset. As a convention, we will use $\code{a}, \code{b}, \code{c}...$ for integer variables and $\code{p}, \code{q}, \code{r}...$ for pointer variables. 
 
 
 

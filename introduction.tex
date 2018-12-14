@@ -86,7 +86,7 @@ void f() {
 \end{array}\]
 
 \noindent Suppose \code{g()} is an external function whose body is unknown to the compiler, and
-\code{print($x$)} prints the value of $x$ to the screen.  The function \code{f()} first assigns
+\code{print(x)} prints the value of $x$ to the screen.  The function \code{f()} first assigns
 \code{42} to \code{x} (line \code{10}), calls \code{g()} (line \code{20}), and then prints \code{x}
 (line \code{30}).  As an optimization, mainstream compilers replace \code{x} with \code{42} at line
 \code{30}, effectively propagating the constant \code{42} at line \code{10} to line \code{30}.  Such
@@ -379,10 +379,10 @@ to replace the C dialects used in Linux and other systems.
 
 \Cref{sec:background} provides the technical background on CompCert that informs the rest of this
 dissertation.  \Cref{chap:intptrcast} presents a formal semantics of integer-pointer casts,
-\Cref{chap:promising} presents a formal semantics of relaxed-memory concurrency, and
+\Cref{chap:relaxed} presents a formal semantics of relaxed-memory concurrency, and
 \Cref{chap:sepcomp} presents lightweight verification techniques for separate compilation.  This
-dissertation concludes with \Cref{chap:epilogue}, which summarizes its contributions and the impacts
-(\Cref{sec:conclusion}) and raises future research questions (\Cref{sec:futurework}).
+dissertation concludes with \Cref{chap:epilogue}, which summarizes the main contributions and the
+impacts and presents future research directions (\Cref{sec:conclusion}).
 
 
 %%% Local Variables:
