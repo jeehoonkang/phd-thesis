@@ -117,8 +117,8 @@ block will fail since the block is not big enough to contain double
 values.
 \begin{center}
   \begin{minted}{c}
-    int* p = malloc(sizeof(int));
-    double* q = foo(p);    // no alias between p and q
+    int *p = malloc(sizeof(int));
+    double *q = foo(p);    // no alias between p and q
   \end{minted}
 \end{center}
 
@@ -141,32 +141,30 @@ they still point to different blocks as pointer values.
 %% such cases, neither GCC nor Clang performs the constant propagation.
 \begin{center}
 \begin{tabular}{@{}l@{}l@{~~}l}
-%\small
-\begin{minipage}{0.37\textwidth}
+\small
+\begin{minipage}{0.45\textwidth}
 \begin{minted}{c}
-foo(ptr p) {
-  var ptr q, int a,b,r;
-  q = malloc (1);
-  a = (int) q;
-  b = *p;
+void foo(int *p) {
+  auto q = (int *) malloc(4);
+  auto a = (uintptr_t) q;
+  auto b = *p;
   *q = 123;
-  r = *p;
+  auto r = *p;
 }
 \end{minted}
 \end{minipage}
 &
 $~\rightarrow$
 &
-%\small
-\begin{minipage}{0.37\textwidth}
+\small
+\begin{minipage}{0.45\textwidth}
 \begin{minted}{c}
-foo(ptr p) {
-  var ptr q, int a,b,r;
-  q = malloc (1);
-  a = (int) q;
-  b = *p;
+void foo(int *p) {
+  auto q = (int *) malloc(4);
+  auto a = (uintptr_t) q;
+  auto b = *p;
   *q = 123;
-  r = b;         // CP
+  auto r = b;         // CP
 }
 \end{minted}
 \end{minipage}
