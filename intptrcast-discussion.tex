@@ -34,13 +34,13 @@ For instance, we can adapt the hybrid model to support
 technique~\cite{krebbers2013aliasing}, which works regardless of
 whether the model is concrete, logical or hybrid.
 
-As another example, in C, \texttt{char*} is a ``universal'' pointer type, which allows
-efficient bulk data moves via \texttt{memcpy}.  Krebber's variant of
+As another example, in C, \code{char*} is a ``universal'' pointer type, which allows
+efficient bulk data moves via \code{memcpy}.  Krebber's variant of
 CompCert~\cite{krebbers2014formal} already supports this semantics using a logical
 memory, and the hybrid model is compatible with that solution.
-Briefly: we let \texttt{char} types store byte-indexed logical values
+Briefly: we let \code{char} types store byte-indexed logical values
 (such as $(l,10)\!:\!2$, which denotes the second byte of the logical
-address $(l,10)$). This strategy works because a \texttt{char} is
+address $(l,10)$). This strategy works because a \code{char} is
 implicitly cast to an integer when used in arithmetic operations,
 and thus we
 can simply treat these casts as side-effecting (\textit{i.e.},
@@ -110,9 +110,9 @@ thus (mostly) already treated as public by the compiler.
 compatible with common alias analyses.  For instance, it can be used
 to justify \textit{size-based alias analysis}, which considers
 pointers to differently-sized objects as distinct. For example, in
-the code below, there is no alias between \texttt{p} and \texttt{q}:
-even if \texttt{q} points to the block
-pointed to by~\texttt{p}, loading or storing a double value in the
+the code below, there is no alias between \code{p} and \code{q}:
+even if \code{q} points to the block
+pointed to by~\code{p}, loading or storing a double value in the
 block will fail since the block is not big enough to contain double
 values.
 \begin{center}
@@ -124,20 +124,20 @@ values.
 
 It also justifies %(modulo the effects of cast)
 \textit{freshness-based alias analysis}, which assumes that the result of
-\texttt{malloc} is distinct from all other pointers.  The 
+\code{malloc} is distinct from all other pointers.  The 
 following example of constant propagation is valid in the
-hybrid model since \texttt{q} points to a fresh block that
-is different from the block pointed to by \texttt{p}.
+hybrid model since \code{q} points to a fresh block that
+is different from the block pointed to by \code{p}.
 It is important to note that there is no alias
-between \texttt{p} and \texttt{q} even after
+between \code{p} and \code{q} even after
 the fresh block is realized. The reason is because
-even if \texttt{p} and \texttt{q} may be cast to the same integer,
+even if \code{p} and \code{q} may be cast to the same integer,
 they still point to different blocks as pointer values.
 %% However, uncommenting the cast
-%% invalidates the transformation because  \texttt{p} might happen to point
-%% to the realized physical address of \texttt{q}. In practice, such cast
+%% invalidates the transformation because  \code{p} might happen to point
+%% to the realized physical address of \code{q}. In practice, such cast
 %% pointer values are usually global and passed to other functions, such
-%% as \texttt{hash\_put} (as shown in the second comment). In
+%% as \code{hash\_put} (as shown in the second comment). In
 %% such cases, neither GCC nor Clang performs the constant propagation.
 \begin{center}
 \begin{tabular}{@{}l@{}l@{~~}l}
@@ -204,7 +204,7 @@ on cast pointer is treated as a program error, whereas in the low-level language
 from converted pointers is defined and affects only the offset into the pointer's 
 logical block. There
 has also been work on extending the semantics to support pointer
-fragments to allow, for example, \texttt{memcpy} to work on memory
+fragments to allow, for example, \code{memcpy} to work on memory
 containing pointers~\cite{krebbers2014formal}, but these extensions still cannot fully 
 support arithmetic operations on pointer values that have been cast
 to an integer type.
@@ -254,16 +254,14 @@ normalization is implemented with an SMT solver, and the semantics in general is
 on the other hand, is a straightforward translation from
 pointers to concrete blocks and integers.
 
-Most importantly, while their approach gives semantics to non-strictly-conforming C programs involving bit-masking of pointers and
-uninitialized values, it fails to define useful programs that use
-integer-pointer casts.  Consider the \texttt{hash\_put} example
-discussed in \Cref{idea:ownership}, where a pointer is hashed and
-then presumably used to index into an array.  Since the resulting
-memory location will depend on the concrete layout of memory, the
-resulting program will have undefined behavior in their semantics.  In
-general, any program that displays non-determinism due to the
-realization of pointers in our model is necessarily undefined in Besson et al.'s
-model.
+Most importantly, while their approach gives semantics to non-strictly-conforming C programs
+involving bit-masking of pointers and uninitialized values, it fails to define useful programs that
+use integer-pointer casts.  Consider the \code{hash\_put} example discussed in
+\Cref{sec:intptrcast:formal-semantics:ownership}, where a pointer is hashed and then presumably used
+to index into an array.  Since the resulting memory location will depend on the concrete layout of
+memory, the resulting program will have undefined behavior in their semantics.  In general, any
+program that displays non-determinism due to the realization of pointers in our model is necessarily
+undefined in Besson et al.'s model.
 
 % the model of Besson et al. Furthermore, it
 % is not possible to extend their model to support these cases since

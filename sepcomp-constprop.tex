@@ -100,11 +100,11 @@ The former requirement, however, requires some more work:
 not only should $\soundstate(\vprg,\vprg,\load(\vprg))$ hold for all programs $\vprg$,
 but rather $\soundstate(\vprg,\vsprg,\load(\vprg))$ should hold for all programs $\vprg$ and all subprograms $\vsprg\subseteq\vprg$.
 In essence, to satisfy this stronger statement, the additional requirement that we have to show is that value analysis is monotone with respect to linking.
-That is, for each global variable \texttt{x}, we prove
+That is, for each global variable \code{x}, we prove
 \[
-\vsprg \subseteq \vprg \implies  \mathrm{abs\text{-}val}(\vsprg,\texttt{x}) \sqsupseteq \mathrm{abs\text{-}val}(\vprg,\texttt{x})
+\vsprg \subseteq \vprg \implies  \mathrm{abs\text{-}val}(\vsprg,\code{x}) \sqsupseteq \mathrm{abs\text{-}val}(\vprg,\code{x})
 \]
-where $\mathrm{abs\text{-}val}(\vprg,\texttt{x})$ is the abstract value of \texttt{x} computed by the global analysis on $\vprg$.
+where $\mathrm{abs\text{-}val}(\vprg,\code{x})$ is the abstract value of \code{x} computed by the global analysis on $\vprg$.
 In other words, running the analysis on a larger program may only give results that are at least as precise.
 
 Somewhat surprisingly, (the global part of) the value analysis in
@@ -116,8 +116,8 @@ the global variable \code{xptr} is declared using the \code{const}
 qualifier, the global part of CompCert 2.4's value analysis assumes
 that it is uninitialized and therefore assigns it the abstract value
 $\bot$.  As a result, the value analysis deems that \code{xptr} cannot
-possibly alias with \texttt{x}.  At the \code{printf} statement, it
-hence deduces that $\texttt{x}=1$, and constant propagation
+possibly alias with \code{x}.  At the \code{printf} statement, it
+hence deduces that $\code{x}=1$, and constant propagation
 ``optimizes'' away the summation \code{x+x} to the constant $2$, which
 gets printed.  This analysis, however, is unsound.  In particular, the
 assumption that \code{xptr} is uninitialized is invalid in the context

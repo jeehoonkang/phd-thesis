@@ -50,7 +50,18 @@ relationship between the memory of the source and target programs, and show that
 that relationship persists throughout the function, relying on any call to other functions to
 maintain a similar relationship.
 
-This relationship will designate one section of each memory as \emph{public}, and require that related locations in the source and target public memories have equivalent values; it will also designate a \emph{private} section of each memory, such that the source program can make changes to its private memory when the target does not make corresponding changes and vice versa. For the technical details of this relation and our notion of equivalence, see \Cref{reasoning:invariants}.
+This relationship will designate one section of each memory as \emph{public}, and require that
+related locations in the source and target public memories have equivalent values; it will also
+designate a \emph{private} section of each memory, such that the source program can make changes to
+its private memory when the target does not make corresponding changes and vice versa.  If you are
+familiar with CompCert's verification, you may regard the relationship is a generalization of
+CompCert's \emph{memory injection}~\cite{compcert-memory} to account for private memories and
+function-modular reasoning.\footnote{In fact, the relationship is also a simplification of
+  CompCert's memory injection in the treatment of public memories: the public memories in the source
+  and the target should coincide in the relationship, while they may differ in CompCert's memory
+  injection.  Though it is straightforward to generalize the relationship in this dimension.}  For
+the technical details of this relation and our notion of equivalence, see
+\Cref{reasoning:invariants}.
 
 \begin{figure}
 \center
@@ -71,7 +82,7 @@ This relationship will designate one section of each memory as \emph{public}, an
 We begin at line 1 by assuming the
 following conditions on the memory of the source and target programs (see \Cref{fig:invex}~(a)):
 \begin{description}
-\item[assume] (equivalent arguments) the parameter \texttt{p} contains
+\item[assume] (equivalent arguments) the parameter \code{p} contains
   \emph{equivalent} arguments $v_\textrm{src} $ in the source and $v_\textrm{tgt}$ in the target;
 \item[assume] (equivalent public memories) 
   there are a set of memory blocks
@@ -90,14 +101,14 @@ following conditions on the memory of the source and target programs (see \Cref{
 After executing line 1, we add the newly allocated block (call it~$l$) to
 the private source memory $m_\textrm{prv:src}$. It is important to note that we can add the
 block $l$ to the private source memory because it is a fresh logical
-block and thus exclusively owned by \texttt{foo}.  After executing
+block and thus exclusively owned by \code{foo}.  After executing
 line 2, the block $l$ contains $123$ (see \Cref{fig:invex}~(b)).
 
-At line 3, we guarantee that the function calls to \texttt{bar} are
+At line 3, we guarantee that the function calls to \code{bar} are
 \emph{equivalent} as follows:
 \begin{description}
 \item[guarantee] (equivalent arguments) 
-  the arguments $v_\textrm{src}$ and $v_\textrm{tgt}$ to \texttt{bar} are equivalent; 
+  the arguments $v_\textrm{src}$ and $v_\textrm{tgt}$ to \code{bar} are equivalent; 
 \item[guarantee] (equivalent public memories) 
   $m_\textrm{pub:src}$ and $m_\textrm{pub:tgt}$,
   which are equivalent and publicly accessible;
@@ -108,8 +119,8 @@ At line 3, we guarantee that the function calls to \texttt{bar} are
   each location in $m_\textrm{prv:tgt}$
   is exclusively owned by a single function.
 \end{description}
-%After the calls to \texttt{bar}, 
-When the calls to \texttt{bar} return,
+%After the calls to \code{bar}, 
+When the calls to \code{bar} return,
 we can assume that the new public
 memories are equivalent to each other (though they may not be the same as the previous public memories), and
 the private memories are untouched (see \Cref{fig:invex}~(c)):
@@ -125,15 +136,15 @@ the private memories are untouched (see \Cref{fig:invex}~(c)):
 \end{description}
 
 At line 4, we load the value $123$ from the source's private memory and
-store it in the variable \texttt{a}.  At line 5, in the source, we
-store the value of \texttt{a}, which is $123$, in the memory cell located at
-the address $v_\texttt{src}$.  In the target, we store the constant
-$123$ in the cell at $v_\texttt{tgt}$. Since we stored equivalent
-values at equivalent locations $v_\texttt{src}$ and $v_\texttt{tgt}$,
+store it in the variable \code{a}.  At line 5, in the source, we
+store the value of \code{a}, which is $123$, in the memory cell located at
+the address $v_\code{src}$.  In the target, we store the constant
+$123$ in the cell at $v_\code{tgt}$. Since we stored equivalent
+values at equivalent locations $v_\code{src}$ and $v_\code{tgt}$,
 we will have equivalent public memories $m''_\textrm{pub:src}$ and
 $m''_\textrm{pub:tgt}$, while leaving the private memories unchanged.
 
-Finally, we return to the callers of \texttt{foo} with (see \Cref{fig:invex}~(d))
+Finally, we return to the callers of \code{foo} with (see \Cref{fig:invex}~(d))
 \begin{description}
 \item[guarantee] (equivalent public memories) 
   $m''_\textrm{pub:src}$ and $m''_\textrm{pub:tgt}$
@@ -147,21 +158,20 @@ Finally, we return to the callers of \texttt{foo} with (see \Cref{fig:invex}~(d)
 where we can ignore the block $l$ because it is not going to be used any more.
 Note that we here guarantee \text{foo} returns with the same private memories it was given
 initially, as we assumed the same property for the function
-\texttt{bar} after line 3.
+\code{bar} after line 3.
 
 \subsection{Memory Invariants}
 \label{reasoning:invariants}
 
-As informally discussed above, we prove program refinement using a memory invariant that places conditions on
-public memories (which must be equivalent in the source and target programs) and private memories (which can differ between them).  We now formally define the
-notion of memory equivalence used in our informal
-example, and the conditions on the private memories.
+As informally discussed above, we prove behavior refinement using a memory invariant that places
+conditions on public memories (which must be equivalent in the source and target programs) and
+private memories (which can differ between them).  We now formally define the notion of memory
+equivalence used in our informal example, and the conditions on the private memories.
 
-The idea of memory equivalence is a simplification of CompCert's
-memory injection \cite{Leroy-Appel-Blazy-Stewart-memory-v2}.  Our
-conditions for concrete blocks are inspired from CompCertTSO's support
-for finite memory \cite{vsevvcik2013compcerttso}.  See
-\Cref{sec:discussion} for more comparisons.
+The idea of memory equivalence is inspired from CompCert's memory injection
+\cite{Leroy-Appel-Blazy-Stewart-memory-v2}, and our conditions for concrete blocks are inspired from
+CompCertTSO's support for finite memory \cite{vsevvcik2013compcerttso}.  See
+\Cref{sec:intptrcast:discussion} for more comparisons.
 
 %%  in the source and the
 %% target are exactly the same because optimizations like DAE may remove
@@ -266,7 +276,7 @@ of \cite{Hur:2012:MBK:2103656.2103666}.
 
 %\newcommand{\assumedinvariant}[1]{\widehat{#1}}
 
-A function, say \texttt{foo}, in the source and target is locally
+A function, say \code{foo}, in the source and target is locally
 simulated if it satisfies the following conditions.  First, consider
 a typical lifecycle of the source and target functions:
 \begin{center}
@@ -324,20 +334,20 @@ a typical lifecycle of the source and target functions:
 % \end{center}
 Here boxed conditions are assumed and the others are guaranteed.
 
-First, in \texttt{foo}, unknown functional calls such as
-\texttt{bar(..)} and \texttt{gee(..)} should be synchronized (\ie when
-the target calls \texttt{bar}, the source should call \texttt{bar} as
+First, in \code{foo}, unknown functional calls such as
+\code{bar(..)} and \code{gee(..)} should be synchronized (\ie when
+the target calls \code{bar}, the source should call \code{bar} as
 well). Note that when a known function is called, the verifier can either step into
 the called function and reason about its code, or treat
 it as an unknown function call.
 
-Next, at the entry point of \texttt{foo}, we assume that we are given
+Next, at the entry point of \code{foo}, we assume that we are given
 memories satisfying a given invariant $\beta_\textrm{s}$, and
 equivalent arguments w.r.t. the bijection in $\beta_\textrm{s}$.
 Then, we execute the code of \textrm{foo} in the source and the target
-until the first unknown function call to \texttt{bar(..)}.  Here we have
+until the first unknown function call to \code{bar(..)}.  Here we have
 to show that there is some invariant $\beta_\textrm{c}$ that holds on
-the current memories and that the arguments to the function \texttt{bar}
+the current memories and that the arguments to the function \code{bar}
 are equivalent w.r.t. the bijection in $\beta_\textrm{c}$.
 
 Here, we also have to show that the current memories are
@@ -372,19 +382,19 @@ to update values in memory.
 Then, we consider the case when the unknown function successfully
 returns. We can assume that the memories at return time also satisfy some
 \emph{future} invariant ${\beta_\textrm{r}}$. We can also
-assume that the function \texttt{bar} does not change the private
+assume that the function \code{bar} does not change the private
 memories in $\beta_\textrm{c}$ (denoted $\beta_\textrm{c}
 =_{\textrm{prv}} {\beta_\textrm{r}}$) because there is no way
-for \texttt{bar} to access them in our hybrid model.
+for \code{bar} to access them in our hybrid model.
 
 We continue through the function, evolving our invariant at non-call steps and performing similar reasoning at other call sites
-such as $\texttt{gee(..)}$.  Finally, when \texttt{foo} returns to its caller, we have to
+such as $\code{gee(..)}$.  Finally, when \code{foo} returns to its caller, we have to
 show that there is some \emph{future} invariant $\beta_\textrm{e}$
 that holds on the current memories. Furthermore, we have to show that
 we did not change the private memories given in
  the initial invariant $\beta_\textrm{s}$ (\ie $\beta_\textrm{s} =_{\textrm{prv}}
 \beta_\textrm{e}$). This condition is necessary because, as seen above, we assume that this property holds at the end of any other function call.
-In this way, we construct a local simulation proof for the $\texttt{foo}$.
+In this way, we construct a local simulation proof for the $\code{foo}$.
 
 
 \subsection{Examples}
@@ -396,14 +406,14 @@ results here are fully formalized in Coq.
 \paragraph{Arithmetic Optimization I}
 
 Consider the transformation in \Cref{fig:intptrcast:formal-semantics:arith1}. If we assume that
-integer variables only contain integer values, not logical addresses, the instruction \texttt{a = (a
-  - b) + (2 * b - b)} has no effect on the value of \texttt{a} and is equivalent to no operation, so
+integer variables only contain integer values, not logical addresses, the instruction \code{a = (a
+  - b) + (2 * b - b)} has no effect on the value of \code{a} and is equivalent to no operation, so
 the optimization is trivially correct.
 
 How do we know that integer variables only contain
 integer values? The straightforward answer is that our language is statically type-checked, as in the LLVM IR. However, the key reason why this is possible
 is that in the hybrid model we actually turn logical addresses into integers
-when they are cast to \texttt{int}, rather than placing logical addresses in integer
+when they are cast to \code{int}, rather than placing logical addresses in integer
 variables. Also, when we load a value from memory to an integer 
 variable (resp. a pointer variable), 
 if the loaded value is a logical address (resp. an integer value), we raise undefined
@@ -424,10 +434,10 @@ arithmetic optimizations as in this example.
 Consider the transformation in \Cref{fig:intptrcast:formal-semantics:dce}.  This example
 is similar to the previous one.  Since we can assume that integer-typed
 variables contain only integers, the execution of the call
-\texttt{foo(a)} does not have any side effects.
+\code{foo(a)} does not have any side effects.
 Furthermore, because we know the code of the function
-\texttt{foo}, we do not need to treat it as an unknown function call.
-Rather, we just step into the code of the function \texttt{foo} and
+\code{foo}, we do not need to treat it as an unknown function call.
+Rather, we just step into the code of the function \code{foo} and
 execute it in the source.%  In this way, we can easily verify this
 % transformation.
 
@@ -437,21 +447,21 @@ Consider the transformation in \Cref{fig:intptrcast:formal-semantics:ownership}.
 example is similar to the running example in
 \Cref{reasoning:running}.
 
-Assume that the first invariant below holds before the \texttt{malloc}.  After
+Assume that the first invariant below holds before the \code{malloc}.  After
 allocating blocks $l_\text{s}$ in the source and $l_\text{t}$ in
 the target, and storing 123 in both blocks, we can move the blocks $l_\text{s}$
 and $l_\text{t}$ into the private sections of the invariant because they are logical and disjoint from the
-public sections, yielding the second invariant below. Next we call the function \texttt{bar}. When it
+public sections, yielding the second invariant below. Next we call the function \code{bar}. When it
 returns, we can assume that the third invariant holds (\ie the
 private sections are untouched). After loading, the variable
-\texttt{a} will contain 123, since \texttt{p} contains the
+\code{a} will contain 123, since \code{p} contains the
 logical address $(l_\text{s},0)$ in the source and $(l_\text{t},0)$ in
 the target. 
 
-Next, when we call \texttt{hash\_put}, we have to make sure that the
+Next, when we call \code{hash\_put}, we have to make sure that the
 arguments are equivalent. The first arguments are equivalent because
 we assume that we start with equivalent values in variables, and the third arguments
-are equivalent because \texttt{a} contains 123.  To show that
+are equivalent because \code{a} contains 123.  To show that
 the second arguments, $(l_\text{s},0)$ and $(l_\text{t},0)$, are
 equivalent, we move the blocks from the private sections to the public
 section and extend the bijection $\alpha'$ to relate $l_\text{s}$
@@ -481,21 +491,21 @@ sections.
 % \end{lstlisting}
 
 % \begin{itemize}
-% \item \texttt{p} is known to contain \texttt{3}, so we replace a use
-%   of \texttt{r} by \texttt{3}.
+% \item \code{p} is known to contain \code{3}, so we replace a use
+%   of \code{r} by \code{3}.
 % \item We can perform constant propagation optimization to this example
-%   even though 1) there is a store to another block (\texttt{q})
-%   between the store to and the load from \texttt{p}, 2) there is an
-%   function call to an unknown function \texttt{bar} between the store
-%   and the load, and 3) the exclusive ownership of \texttt{p} is lost
-%   after the load from \text{p}.  Since \texttt{p} is allocated as a
-%   logical block, can mark \texttt{p} as private.  Thus \texttt{r}
-%   should be \texttt{3} after the function call to \texttt{bar}.
+%   even though 1) there is a store to another block (\code{q})
+%   between the store to and the load from \code{p}, 2) there is an
+%   function call to an unknown function \code{bar} between the store
+%   and the load, and 3) the exclusive ownership of \code{p} is lost
+%   after the load from \text{p}.  Since \code{p} is allocated as a
+%   logical block, can mark \code{p} as private.  Thus \code{r}
+%   should be \code{3} after the function call to \code{bar}.
 % \item If a pointer is determinted to be physical or logical at the
 %   allocation time, this example is not justified due to ownership
-%   transfer.  Since \texttt{p} is casted to integer, it should be
-%   allocated at a physical address.  Thus \texttt{p} should be marked
-%   as public, and \texttt{bar} may modify the content of \texttt{p}.
+%   transfer.  Since \code{p} is casted to integer, it should be
+%   allocated at a physical address.  Thus \code{p} should be marked
+%   as public, and \code{bar} may modify the content of \code{p}.
 % \end{itemize}
 
 
@@ -508,9 +518,9 @@ integer variables contain integer values.
 % \begin{itemize}
 % \item Thanks to elaboration, we know the type of operands of every
 %   operation.  For example, we can distinguish integer additions based
-%   on the type of operands ($\texttt{+}_{\mathtt{ii}}$ between two
-%   integers, $\texttt{+}_{\mathtt{pi}}$ between a pointer and an
-%   integer, and $\texttt{+}_{\mathtt{ip}}$ between an integer and a
+%   on the type of operands ($\code{+}_{\mathtt{ii}}$ between two
+%   integers, $\code{+}_{\mathtt{pi}}$ between a pointer and an
+%   integer, and $\code{+}_{\mathtt{ip}}$ between an integer and a
 %   pointer).
 % \item Standard integer optimizations are justified in our model, as
 %   integer variables really contain integer values, not logical
@@ -518,10 +528,10 @@ integer variables contain integer values.
 %   model: the source program that require 4 integer operations into the
 %   target program that require 3 integer operations.
 % \item However, this optimization is not justified in the CompCert
-%   model.  Suppose \texttt{a} contains an integer, and \texttt{b0},
-%   \texttt{b1} and \texttt{b2} contain logical pointers of the same
-%   block.  Since \texttt{a - b0} is \texttt{Vundef}, the operands of
-%   two \texttt{printf}'s in the target are unconstrained, while those
+%   model.  Suppose \code{a} contains an integer, and \code{b0},
+%   \code{b1} and \code{b2} contain logical pointers of the same
+%   block.  Since \code{a - b0} is \code{Vundef}, the operands of
+%   two \code{printf}'s in the target are unconstrained, while those
 %   of the source are specific integers.
 % \end{itemize}
 
@@ -531,11 +541,11 @@ Consider the transformation in \Cref{fig:intptrcast:formal-semantics:deadcast}, 
 the source uses the hybrid model and the target uses the concrete model.
 
 We begin by assuming that the first invariant below holds before the call to
-\texttt{foo}, where the variable \texttt{p} contains equivalent
+\code{foo}, where the variable \code{p} contains equivalent
 addresses $(l_\text{s},i)$ in the source and $\toint{(l_\text{t},i)}{m}$ in the target.
 Note that the block $l_\text{t}$ is concrete, since the target is using
 the fully concrete model. After the allocation of a block, say
-$l'_\text{s}$, in \texttt{foo} in the source, we move it to the source's
+$l'_\text{s}$, in \code{foo} in the source, we move it to the source's
 private memory, yielding the second invariant below.  Here it is important
 to note that if the source was using the concrete model, we could not move
 the block $l'_\text{s}$ into the private section because $l'_\text{s}$
@@ -546,7 +556,7 @@ invariant below.  Here it is important to note that if the target
 language was using the hybrid model and $l_\text{t}$ were logical,
 then we would produce an invariant in which $l_\text{s}$ is
 concrete and $l_\text{t}$ is logical, which would be an invalid invariant.  After
-\texttt{foo} returns, we simply drop the block $l'_\text{s}$ from the
+\code{foo} returns, we simply drop the block $l'_\text{s}$ from the
 source private section because we do not use it, yielding the fourth
 invariant below. Then we can proceed to verify the rest of the code.
 \[
@@ -560,7 +570,7 @@ invariant below. Then we can proceed to verify the rest of the code.
 As a sanity check for our reasoning principles, we wrote an identity compiler from our language with the hybrid
 model to itself, and a simple compiler from our language with the hybrid
 model to the same language with the concrete model. The latter compiler just eliminates
-dead casts of the form ${\texttt{\_ = (int) p}}$. We successfully verified these two compilers in Coq using our reasoning principles.
+dead casts of the form ${\code{\_ = (int) p}}$. We successfully verified these two compilers in Coq using our reasoning principles.
 
 % \begin{tabular}{ll}
 % \small
@@ -589,7 +599,7 @@ dead casts of the form ${\texttt{\_ = (int) p}}$. We successfully verified these
 % \begin{itemize}
 % \item If a block is not physically realized, then we can optimize as
 %   in the logical model.  In the above example, we can optimize out
-%   everything related to the memory block allocated at \texttt{p}.
+%   everything related to the memory block allocated at \code{p}.
 % \end{itemize}
 
 % \begin{tabular}{ll}
@@ -610,13 +620,13 @@ dead casts of the form ${\texttt{\_ = (int) p}}$. We successfully verified these
 
 % \begin{itemize}
 % \item In our model, this example is justified.  Since casting to
-%   integer requires pointers to take physical address, \texttt{i}
+%   integer requires pointers to take physical address, \code{i}
 %   contains an integer, not a logical pointer.  Thus we can optimize
 %   out the multiplication without worrying about side effects.
 % \item In the CompCert model, casts between integers and pointers are
 %   ignored, and integer variables may contain logical pointer values.
 %   When an operation require an integer but a logical pointer is given,
-%   CompCert return \texttt{Vundef} (undefined value). 
+%   CompCert return \code{Vundef} (undefined value). 
 % \item \todo{What is the point of this example?}
 % \end{itemize}
 

@@ -223,7 +223,7 @@ update the contents of every allocated memory cell.
   to the logical memory model's advantages.}
 
 \jeehoon{In the above example, the first optimization is allowed since there is no way to forge the
-  logical address of the variable \texttt{a} from those of other blocks. Also, the second one is
+  logical address of the variable \code{a} from those of other blocks. Also, the second one is
   allowed since the memory is infinitely large.}
 
 \jeehoon{where typically the set of valid allocation block identifiers is infinite.  While logical
@@ -239,11 +239,11 @@ some unknown external function~\code{g}. We might expect the compiler to deduce 
 % These represent pointers as 32-bit (or 64-bit) integers,
 % which is close to what programmers expect, but do not support
 % some of even the most basic optimizations that compilers perform.
-% As a simple illustration, consider the following function \texttt{f} that
-% initializes a local variable \texttt{a} and then calls some unknown external
-% function \texttt{g}.
+% As a simple illustration, consider the following function \code{f} that
+% initializes a local variable \code{a} and then calls some unknown external
+% function \code{g}.
 % The compiler might perform constant propagation and optimize this program
-% as follows by assuming that the value of \texttt{a} is unaffected by the call to \texttt{g}.
+% as follows by assuming that the value of \code{a} is unaffected by the call to \code{g}.
 \begin{center}
 \begin{tabular}{@{}l@{}l@{}l@{}l@{}l@{}}
 %% \small
@@ -292,21 +292,21 @@ int f(void) {
 \end{center}
 
 \vskip 0.3cm Using a simple concrete memory model, however, we have to consider the possibility that
-\texttt{g} is able to ``guess'' the location of \texttt{a} in memory and changes its value. This can
+\code{g} is able to ``guess'' the location of \code{a} in memory and changes its value. This can
 happen if, for instance, our semantics allocates memory deterministically and the caller
-of~\texttt{f} sets up the state of memory appropriately for \texttt{g}.
+of~\code{f} sets up the state of memory appropriately for \code{g}.
 
 % We note, however, that this reasoning is not valid in the concrete model.
-% The variable \texttt{a} is allocated somewhere in memory, and the external
+% The variable \code{a} is allocated somewhere in memory, and the external
 % function might `guess' the address at which it is allocated and overwrite
 % its value.
 %
 
 The compiler may further optimize the program by completely removing
-the now unused local variable \texttt{a}. This latter transformation is again
+the now unused local variable \code{a}. This latter transformation is again
 disallowed by concrete models because it might change the behavior of
 the program:
-by virtue of there being one fewer memory cells allocated, the call to \texttt{g}
+by virtue of there being one fewer memory cells allocated, the call to \code{g}
 might succeed where initially it exhausted memory.
 
 

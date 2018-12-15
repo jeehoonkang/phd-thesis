@@ -36,12 +36,12 @@ In the table in \Cref{fig:results}, we summarize the changes we
 made in number of lines of Coq.  For these statistics, we first split
 the development of CompCert into two categories: $(1)$ Compiler \&
 Verification; and $(2)$ Metatheory (\ie everything else). The former
-includes all Coq files in the directories \texttt{cfrontend},
-\texttt{backend}, \texttt{driver}, \texttt{arm}, \texttt{ia32}, and
-\texttt{powerpc}; and the latter includes all other files.
+includes all Coq files in the directories \code{cfrontend},
+\code{backend}, \code{driver}, \code{arm}, \code{ia32}, and
+\code{powerpc}; and the latter includes all other files.
 
 We calculated the statistics fully automatically using the Unix
-\texttt{diff} command. The column \textbf{Rm} shows the number of
+\code{diff} command. The column \textbf{Rm} shows the number of
 lines of code~(LOC) removed from the original CompCert code reported
 by the diff command, and the columns \textbf{AddD} and \textbf{AddN}
 together show the number of LOC added in \sepcomp.  Here,
@@ -59,7 +59,7 @@ copy-paste-and-modifying the original proof of simulation.  Examples of
 include (a) proving straightforward ``wheel-greasing'' lemmas that
 merely serve to streamline the proof effort, and (b) updating
 automatically generated hypothesis names appropriately (\eg changing
-\texttt{apply H1} to \texttt{apply H2}).
+\code{apply H1} to \code{apply H2}).
 
 \sepcomp{} supports verified separate compilation to all three target
 assembly languages of CompCert---PowerPC, ARM, and IA32---with very
