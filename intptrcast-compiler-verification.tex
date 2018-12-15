@@ -5,7 +5,10 @@ In this section, we present a compiler verification technique for proving semant
 under our semantics, and apply the technique to verify a number of standard optimizations.
 
 
-\subsection{TODO: Set of Behaviors}
+\subsection{Modeling Out-of-Memory}
+\label{sec:intptrcast:compiler-verification:oom}
+
+\jeehoon{Proper introduction.}
 
 On the other hand, we regard \emph{out of memory as the empty set of behaviors} (\ie no
 behaviors).\footnote{CompCert does not need to define the behaviors of out of memory because it uses
@@ -409,10 +412,10 @@ results here are fully formalized in Coq.
 
 \paragraph{Arithmetic Optimization I}
 
-Consider the transformation in \Cref{code:arith1}. If we assume that integer variables only contain integer
-values, not logical addresses, the instruction \texttt{a = (a
-  - b) + (2 * b - b)} has no effect on the value of \texttt{a} and is equivalent to no
-operation, so the optimization is trivially correct. 
+Consider the transformation in \Cref{fig:intptrcast:formal-semantics:arith1}. If we assume that
+integer variables only contain integer values, not logical addresses, the instruction \texttt{a = (a
+  - b) + (2 * b - b)} has no effect on the value of \texttt{a} and is equivalent to no operation, so
+the optimization is trivially correct.
 
 How do we know that integer variables only contain
 integer values? The straightforward answer is that our language is statically type-checked, as in the LLVM IR. However, the key reason why this is possible
@@ -435,7 +438,7 @@ arithmetic optimizations as in this example.
 
 \paragraph{Dead Code Elimination}
 
-Consider the transformation in \Cref{code:dce}.  This example
+Consider the transformation in \Cref{fig:intptrcast:formal-semantics:dce}.  This example
 is similar to the previous one.  Since we can assume that integer-typed
 variables contain only integers, the execution of the call
 \texttt{foo(a)} does not have any side effects.
@@ -447,7 +450,7 @@ execute it in the source.%  In this way, we can easily verify this
 
 \paragraph{Ownership Transfer}
 
-Consider the transformation in \Cref{code:ownership}.  This
+Consider the transformation in \Cref{fig:intptrcast:formal-semantics:ownership}.  This
 example is similar to the running example in
 \Cref{reasoning:running}.
 
@@ -515,7 +518,7 @@ sections.
 
 \paragraph{Arithmetic Optimization II}
 
-We can easily verify the transformation in \Cref{code:arith2}
+We can easily verify the transformation in \Cref{fig:intptrcast:formal-semantics:arith2}
 for the same reason as in \Cref{ex:arith1}: because we can assume
 that all integer variables contain integer values.
 
@@ -541,9 +544,8 @@ that all integer variables contain integer values.
 
 \paragraph{Dead Cast Elimination}
 
-Consider the transformation in \Cref{code:deadcast}, in the case in which
-the source uses the hybrid model and the target uses the
-concrete model.
+Consider the transformation in \Cref{fig:intptrcast:formal-semantics:deadcast}, in the case in which
+the source uses the hybrid model and the target uses the concrete model.
 
 We begin by assuming that the first invariant below holds before the call to
 \texttt{foo}, where the variable \texttt{p} contains equivalent

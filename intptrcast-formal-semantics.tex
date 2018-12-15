@@ -1,8 +1,6 @@
 \section{Formal Semantics}
 \label{sec:intptrcast:formal-semantics}
 
-\jeehoon{``// return'' in examples...}
-
 Our hybrid model is simply a hybrid of the fully concrete
 model and the fully logical model. However, there are several issues
 with how to combine the two models to minimize their disadvantages.
@@ -10,8 +8,12 @@ In this section, we introduce the hybrid model and discuss how
 we address the design issues at a high level.  % More detailed
 % discussions with concrete examples will follow in the subsequent
 % sections.  
-All the optimization examples presented in this
-section are performed by \code{clang -O2}.
+
+All the optimization examples presented in this section are performed by \code{clang -O2}.
+Furthermore, unless specified otherwise, integer variables have type \code{uintptr\_t}, which is an
+integer type that is able to hold a pointer value (see \jeehoon{refer C18} for more details), and
+pointer variables have type (\code{int *}).
+
 
 \subsection{Hybrid of Concrete and Logical Blocks}
 \label{sec:intptrcast:formal-semantics:representation}
@@ -47,7 +49,8 @@ ranges should be disjoint. Logical blocks have no such requirement, since they a
 by construction.
 %\label{model:issues}
 
-In the subsequent sections, we discuss several issues that arose during the design of our hybrid model and justify our solutions to the issues.
+In the subsequent sections, we discuss several issues that arose during the design of our hybrid
+model and justify our solutions to the issues.
 
 \subsection{Why Hybrid?}
 \label{sec:intptrcast:formal-semantics:hybrid}
@@ -69,11 +72,11 @@ information, so that we can tell when a block is exclusively owned. In such a mo
 to know that we do not lose permission information when a pointer is cast to an integer, even if
 integer operations are performed on it (\eg \code{base64\_enc}oding a pointer and then
 \code{base64\_dec}oding it).  However, this prevents the optimization presented in
-\Cref{code:arith1}.  Suppose the variable \code{b} contains an integer with permission to
-access some valid block $l$, and \code{a} contains an integer without any permission that is equal
-to the concrete address of the block $l$. Then the source program successfully stores 123 into the
-block $l$ because \code{q} has the relevant permission, whereas the target program fails because
-\code{q} does not have the permission.
+\Cref{fig:intptrcast:formal-semantics:arith1}.  Suppose the variable \code{b} contains an integer
+with permission to access some valid block $l$, and \code{a} contains an integer without any
+permission that is equal to the concrete address of the block $l$. Then the source program
+successfully stores 123 into the block $l$ because \code{q} has the relevant permission, whereas the
+target program fails because \code{q} does not have the permission.
 %
 \begin{figure}[t]
 \center
@@ -82,7 +85,7 @@ block $l$ because \code{q} has the relevant permission, whereas the target progr
 \begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
 a = (a - b) + (2 * b - b);
-q = (ptr) a;
+q = (int *) a;
 *q = 123;
 \end{minted}
 \end{minipage}
@@ -92,13 +95,13 @@ $\quad\rightarrow\quad$
 %\small
 \begin{minipage}{0.2\textwidth}
 \begin{minted}{c}
-;
-q = (ptr) a;
+
+q = (int *) a;
 *q = 123;
 \end{minted}
 \end{minipage}
 \end{tabular}
-\caption{Arithmetic Optimization Example I}\label{code:arith1}
+\caption{Arithmetic Optimization Example I}\label{fig:intptrcast:formal-semantics:arith1}
 \end{figure}
 %
 See \Cref{sec:intptrcast:compiler-verification:examples} for how to verify this optimization in our hybrid model.
@@ -127,7 +130,7 @@ value and maintain the ownership guarantees of the logical model.
 
 However, this approach has a serious problem: it does not justify some important integer
 optimizations, such as a dead code elimination presented in
-\Cref{code:intptrcast:formal-semantics:dce}.  Suppose the pointer \code{p} contains a logical block
+\Cref{fig:intptrcast:formal-semantics:dce}.  Suppose the pointer \code{p} contains a logical block
 $l$. In the source program, since its concrete address is used in the function \code{foo}, the block
 $l$ must be given a concrete address. In the target, the read-only call to \code{foo} is optimized
 away, and the block $l$ may not be given a concrete address. That is, the source may have more
@@ -137,17 +140,17 @@ possible in the target that did not exist in the source, the optimization has in
 behavior, and is invalid.
 
 \begin{figure}[t]
+\small
 \center
 \begin{tabular}{lll}
 %\small
-\begin{minipage}{0.2\textwidth}
+\begin{minipage}{0.3\textwidth}
 \begin{minted}{c}
-foo(int a) {
+void foo(uintptr_t a) {
     a = a & 123;
-    // return a;
 }
 ...
-a = (int) p;
+a = (uintptr_t) p;
 foo(a);
 bar();
 \end{minted}
@@ -156,21 +159,20 @@ bar();
 $\quad\rightarrow\quad$
 &
 %\small
-\begin{minipage}{0.2\textwidth}
+\begin{minipage}{0.3\textwidth}
 \begin{minted}{c}
-foo(int a) {
+foo(uintptr_t a) {
     a = a & 123;
-    // return a;
 }
 ...
-a = (int) p;
+a = (uintptr_t) p;
 
 bar();
 \end{minted}
 \end{minipage}
 \end{tabular}
 \caption{Dead Code Elimination Example}
-\label{code:intptrcast:formal-semantics:dce}
+\label{fig:intptrcast:formal-semantics:dce}
 \end{figure}
 
 
@@ -188,14 +190,11 @@ details).
 Once we know which blocks will need concrete addresses, we need to
 decide when during a program's execution to assign those addresses.
 
-\jeehoon{Resolve the issue on out-of-memory.}
-
-One approach would be to make such a decision as early as possible
-(\ie at allocation time). We allocate blocks as either logical or
-concrete, and cause concrete operations (namely integer casts) on
-logical blocks to raise out-of-memory-type behavior (\ie no behavior).
-Since it is difficult to determine whether a block will need a
-concrete address,
+One approach would be to make such a decision as early as possible (\ie at allocation time). We
+allocate blocks as either logical or concrete, and cause concrete operations (namely integer casts)
+on logical blocks to raise \emph{out-of-memory-type behavior}.  (For its precise meaning, we refer
+the reader to \Cref{sec:intptrcast:compiler-verification:oom}.)  Since it is difficult to determine
+whether a block will need a concrete address,
 %% (and we would like to be able to compile our programs to more concrete ones),
 we would need to choose the kind of block to allocate
 non-deterministically. However, this would add unintuitive failures to
@@ -210,12 +209,13 @@ first casting point, and concrete afterward.
  %% at which they must be concrete, we reduce the non-determinism of the model. 
 
 \begin{figure}[t]
+\small
 \center
 \begin{tabular}{lll}
 %\small
 \begin{minipage}{0.3\textwidth}
 \begin{minted}{c}
-p = malloc (1);
+p = (int *) malloc(4);
 *p = 123;
 bar();
 a = *p;
@@ -228,7 +228,7 @@ $\quad\rightarrow\quad$
 %\small
 \begin{minipage}{0.3\textwidth}
 \begin{minted}{c}
-p = malloc (1);
+p = (int *) malloc(4);
 *p = 123;
 bar();
 a = *p;
@@ -236,11 +236,11 @@ hash_put(h, p, 123);
 \end{minted}
 \end{minipage}
 \end{tabular}
-\caption{Ownership Transfer Example}\label{code:ownership}
+\caption{Ownership Transfer Example}\label{fig:intptrcast:formal-semantics:ownership}
 \end{figure}
 
 This also allows \emph{ownership transfer} optimizations such as the
-constant propagation example in \Cref{code:ownership}, in which
+constant propagation example in \Cref{fig:intptrcast:formal-semantics:ownership}, in which
 pointers are privately owned up until some point and then become
 publicly available.  
 % On the other hand, in the hybrid model,
@@ -269,9 +269,9 @@ Thus, you lose the ownership over the block and cannot justify the constant prop
 \subsection{Operations on Pointers}
 
 In \Cref{sec:intptrcast:formal-semantics:cast}, we explained that the fewer blocks we make concrete, the more we can take advantage of the ownership guarantees provided by logical blocks. We have seen that operations that require pointers to have integer values force a lower bound on the number of blocks that must be made concrete. As such, we can improve our model by reducing the number of operations that require concrete addresses. We take our cue from CompCert's memory model, in which several arithmetic operations, such as integer-pointer addition and subtraction of pointers from pointers in the
-same block, are well-defined even in the absence of a concrete address (see \Cref{backgrounds:logical}). 
+same block, are well-defined even in the absence of a concrete address (see \Cref{sec:background:memory}). 
 
-One disadvantage of CompCert's approach to arithmetic operations is that it invalidates some important arithmetic optimizations, such as the optimization presented in \Cref{code:arith2}, by introducing logical addresses as possible values for integer-typed variables. 
+One disadvantage of CompCert's approach to arithmetic operations is that it invalidates some important arithmetic optimizations, such as the optimization presented in \Cref{fig:intptrcast:formal-semantics:arith2}, by introducing logical addresses as possible values for integer-typed variables. 
 To see this, suppose that the integer variables \code{a}, \code{b}, \code{c1}, and \code{c2} contain the same logical address $(l,0)$. The source program shown will successfully assign $(l,0)$ to the variables \code{d1} and \code{d2}, because \code{b-c1} and \code{b-c2} evaluate to $0$. However, in the target, the variable $\code{t}$ gets an unspecified value, because the addition of two logical addresses is undefined. Thus, the target has more behaviors than the source, and the optimization is invalid.
 
 \begin{figure}[t]
@@ -280,7 +280,7 @@ To see this, suppose that the integer variables \code{a}, \code{b}, \code{c1}, a
 %\small
 \begin{minipage}{0.3\textwidth}
 \begin{minted}{c}
-;
+
 d1 = a + (b - c1);
 d2 = a + (b - c2);
 \end{minted}
@@ -297,7 +297,7 @@ d2 = t - c2;
 \end{minted}
 \end{minipage}
 \end{tabular}
-\caption{Arithmetic Optimization Example II}\label{code:arith2}
+\caption{Arithmetic Optimization Example II}\label{fig:intptrcast:formal-semantics:arith2}
 \end{figure}
 
 We avoid this disadvantage through the use of type checking. 
@@ -334,26 +334,25 @@ allocation. In the concrete model allocations of dead blocks cannot be
 removed, because otherwise an arbitrary access in the source may
 succeed but fail in the target. 
 
-Our solution to this problem is to remove dead casts combined with dead blocks during
-the translation from the hybrid to the fully concrete model.
-For instance, consider the dead call elimination optimization presented in \Cref{code:deadcast}. This optimization is not valid when both the source and
-the target use the hybrid model, due to the cast operation in the
-function. It is also not valid when both the source and the target use
-the concrete memory, due to the allocation in the function. However, the optimization is valid when the source uses the
-hybrid model and the target uses the fully concrete model (see \Cref{sec:intptrcast:compiler-verification:examples} for formal details).
+Our solution to this problem is to remove dead casts combined with dead blocks during the
+translation from the hybrid to the fully concrete model.  For instance, consider the dead call
+elimination optimization presented in \Cref{fig:intptrcast:formal-semantics:deadcast}. This
+optimization is not valid when both the source and the target use the hybrid model, due to the cast
+operation in the function. It is also not valid when both the source and the target use the concrete
+memory, due to the allocation in the function. However, the optimization is valid when the source
+uses the hybrid model and the target uses the fully concrete model (see
+\Cref{sec:intptrcast:compiler-verification:examples} for formal details).
 
 \begin{figure}[t]
-\center
+\small \center
 \begin{tabular}{@{}l@{}l@{~~}l}
 %\small
-\begin{minipage}{0.3\textwidth}
+\begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
-foo(ptr p, int n) {
-  var ptr q, int a, r;
-  q = malloc (n);
-  a = (int) p;
-  r = a * 123;
-  // return r;
+void foo(int *p, int n) {
+  auto q = malloc(n);
+  auto a = (uintptr_t) p;
+  auto r = a * 123;
 }
 \end{minted}
 \end{minipage}
@@ -361,21 +360,19 @@ foo(ptr p, int n) {
 $\quad\rightarrow\quad$
 &
 %\small
-\begin{minipage}{0.3\textwidth}
+\begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
-foo(ptr p, int n) {
-  var ptr q, int a, r;
-  q = malloc (n);
-  a = (int) p;
-  r = a * 123;
-  // return r;
+void foo(int *p, int n) {
+  auto q = malloc(n);
+  auto a = (uintptr_t) p;
+  auto r = a * 123;
 }
 \end{minted}
 \end{minipage}
 \\
 \\
 %\small
-\begin{minipage}{0.3\textwidth}
+\begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
 ...
 foo(p, n);
@@ -386,7 +383,7 @@ bar();
 $\quad\rightarrow\quad$
 &
 %\small
-\begin{minipage}{0.3\textwidth}
+\begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
 ...
 
@@ -395,7 +392,7 @@ bar();
 \end{minipage}
 \end{tabular}
 \caption{Dead Cast Elimination Example}
-\label{code:deadcast}
+\label{fig:intptrcast:formal-semantics:deadcast}
 \end{figure}
 
 Although our solution does not justify the removal of all dead casts,
@@ -433,16 +430,15 @@ Although this optimization cannot be performed in our framework, the function \c
 unpredictable number generator, and is unlikely to occur in real programs.
 
 \begin{center}
+\small
 \begin{tabular}{@{}l@{}l@{}l@{}}
 %\small
-\begin{minipage}{0.3\textwidth}
+\begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
-foo(ptr p, int n) {
-  var ptr q, int a, r;
-  q = malloc (n);
-  a = (int) q;
-  r = a * 123;
-  // return r;
+void foo(ptr p, int n) {
+  auto q = malloc(n);
+  auto a = (uintptr_t) q;
+  auto r = a * 123;
 }
 \end{minted}
 \end{minipage}
@@ -450,21 +446,19 @@ foo(ptr p, int n) {
 $\quad\rightarrow\quad$
 &
 %\small
-\begin{minipage}{0.3\textwidth}
+\begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
-foo(ptr p, int n) {
-  var ptr q, int a, r;
-  q = malloc (n);
-  a = (int) q;
-  r = a * 123;
-  // return r;
+void foo(ptr p, int n) {
+  auto q = malloc(n);
+  auto a = (uintptr_t) q;
+  auto r = a * 123;
 }
 \end{minted}
 \end{minipage}
 \\
 \\
 %\small
-\begin{minipage}{0.3\textwidth}
+\begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
 ...
 foo(p, n);
@@ -475,7 +469,7 @@ bar();
 $\quad\rightarrow\quad$
 &
 %\small
-\begin{minipage}{0.3\textwidth}
+\begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
 ...
 
@@ -489,15 +483,19 @@ Another, more reasonable limitation of our model occurs when one privately uses 
 public (\eg by using the integer as a key for hash table).  Consider the following example, which is a variant of the example in \Cref{idea:ownership},
 where we cast the address of a newly allocated block into an integer
 and use the integer as a key for hash table:
+
+\vskip 0.2cm
+
 \begin{center}
+\small
 \begin{tabular}{@{}l@{}l@{}l@{}}
 %\small
 \begin{minipage}{0.3\textwidth}
 \begin{minted}{c}
 ...
-p = malloc (1);
+p = (int *) malloc(4);
 *p = 123;
-b = (int) p;
+b = (uintptr_t) p;
 bar();
 a = *p;
 hash_put(h, b, a);
@@ -511,15 +509,16 @@ $\qquad\rightarrow\qquad$
 \begin{minipage}{0.3\textwidth}
 \begin{minted}{c}
 ...
-p = malloc (1);
+p = (int *) malloc(4);
 *p = 123;
-b = (int) p;
+b = (uintptr_t) p;
 bar();
 a = *p;
 hash_put(h, b, 123);
 ...
 \end{minted}
 \end{minipage}
+\\
 \end{tabular}
 \end{center}
 
