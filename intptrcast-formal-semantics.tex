@@ -185,7 +185,7 @@ details).
 
 
 \subsection{When Concrete Addresses are Assigned to Blocks?}
-\label{idea:ownership}
+\label{sec:intptrcast:formal-semantics:ownership}
 
 Once we know which blocks will need concrete addresses, we need to
 decide when during a program's execution to assign those addresses.
@@ -193,7 +193,7 @@ decide when during a program's execution to assign those addresses.
 One approach would be to make such a decision as early as possible (\ie at allocation time). We
 allocate blocks as either logical or concrete, and cause concrete operations (namely integer casts)
 on logical blocks to raise \emph{out-of-memory-type behavior}.  (For its precise meaning, we refer
-the reader to \Cref{sec:intptrcast:compiler-verification:oom}.)  Since it is difficult to determine
+the reader to \Cref{sec:intptrcast:formal-semantics:oom}.)  Since it is difficult to determine
 whether a block will need a concrete address,
 %% (and we would like to be able to compile our programs to more concrete ones),
 we would need to choose the kind of block to allocate
@@ -257,13 +257,77 @@ non-deterministic allocation does not allow such optimizations for the following
 When the allocated block in the target is concrete, the
   corresponding allocation in the source must be concrete; otherwise,
   when the function \code{hash\_put} casts the address of the block to
-  an integer the source program raises no behavior, while the target succeeds.
+  an integer the source program raises out-of-memory-type behavior, while the target succeeds.
 Thus, you lose the ownership over the block and cannot justify the constant propagation due to the presence of \code{bar()}.
 
    % Note that this may not be a decisive example, however, since this
    % optimization is not used in all real-world compilers (it is
    % performed by \code{clang -O2} and higher, but not by \code{gcc
    %   -O2} or higher).
+
+
+\subsection{Out of Memory Behavior}
+\label{sec:intptrcast:formal-semantics:oom}
+
+In \Cref{sec:intptrcast:formal-semantics:ownership}, we discuss that pointer-to-integer cast may
+raise out of memory, and thus we need to define the semantics of out of memory.  It is worth noting
+that CompCert does not need to define the behaviors of out of memory because it uses a purely
+logical memory model and out of memory does not occur.
+% while we should regard out of memory because it is unavoidable in the presence of integer-pointer
+% casts.
+
+In this dissertation, we regard out of memory as \emph{the empty set of behaviors} (\ie no
+behaviors), following CompCertTSO~\cite{vsevvcik2013compcerttso}, for the following reasons.  First,
+we should allow the target program to run out of memory even if the source program does not, because
+register allocation---one of the most important compiler optimizations---may increase the program's
+memory requirements.  Second, since running out of memory is not that serious a problem for
+programmers as is genuine undefined behavior (\eg accessing freed memory), the target behavior of a
+source program running out of memory should not be arbitrary.
+
+Though our semantics of out of memory---as well as all the other existing proposals---is not
+entirely satisfactory for the following reasons.  First, our semantics may not justify those
+optimizations that reduce memory consumption instead of increasing it, such as register promotion
+and dead allocation elimination.  Second, the ISO C18 Standard~\cite{iso2018iec} says that
+\texttt{malloc} returns zero in case of out of memory [\S7.22.3 paragraph~1] \jeehoon{check it},
+instead of allowing no behaviors.  The ISO C18 Standard semantics, however, is also unsatisfactory
+in that it does not justify dead allocation eliminations, \eg{} if a dead malloc is eliminated, then
+the source may have more allocated blocks than the target has and thus a subsequent allocation may
+return zero in the source but return a valid pointer in the target.  For this reason, we leave
+defining a more proper semantics of out of memory as a future work.
+
+%% In C11 Standard~\cite{iso2011iec}, \texttt{malloc} returns $0$ when out of memory (7.22.3
+%% paragraph 1).  However, this semantics does not justify
+%% memory optimizations, such as dead allocation eliminations, since
+%% the a \texttt{malloc} in the target may return $0$ while the
+%% corresponding \texttt{malloc} in the source may return a valid
+%% pointer.
+%This question arises naturally,
+%since integer-pointer casts inherently introduce out of memory.
+
+% but should match the source behavior and also run out of memory.
+
+% Thus we model \emph{out of memory as the empty set of behaviors}, or in other words, no behaviors.
+
+% Then what is the set of behaviors of out of memory?
+
+To make compiler verification more faithful in the presence of out of memory, we allow programmers
+to observe \emph{partial behaviors}, possibly before discarding behavior due to running out of
+memory, in addition to (whole) behaviors presented in \Cref{sec:background:correctness}:
+\begin{itemize}
+\item A partial execution of the program that has produced a finite sequence
+of I/O events, $e_1, \cdots, e_n, \mathtt{partial}$.
+\end{itemize}
+Partial behaviors allow programmers to observe I/O events prior to an out-of-memory error, which is
+more faithful to the real world because it is absurd to discard I/O events before running out of
+memory.  As before, refinement is defined as inclusion of the set of (possibly partial) behaviors of
+the target program into that of the source program.  As a consequence, compilers should guarantee
+that the target program always performs a prefix of the events the source program could have
+performed.
+% However, unlike CompCertTSO, where only the target language can run out of memory, our source
+% language can also run out of memory due to pointer-to-integer casts, as we explain below.
+
+% To handle this, we also observes \emph{partial behaviors}, possibly before discarding behavior due
+% to running out of memory:
 
 
 \subsection{Operations on Pointers}
@@ -307,7 +371,7 @@ while also giving semantics to the operations on logical addresses when possible
 See \Cref{sec:intptrcast:formal-semantics:langsem} for an example of type-dependent semantics of arithmetic operations in our model.
 
 \subsection{Dead Cast Elimination}
-\label{idea:deadcast}
+\label{sec:intptrcast:formal-semantics:deadcast}
 
 As a result of our design decisions thus far, casts have become
 important effectful operations in our model, determining the points at
@@ -424,7 +488,7 @@ integers in actual programs are unlikely to be completely local. There are few r
 
 For instance, consider the following example of a simple program in which we might want to perform a locality optimization even after casting a pointer to an integer.
 The program is a variant of 
-the example in \Cref{idea:deadcast}, in which we cast \code{q} into an integer instead of~\code{p},
+the example in \Cref{sec:intptrcast:formal-semantics:deadcast}, in which we cast \code{q} into an integer instead of~\code{p},
 so that in our model the local block becomes concrete and cannot be eliminated.
 Although this optimization cannot be performed in our framework, the function \code{foo} is nothing but an %silly pseudo random 
 unpredictable number generator, and is unlikely to occur in real programs.
@@ -480,7 +544,7 @@ bar();
 \end{center}
 
 Another, more reasonable limitation of our model occurs when one privately uses a local block for some time, then casts its address to an integer and releases it to the
-public (\eg by using the integer as a key for hash table).  Consider the following example, which is a variant of the example in \Cref{idea:ownership},
+public (\eg by using the integer as a key for hash table).  Consider the following example, which is a variant of the example in \Cref{sec:intptrcast:formal-semantics:ownership},
 where we cast the address of a newly allocated block into an integer
 and use the integer as a key for hash table:
 
