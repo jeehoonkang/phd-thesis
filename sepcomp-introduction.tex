@@ -1,10 +1,6 @@
 \section{Introduction}
 \label{sec:sepcomp:introduction}
 
-\jeehoon{It is important to note that this approach of using forward simulations (when convenient)
-  carries over without modification when porting CompCert to Level A and B compositional
-  correctness, as we do in the next section.}
-
 There was a key dimension in which the verification of CompCert is not realistic---namely that, for
 simplicity, it only establishes the correctness of \emph{whole-program} compilation: if CompCert is
 used to compile a self-contained C program consisting of a single file, then the output of CompCert
@@ -19,16 +15,15 @@ nothing about them.
 
 The technical reason for this limitation is that it makes it possible for the CompCert verification
 to be carried out straightforwardly using closed simulations: simulations between closed (\ie
-self-contained, executable) programs.  \jeehoon{explain the closed simulations in the background.}
-For each pass of the compiler, the output of the pass is shown to simulate the input of the pass,
-assuming and preserving whatever invariant the verifier wishes to impose on the relation between the
-states of the input and output.  Working with closed simulations simplifies life in two ways: $(1)$
-the simulation proof for each pass can rely on whatever state invariant it chooses, independent of
-what invariants are used in other passes, and $(2)$ these independent simulations collectively imply
-the end-to-end correctness of the whole compiler (this is sometimes called ``vertical
-compositionality'').  However, closed simulations are by definition simulations over whole program
-states, thus seemingly confining their applicability to the verification of whole-program
-compilation.
+self-contained, executable) programs.  For each pass of the compiler, the output of the pass is
+shown to simulate the input of the pass, assuming and preserving whatever invariant the verifier
+wishes to impose on the relation between the states of the input and output.  Working with closed
+simulations simplifies life in two ways: $(1)$ the simulation proof for each pass can rely on
+whatever state invariant it chooses, independent of what invariants are used in other passes, and
+$(2)$ these independent simulations collectively imply the end-to-end correctness of the whole
+compiler (this is sometimes called ``vertical compositionality'').  However, closed simulations are
+by definition simulations over whole program states, thus seemingly confining their applicability to
+the verification of whole-program compilation.
 
 There has consequently been a great deal of work in the past several years attempting to prove
 compiler correctness \emph{without} the whole-program restriction.  Indeed, it turns out that even
@@ -229,8 +224,8 @@ We demonstrate the effectiveness of our techniques by applying them to CompCert 
 two person-months total, we adapted the existing CompCert verification to support both Level A and
 Level B compositional correctness, and much of that time was spent trying to understand the original
 CompCert proof.  \textbf{The result of this effort is the first verification of separate compilation
-  for the full CompCert compiler, which has subsequently been merged upstream in CompCert 2.7.}  Our
-verification (available online~\cite{kang-phd-thesis-web}) is mostly the same as the original
+  for the full CompCert compiler, which has subsequently been adopted in the official CompCert 2.7.}
+Our verification (available online~\cite{kang-phd-thesis-web}) is mostly the same as the original
 CompCert verification, and is only 2\% (for Level A) or 3\% (for Level B) larger than the original
 verification in terms of lines of Coq.  Furthermore, in the course of doing so, we uncovered two
 bugs in CompCert: one in an invalid axiom, and one (in CompCert's ``value analysis'') that was

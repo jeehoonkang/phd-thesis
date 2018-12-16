@@ -142,10 +142,6 @@ A correctness (for the remaining 6 passes that did not fall into the trivial cas
 
 
 
-
-
-
-
 % Or not:
 
 % \[
@@ -279,6 +275,14 @@ compositional correctness, we were able to simply extract and compose
 simulation proof for the latter part of $R'$.
 
 
+\paragraph{Note:}
+
+it is important to note that our idea works at porting CompCert's verification using forward
+simulations (when convenient), as well as that using backward simulations, to Level A and B
+compositional correctness.
+
+% it is important to note that this approach of using forward simulations (when convenient) carries
+% over without modification when porting CompCert to Level A and B compositional correctness.
 
 
 

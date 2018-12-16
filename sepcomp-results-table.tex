@@ -1,0 +1,41 @@
+\begin{tabular}{|l||r||r|r|r||r|r|r|}
+\hline
+& \multicolumn{1}{c||}{\textbf{CompCert}} & \multicolumn{3}{c||}{\textbf{\sepcomp-LevelA}} & \multicolumn{3}{c|}{\textbf{\sepcomp-LevelB}} \\
+\cline{3-8} 
+ & \multicolumn{1}{c||}{\textbf{(LOC)}} & \multicolumn{1}{c|}{\textbf{Rm}} & \multicolumn{1}{c|}{\textbf{AddD}} & \multicolumn{1}{c||}{\textbf{AddN}} & \multicolumn{1}{c|}{\textbf{Rm}} & \multicolumn{1}{c|}{\textbf{AddD}} & \multicolumn{1}{c|}{\textbf{AddN}} \\
+\hline 
+\textbf{Total} & 206702 & 318\phantom{0}(0.2\%) & 465 \phantom{0}(0.2\%) & 3392 \phantom{0}(1.6\%) & 372 \phantom{0}(0.2\%) & 1439 \phantom{0}(0.7\%) & 4845 \phantom{0}(2.3\%) \\
+\hline 
+\hline
+\textbf{Compiler \& Verification} & 88451 & 318\phantom{0}(0.4\%) & 465 \phantom{0}(0.5\%) & 1153 \phantom{0}(1.3\%) & 372 \phantom{0}(0.4\%) & 1439 \phantom{0}(1.6\%) & 1726 \phantom{0}(2.0\%) \\
+\hline 
+\texttt{driver/Compiler.v} & 367 & 6\phantom{0}(1.6\%) & 6 \phantom{0}(1.6\%) & \phantom{ (00.0\%)} & 9 \phantom{0}(2.5\%) & 9 \phantom{0}(2.5\%) & \phantom{ (00.0\%)} \\
+\texttt{../ValueAnalysis.v} & 1825 & 16\phantom{0}(0.9\%) & 33 \phantom{0}(1.8\%) & 86 \phantom{0}(4.7\%) & 16 \phantom{0}(0.9\%) & 33 \phantom{0}(1.8\%) & 86 \phantom{0}(4.7\%) \\
+\texttt{../Cstrategy.v} & 3070 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} \\
+\texttt{../SimplExpr(proof|spec).v} & 3383 & 14\phantom{0}(0.4\%) & 10 \phantom{0}(0.3\%) & \cellcolor[gray]{0.8}68 \phantom{0}(2.0\%) & 14 \phantom{0}(0.4\%) & 10 \phantom{0}(0.3\%) & 68 \phantom{0}(2.0\%) \\
+\texttt{../SimplLocalsproof.v} & 2251 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 19 \phantom{0}(0.8\%) & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 19 \phantom{0}(0.8\%) \\
+\texttt{../Cshmgenproof.v} & 1515 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 21 \phantom{0}(1.4\%) & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 21 \phantom{0}(1.4\%) \\
+\texttt{../Cminorgenproof.v} & 2256 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 11 \phantom{0}(0.5\%) & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 11 \phantom{0}(0.5\%) \\
+\texttt{../Select*proof.v} & 2686 & 86\phantom{0}(3.2\%) & 117 \phantom{0}(4.4\%) & \cellcolor[gray]{0.8}203 \phantom{0}(7.6\%) & 86 \phantom{0}(3.2\%) & 117 \phantom{0}(4.4\%) & 203 \phantom{0}(7.6\%) \\
+\texttt{../RTLgen(proof|spec).v} & 2781 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 12 \phantom{0}(0.4\%) & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 12 \phantom{0}(0.4\%) \\
+\texttt{../Tailcallproof.v} & 627 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 8 \phantom{0}(1.3\%) & 21 \phantom{0}(3.3\%) & \cellcolor[gray]{0.8}186 (29.7\%) & 37 \phantom{0}(5.9\%) \\
+\texttt{../Inlining(proof|spec).v} & 1979 & 59\phantom{0}(3.0\%) & 98 \phantom{0}(5.0\%) & \cellcolor[gray]{0.8}50 \phantom{0}(2.5\%) & 60 \phantom{0}(3.0\%) & \cellcolor[gray]{0.8}323 (16.3\%) & 64 \phantom{0}(3.2\%) \\
+\texttt{../Renumberproof.v} & 267 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 30 (11.2\%) & \cellcolor[gray]{0.8}126 (47.2\%) & 35 (13.1\%) \\
+\texttt{../Constpropproof.v} & 644 & 50\phantom{0}(7.8\%) & 68 (10.6\%) & \cellcolor[gray]{0.8}26 \phantom{0}(4.0\%) & 52 \phantom{0}(8.1\%) & \cellcolor[gray]{0.8}180 (28.0\%) & 36 \phantom{0}(5.6\%) \\
+\texttt{../CSEproof.v} & 1238 & 29\phantom{0}(2.3\%) & 56 \phantom{0}(4.5\%) & \cellcolor[gray]{0.8}34 \phantom{0}(2.7\%) & 30 \phantom{0}(2.4\%) & \cellcolor[gray]{0.8}146 (11.8\%) & 45 \phantom{0}(3.6\%) \\
+\texttt{../Deadcodeproof.v} & 1024 & 58\phantom{0}(5.7\%) & 77 \phantom{0}(7.5\%) & \cellcolor[gray]{0.8}34 \phantom{0}(3.3\%) & 54 \phantom{0}(5.3\%) & \cellcolor[gray]{0.8}171 (16.7\%) & 45 \phantom{0}(4.4\%) \\
+\texttt{../Allocproof.v} & 2219 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 14 \phantom{0}(0.6\%) & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 14 \phantom{0}(0.6\%) \\
+\texttt{../Tunnelingproof.v} & 417 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} \\
+\texttt{../Linearizeproof.v} & 750 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 8 \phantom{0}(1.1\%) & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 8 \phantom{0}(1.1\%) \\
+\texttt{../CleanupLabelsproof.v} & 372 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} \\
+\texttt{../Stackingproof.v} & 2894 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 10 \phantom{0}(0.3\%) & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 10 \phantom{0}(0.3\%) \\
+\texttt{../Asmgenproof0proof.v} & 867 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} \\
+\texttt{arm/*proof*.v} & 4046 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} \\
+\texttt{ia32/*proof*.v} & 3683 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} \\
+\texttt{powerpc/*proof*.v} & 3912 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} \\
+\specialcell{others in \texttt{cfrontend}, \texttt{backend}, \\ ~~\texttt{driver}, \texttt{arm}, \texttt{ia32}, \texttt{powerpc}} & 43378 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 549 \phantom{0}(1.3\%) & \phantom{ (00.0\%)} & 138 \phantom{0}(0.3\%) & 1012 \phantom{0}(2.3\%) \\
+\hline
+\hline
+\textbf{Metatheory} & 118251 & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 2239 \phantom{0}(1.9\%) & \phantom{ (00.0\%)} & \phantom{ (00.0\%)} & 3119 \phantom{0}(2.6\%) \\
+\hline 
+\end{tabular}
