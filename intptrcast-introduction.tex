@@ -92,7 +92,7 @@ This is useful since taking a pointer is a cheap way to get a unique key.
 The most straightforward way to support bit-level pointer manipulation is to adopt the concrete
 memory model, but as we have seen in \Cref{sec:introduction,sec:background:memory}, this model
 invalidates many basic compiler optimizations such as constant propagation and dead allocation
-elimination.
+elimination. \jeehoon{DAE?}
 
 % due to the combination of finite memory and casts of arbitrary integers to pointers.
 
@@ -102,6 +102,8 @@ low-level C programming idioms using casts between pointers and integers, treati
 containing them as undefined (\ie erroneous).  At the essence of the problem is that logical models
 represent pointers as pairs of an allocation block identifier and an offset within that block, which
 cannot be easily casted into and from an integer.
+
+\jeehoon{Say the example in the introduction.}
 
 %\todo{Show example with pointer to integer cast.}
 %Gil:

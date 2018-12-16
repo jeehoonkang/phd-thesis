@@ -65,7 +65,7 @@ that is actually performed by the mainstream compilers such as GCC~\cite{gcc} an
 void f() {
   10: int a = 42;
   20: g();
-  30: print(x);
+  30: print(a);
 }
 \end{minted}
 \end{minipage}
@@ -177,8 +177,75 @@ complex and are not widely accepted in the systems programming community, \eg{} 
 defines its own dialect of C that supports much less compiler optimizations and is closer to
 assembly languages than ISO C18.
 
-\jeehoon{explain the problem with examples: too many undefined behaviors, conflicts among
-  optimizations.}
+
+\paragraph{Too Many Undefined Behaviors}
+
+\jeehoon{explain the problem with examples: too many undefined behaviors}
+
+
+\paragraph{Conflicts among Optimizations}
+
+Even worse, some optimizations in mainstream compilers are conflicting with each other and result in
+miscompilation bugs.  It is difficult to fix these bugs because it is unclear which optimizations
+are to blame.
+
+For example, Consider the following program (for now, ignore the gray area):
+%
+\begin{center}
+\small
+\begin{minipage}{0.5\textwidth}
+\begin{minted}[bgcolor=white]{c}
+void main() { 
+  int x = 0;
+  uintptr_t xi = (uintptr_t) &x;
+\end{minted}
+\vskip -0.7cm
+\begin{minted}[bgcolor=gray]{c}
+  uintptr_t i;
+  for (i = 0; i < xi; ++i) {}
+  if (xi != i) {
+    printf("unreachable\n");
+    xi = i;
+  }
+\end{minted}
+\vskip -0.7cm
+\begin{minted}[bgcolor=white]{c}
+  auto p = (int *) xi;
+  *p = 1;
+  printf("%d\n", x); // expected: 1, actual: 0
+}
+\end{minted}
+\end{minipage}
+\end{center}
+
+\noindent Note that \code{uintptr\_t} is an integer type that is able to hold a pointer value (see
+\jeehoon{refer C18} for more details).  In this program, the pointer to the local variable \code{x}
+is casted to an integer, \code{xi}, and then casted back to pointer, \code{p}.  Thus \code{p} points
+to \code{x}, and after \code{*p} is assigned one, the value of \code{x} should be one.  Furthermore,
+inserting the code in the gray area should not change the program's behavior, because the gray area
+is dead code: after the for loop, \code{i} equals to \code{xi}, and the conditional branch is not
+taken.
+
+GCC miscompiles this program as follows\footnote{This miscompilation bug is reported in
+  \url{https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65752}, which is still open as of this
+  writing.}:
+%
+\begin{enumerate}
+\item Code motion optimization moves \mintinline{c}{xi = i} out of the conditional branch, because
+  regardless of whether the branch is taken, \code{xi = i} should hold.
+\item Alias analysis thinks that \code{p} is not a valid pointer, because it originates from
+  \code{xi}, which equals to \code{i}, which in turn is obtained by just incrementing by one several
+  times from zero.
+\item Constant propagation optimization replaces \code{x} at the last line with zero, because
+  \code{x} is initialized with zero and no intervening stores are writing to \code{x}.  In
+  particular, \code{p} is not aliased with \code{\&x}, at least from the compiler's point of view,
+  because \code{p} is not a valid pointer.
+\end{enumerate}
+
+\noindent It is unclear which optimizations or analyses involved with this bug are to blame, because
+all of them look fine: the code motion and constant propagation optimizations are definitely legit,
+and the alias analysis has a reasonable cause to believe that \code{p} is invalid.  But still, they
+are conflicting with each other and they collectively result in a miscompilation bug.
 
 
 \subsection{The Prior Art: Formal Semantics and Compiler Verification}

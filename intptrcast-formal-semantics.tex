@@ -10,9 +10,9 @@ we address the design issues at a high level.  % More detailed
 % sections.  
 
 All the optimization examples presented in this section are performed by \code{clang -O2}.
-Furthermore, unless specified otherwise, integer variables have type \code{uintptr\_t}, which is an
-integer type that is able to hold a pointer value (see \jeehoon{refer C18} for more details), and
-pointer variables have type \code{int*}.
+Furthermore, unless specified otherwise, integer variables have type \code{uintptr\_t}, and pointer
+variables have type \code{int*}.  Recall that \code{uintptr\_t} is an integer type that is able to
+hold a pointer value.
 
 
 \subsection{Hybrid of Concrete and Logical Blocks}

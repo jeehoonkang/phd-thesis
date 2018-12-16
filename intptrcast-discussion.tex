@@ -1,7 +1,7 @@
 \section{Discussion}
 \label{sec:intptrcast:discussion}
 
-\subsection{Implementation Details}
+\subsection{Implementation and Experiment Details}
 
 \paragraph{Coq Formalization}
 All the proofs reported in this paper have been fully formalized in
@@ -280,8 +280,14 @@ void foo(int *p) {
 
 \jeehoon{rewrite it..}
 
+Our idea to give semantics to more programs involving pointer operations---namely, using concrete
+and logical blocks at the same time---is subsequently refined by follow-up papers by other
+researchers~\cite{intptrcast-oopsla,intptrcast-popl}.
+
 The hybrid model refines the C standard by giving semantics to more programs involving pointer
-operations. We intend to use this model for compiler verification tasks, extending the range of
+operations.
+
+We intend to use this model for compiler verification tasks, extending the range of
 common optimizations that can be verified. Ultimately, we would like to build a verified translation
 validation framework for LLVM that supports all commonly-used features of C. We would also like to
 integrate our model with CompCert and use it to justify new CompCert optimizations.  We believe that
