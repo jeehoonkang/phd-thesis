@@ -19,11 +19,11 @@
 	\input glyphtounicode\pdfgentounicode=1 %type 1 font사용시
 	\usepackage[pdftex,unicode]{hyperref} % delete me
 	\usepackage[pdftex]{graphicx}
-	\usepackage[pdftex,svgnames]{xcolor}
+	\usepackage[pdftex,svgnames,table]{xcolor}
 \else
 	\usepackage[dvipdfmx,unicode]{hyperref} % delete me
 	\usepackage[dvipdfmx]{graphicx}
-	\usepackage[dvipdfmx,svgnames]{xcolor}
+	\usepackage[dvipdfmx,svgnames,table]{xcolor}
 \fi
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -36,10 +36,10 @@
 \usepackage{MinionPro}
 \usepackage{MyriadPro}
 \usepackage[scaled]{beramono}
-\usepackage[cache=false]{minted}
+\usepackage{minted}
 \usepackage{cleveref}
-\usepackage{listings} % TODO: use minted
 \usepackage[shortlabels]{enumitem}
+\usepackage{lscape}
 
 \linespread{1.1}
 \renewcommand{\thechapter}{\Roman{chapter}}

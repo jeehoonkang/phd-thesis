@@ -4,10 +4,21 @@
   \begin{tabular}[#1]{@{}c@{}}#2\end{tabular}}
 \definecolor{light-gray}{gray}{0.8}
 
+We applied our Level A and B techniques to CompCert 2.4 with three
+patches applied (two bug fixes and RTL-level optimization flags),
+resulting in \emph{\sepcomp-LevelA} and \emph{\sepcomp-LevelB}.
+In the former, we prove the behavioral refinement result between the
+source C program obtained by syntactically linking several C files and
+the target assembly program obtained by syntactically linking the
+results of compiling source files with the \emph{same} optimization
+flag.  In the latter, we prove the same behavioral refinement result
+even when each source file is compiled with a different optimization
+flag.
+
+\begin{landscape}
 \begin{figure*}
 \begin{center}
-{\small \input{sepcomp-results-table.tex}
-}
+{\scriptsize \input{sepcomp-results-table.tex}}
 \end{center}
 {\vskip -1.2em
   \[\begin{array}{lll}
@@ -20,17 +31,7 @@
 \caption{Changes to lines of code when porting CompCert to \sepcomp-LevelA and \sepcomp-LevelB.}
 \label{fig:results}
 \end{figure*}
-
-We applied our Level A and B techniques to CompCert 2.4 with three
-patches applied (two bug fixes and RTL-level optimization flags),
-resulting in \emph{\sepcomp-LevelA} and \emph{\sepcomp-LevelB}.
-In the former, we prove the behavioral refinement result between the
-source C program obtained by syntactically linking several C files and
-the target assembly program obtained by syntactically linking the
-results of compiling source files with the \emph{same} optimization
-flag.  In the latter, we prove the same behavioral refinement result
-even when each source file is compiled with a different optimization
-flag.
+\end{landscape}
 
 In the table in \Cref{fig:results}, we summarize the changes we
 made in number of lines of Coq.  For these statistics, we first split

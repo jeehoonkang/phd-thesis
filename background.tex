@@ -247,11 +247,11 @@ some unknown external function~\code{g}. We might expect the compiler to deduce 
 \begin{center}
 \begin{tabular}{@{}l@{}l@{}l@{}l@{}l@{}}
 %% \small
-\multicolumn{5}{c}{\small \mintinline{c}{extern void g();} \\}
-\\
 \begin{minipage}{0.2\textwidth}
 \small
 \begin{minted}{c}
+extern void g();
+
 int f(void) {
   int a = 0;
   g();
@@ -266,6 +266,8 @@ $\quad\rightarrow\quad$
 \begin{minipage}{0.2\textwidth}
 \small
 \begin{minted}{c}
+extern void g();
+
 int f(void) {
   int a = 0;
   g();
@@ -280,6 +282,8 @@ $\quad\rightarrow\quad$
 \begin{minipage}{0.2\textwidth}
 \small
 \begin{minted}{c}
+extern void g();
+
 int f(void) {
 
   g();
