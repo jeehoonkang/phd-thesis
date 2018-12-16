@@ -53,15 +53,8 @@ maintain a similar relationship.
 This relationship will designate one section of each memory as \emph{public}, and require that
 related locations in the source and target public memories have equivalent values; it will also
 designate a \emph{private} section of each memory, such that the source program can make changes to
-its private memory when the target does not make corresponding changes and vice versa.  If you are
-familiar with CompCert's verification, you may regard the relationship is a generalization of
-CompCert's \emph{memory injection}~\cite{compcert-memory} to account for private memories and
-function-modular reasoning.\footnote{In fact, the relationship is also a simplification of
-  CompCert's memory injection in the treatment of public memories: the public memories in the source
-  and the target should coincide in the relationship, while they may differ in CompCert's memory
-  injection.  Though it is straightforward to generalize the relationship in this dimension.}  For
-the technical details of this relation and our notion of equivalence, see
-\Cref{reasoning:invariants}.
+its private memory when the target does not make corresponding changes and vice versa.  For the
+technical details of this relation and our notion of equivalence, see \Cref{reasoning:invariants}.
 
 \begin{figure}
 \center
@@ -168,9 +161,14 @@ conditions on public memories (which must be equivalent in the source and target
 private memories (which can differ between them).  We now formally define the notion of memory
 equivalence used in our informal example, and the conditions on the private memories.
 
-The idea of memory equivalence is inspired from CompCert's memory injection
-\cite{Leroy-Appel-Blazy-Stewart-memory-v2}, and our conditions for concrete blocks are inspired from
-CompCertTSO's support for finite memory \cite{vsevvcik2013compcerttso}.  See
+If you are familiar with CompCert's verification, you may regard the memory invariant is a
+generalization of CompCert's \emph{memory injection}~\cite{Leroy-Appel-Blazy-Stewart-memory-v2} to
+account for private memories, function-modular reasoning, and finite memory.\footnote{In fact, the
+  memory invariant is also a simplification of CompCert's memory injection in the treatment of
+  public memories: the public memories in the source and the target should coincide in the
+  invariant, while they may differ in CompCert's memory injection.  Though it is straightforward to
+  generalize the invariant in this dimension.}  Furthermore, our conditions for concrete blocks are
+inspired from CompCertTSO's support for finite memory \cite{vsevvcik2013compcerttso}.  See
 \Cref{sec:intptrcast:discussion} for more comparisons.
 
 %%  in the source and the
@@ -315,7 +313,7 @@ a typical lifecycle of the source and target functions:
         //\hspace*{3pt}$\beta'_\text{c}\quad{\beta_\text{r}}\!\sqsubseteq\!\beta'_\text{c}$ \\
         //\fbox{${\beta'_\text{r}}\quad\beta'_\text{c}\!\sqsubseteq\!{\beta'_\text{r}} \,\land\, \beta'_\text{c}\!=_{\textrm{prv}}\!{\beta'_\text{r}}$} \\
         //\hspace*{3pt}$\beta_\text{e}\quad{\beta'_\text{r}}\!\sqsubseteq\!\beta_\text{e} \;\land\; {\beta_\text{s}}\!=_{\textrm{prv}}\!\beta_\text{e}$ \\
-        \phantom{ }
+        \phantom{\Large k}
       \end{minipage}
   \end{tabular}
 \end{center}
@@ -332,7 +330,7 @@ a typical lifecycle of the source and target functions:
 % \end{lstlisting}
 % \end{minipage}
 % \end{center}
-Here boxed conditions are assumed and the others are guaranteed.
+\noindent Here boxed conditions are assumed and the others are guaranteed.
 
 First, in \code{foo}, unknown functional calls such as
 \code{bar(..)} and \code{gee(..)} should be synchronized (\ie when

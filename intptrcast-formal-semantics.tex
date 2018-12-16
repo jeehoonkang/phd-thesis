@@ -12,7 +12,7 @@ we address the design issues at a high level.  % More detailed
 All the optimization examples presented in this section are performed by \code{clang -O2}.
 Furthermore, unless specified otherwise, integer variables have type \code{uintptr\_t}, which is an
 integer type that is able to hold a pointer value (see \jeehoon{refer C18} for more details), and
-pointer variables have type (\code{int *}).
+pointer variables have type \code{int*}.
 
 
 \subsection{Hybrid of Concrete and Logical Blocks}
@@ -813,7 +813,7 @@ m(l) = (v, p, n, c) \land v=\mathrm{true} \land (0\le i < n)}
 \end{array}
 \]
 
-Casting a logical address $(l,i)$ into an integer first realizes the
+Casting a logical address $(l,i)$ into an integer first concretizes the
 block $l$ and then reifies the address $(l,i)$ if it is valid;
 otherwise, raises undefined behavior.  Casting an integer $i$ yields a
 valid logical address $(l,j)$ that is reified to $i$ if there is such
@@ -822,7 +822,7 @@ an integer is cast to a unique address if it succeeds.
 \[
 \begin{array}{@{}l@{~}c@{~}ll@{}}
 \code{cast2int}_m(l,i) &\defeq& \toint{(l,i)}{m} &\text{if }~ \text{valid}_m(l,i)
-~~~\text{\{after realizing $l$\}}
+~~~\text{\{after concretizing $l$\}}
 \\
 \code{cast2ptr}_m(i)   &\defeq& (l,j) & \text{if }~ \text{valid}_m(l,j) \land \toint{(l,j)}{m}=i \\
 \end{array}
@@ -905,7 +905,7 @@ and treated as described above) and integer-typed variables (whose values are al
 
 We also give the language a purely concrete semantics and use it as a
 low-level intermediate language with the concrete memory.  In this
-semantics, all memory blocks are realized and all values are just
+semantics, all memory blocks are concretized and all values are just
 integers, interpreted as either integer values or physical addresses
 of memory cells.
 
