@@ -278,24 +278,30 @@ void foo(int *p) {
 
 \subsection{Impact}
 
-\jeehoon{rewrite it..}
+In the course of doing this research, we discovered the GCC bug presented in
+\Cref{sec:introduction:problem}.  With this bug, we persuaded compiler writers that $(1)$ it is
+subtle to define the semantics of casts between pointers and integers, and $(2)$ it is safe to turn
+off some alias analyses that are too aggressive to peacefully coexist with other optimizations.
 
 Our idea to give semantics to more programs involving pointer operations---namely, using concrete
 and logical blocks at the same time---is subsequently refined by follow-up papers by other
-researchers~\cite{intptrcast-oopsla,intptrcast-popl}.
+researchers~\cite{intptrcast-oopsla,intptrcast-popl}.  In particular, \cite{intptrcast-popl} is
+accompanied with promising revision proposals to the ISO C Standard.
 
-The hybrid model refines the C standard by giving semantics to more programs involving pointer
-operations.
+% The hybrid model refines the C standard by giving semantics to more programs involving pointer
+% operations.
 
-We intend to use this model for compiler verification tasks, extending the range of
-common optimizations that can be verified. Ultimately, we would like to build a verified translation
-validation framework for LLVM that supports all commonly-used features of C. We would also like to
-integrate our model with CompCert and use it to justify new CompCert optimizations.  We believe that
-our ideas are readily applicable to CompCert(TSO) and related projects like
-Vellvm~\cite{vellvm:popl12,vellvm:pldi13} because our memory model and notion of memory invariant
-are technically very close to CompCert's. (Vellvm also uses CompCert's memory model.) Essentially,
-all that would have to change in the proofs are the cases handling pointer to integer casts.
+We intend to use this model for compiler verification tasks, extending the range of common
+optimizations that can be verified.  Ultimately, we would like to generalize
+Crellvm~\cite{crellvm}---the credible compilation framework for LLVM---to support casts between
+pointers and integers.  We would also like to integrate our model with CompCert and use it to
+justify new CompCert optimizations.  We believe that our ideas are readily applicable to
+CompCert(TSO) and related projects like Vellvm~\cite{vellvm:popl12,vellvm:pldi13} because our memory
+model and notion of memory invariant are technically very close to CompCert's.  (Vellvm also uses
+CompCert's memory model.)  Essentially, all that would have to change in the proofs are the cases
+handling pointer to integer casts.
 
+% all commonly-used features of C.
 
 
 %% 
