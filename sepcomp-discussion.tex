@@ -30,13 +30,13 @@ under an arbitrary ``semantic context'', which may consist of a
 linking of C and assembly modules.
 
 On the one hand, Compositional CompCert is targeting a more ambitious
-goal than \sepcomp{}.  Their approach inherently supports the
+goal than separate compilation.  Their approach inherently supports the
 possibility of linking results of multiple different compilers, as
 well as the ability to link C modules with hand-coded assembly
 modules, both of which are beyond the scope of our techniques.
 
 On the other hand, as we explained in the introduction, the modesty of
-our goal is quite deliberate---it enables our \sepcomp{} verification
+our goal is quite deliberate---it enables our separate compilation verification
 to use a considerably more lightweight approach than they do.  For
 example, they report that their porting of CompCert passes to verify
 compositional correctness took approximately 10 person-months and led
@@ -51,7 +51,7 @@ CompCert by roughly a factor of 7.
 One reason for this, we believe, is that the \emph{structured
   simulations} employed in the Compositional CompCert proof require
 all passes in the compiler to be verified using a common
-``memory-injection'' invariant.  In contrast, with \sepcomp{} we were
+``memory-injection'' invariant.  In contrast, in our verification, we were
 able to essentially reuse the invariants from the original CompCert
 proof, which are different for different passes.  Another potential
 reason concerns the treatment of inter-module vs.\ external function
@@ -61,8 +61,8 @@ external function calls preserve the simulation relation in each pass.
 In Compositional CompCert, inter-module function calls are treated the
 same as external function calls, and as a result Stewart~\etal's
 verification must additionally establish that functions compiled by
-the compiler satisfy the external function axioms.  In contrast, with
-SepCompCert we reduce the problem of verifying separate compilation to
+the compiler satisfy the external function axioms.  In contrast, in our verification,
+we reduce the problem of verifying separate compilation to
 that of verifying correctness of compilation for a whole
 (multi-module) program.  Thus, for us, inter-module function calls are
 \emph{not} treated as external calls---they merely shift control to
@@ -78,7 +78,7 @@ propagation, and inlining).  Second, due to its use of interaction
 semantics, Compositional CompCert employs a bespoke ``semantic''
 notion of linking (even for linking assembly files), which has not yet
 been related to the standard notion of syntactic linking (see
-\Cref{sec:adaptconstprop}) that we employ in the \sepcomp{}
+\Cref{sec:adaptconstprop}) that we employ in our
 verification.  Syntactic linking corresponds much more closely to the
 physical linking of machine code implemented by the \code{gcc} linker
 that CompCert uses by default.  Proving this is outside the scope of
@@ -94,7 +94,7 @@ CompCert.  While similar in many ways to the approach of
 Stewart~\etal, the \emph{compositional semantics} of
 Ramananandro~\etal\ defines linking so that the linking of
 assembly-level modules boils down to syntactic linking (essentially,
-concatenation), as it does in \sepcomp{}.  On the other hand, they
+concatenation), as it does in our verification.  On the other hand, they
 have only used their approach to compositionally verify a few passes
 of CompCert.
 
@@ -202,7 +202,7 @@ implementation of an interactive SML read-eval-print loop.  In that
 sense, the verification is not exactly ``whole-program'' because new
 code can be compiled and added to a global database interactively.
 But it also does not support true separate compilation in the sense
-that \sepcomp{} does because modules cannot be compiled independently
+that our verification does because modules cannot be compiled independently
 of the other modules they depend on.
 
 We believe in principle it should be possible to use our techniques to
@@ -218,7 +218,10 @@ and thus linking will need to be defined at the machine-code level.
 
 \subsection{Impact}
 
-TODO
+We verified separate compilation for the \emph{full} CompCert compiler for the first time.  In the
+course of doing so, we uncovered two compiler bugs---one of which is on separate compilation and the
+other is orthogonal to separate compilation---and our verification techniques are subsequently
+adopted in the official CompCert 2.7.
 
 
 

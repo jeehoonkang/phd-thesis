@@ -192,8 +192,9 @@ are to blame.
 
 For example, we discovered that GCC miscompiles the following program\footnote{This miscompilation
   bug is reported in \url{https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65752}, which is still open
-  as of this writing.} (for now, ignore the gray area):
+  as of this writing.}:
 %
+\begin{figure}
 \begin{center}
 \small
 \begin{minipage}{0.5\textwidth}
@@ -220,14 +221,17 @@ void main() {
 \end{minted}
 \end{minipage}
 \end{center}
+\caption{A GCC bug in the presence of casts between pointers and integers}
+\label{fig:introduction:bug}
+\end{figure}
 
-\noindent Note that \code{uintptr\_t} is an integer type that is able to hold a pointer value (see
-\jeehoon{refer C18} for more details).  In this program, the pointer to the local variable \code{x}
-is casted to an integer, \code{xi}, and then casted back to pointer, \code{p}.  Thus \code{p} points
-to \code{x}, and after \code{*p} is assigned one, the value of \code{x} should be one.  Now
-inserting the code in the gray area should not change the program's behavior, because the gray area
-is dead code: after the for loop, \code{i} equals to \code{xi}, and the conditional branch is not
-taken.
+\noindent (At first, ignore the gray area.)  Note that \code{uintptr\_t} is an integer type that is
+able to hold a pointer value (see \jeehoon{refer C18} for more details).  In this program, the
+pointer to the local variable \code{x} is casted to an integer, \code{xi}, and then casted back to
+pointer, \code{p}.  Thus \code{p} points to \code{x}, and after \code{*p} is assigned one, the value
+of \code{x} should be one.  Now inserting the code in the gray area should not change the program's
+behavior, because the gray area is dead code: after the for loop, \code{i} equals to \code{xi}, and
+the conditional branch is not taken.
 
 GCC miscompiles this program as follows:
 %
@@ -319,10 +323,10 @@ as safety-critical embedded systems.
 \subsection{Our Contribution: Towards Formalization of C in the Wild}
 
 In this dissertation, we carry forward the research agenda for the formalization of real-world
-practice of C semantics and compilers by lifting the prior work's simplifying assumptions in several
-dimensions.  Specifically, we make the following contributions:
+practice of C semantics and compilers by accounting for more features and use cases that are crucial
+in the real-world practice and yet were beyond the reach of the prior work.  Specifically, we make
+the following contributions:
 
-\jeehoon{Articulate that we picked the top-notch features.}
 
 % Specifically, we propose the formal semantics of several low-level features that are the defining
 % characteristics of C and yet are omitted from the prior work.  Furthermore, we propose
@@ -341,11 +345,17 @@ that $(1)$ fully supports operations on the representation of pointers, includin
 operations for pointers that have been cast to integers, $(2)$ validates major compiler
 optimizations on memory accesses, and $(3)$ is simple to understand and program with.
 
-The key novel idea behind our semantics is the notion of concretization: when allocated, a memory
-block is not assigned a concrete address yet; only when it is required by a pointer-to-integer cast,
-the block is lazily assigned a concrete address, \ie{} the block is concretized.
+The key novel idea behind our semantics is the notion of \emph{concretization}: when allocated, a
+memory block is not assigned a concrete address yet; only when it is required by a
+pointer-to-integer cast, the block is lazily assigned a concrete address, \ie{} the block is
+concretized.
 
-\jeehoon{impact.}
+In the course of doing this research, we discovered the GCC bug presented in
+\Cref{fig:introduction:bug}, with which we persuaded compiler writers that it is safe to turn off
+some too aggressive aliase analyses.  Furthermore, our idea has subsequently been refined by
+follow-up papers by other researchers~\cite{intptrcast-oopsla,intptrcast-popl}, which are
+accompanied with promising revision proposals to the LLVM compiler and ISO C Standard.
+
 
 % The ISO C standard does not specify the semantics of many valid programs that use non-portable
 % idioms such as integer-pointer casts. Recent efforts at formal definitions and verified
@@ -379,7 +389,10 @@ write in the future, thus enabling other threads to read from that write out of 
 to prevent out-of-thin-air behaviors, a promise step requires a thread-local certification that it
 will be possible to execute the promised write even in the absence of the promise.
 
-\jeehoon{impact.}
+Our semantics is a promising proposal for relaxed-memory concurrency semantics for C/C++ and
+compiler IRs, and draws interest from both industry and academia.  In particular, our semantics
+serves as a guide to C/C++ relaxed-memory concurrency, and reasoning principles for our semantics
+are being developed.
 
 This chapter draws heavily on the work and writing in the following paper:
 
@@ -406,10 +419,11 @@ problem in terms of whole-program compilation, thereby enabling us to largely re
 closed-simulation proofs from existing compiler verifications.  We demonstrate the effectiveness of
 these techniques by applying them to CompCert 2.4, converting its verification of whole-program
 compilation into a verification of separate compilation in less than two person-months.  This
-conversion only required a small number of changes to the original proofs, and uncovered two
-compiler bugs along the way.
+conversion only required a small number of changes to the original proofs.
 
-Our verification techniques are subsequently adopted in CompCert 2.7.
+We uncovered two compiler bugs along the way---one of which is on separate compilation and the other
+is orthogonal to separate compilation---and our verification techniques are subsequently adopted in
+CompCert 2.7.
 
 This chapter draws heavily on the work and writing in the following paper:
 
@@ -437,16 +451,16 @@ to replace the C dialects used in Linux and other systems.
 % analysis, union, inline assembly, GPUs and accelerators---and by verifying mainstream compilers.
 
 
-% TODO: how to mention these papers?
-%
-% \begin{itemize}
-% \item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
-%   \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
-% \item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
-%   Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
-%   (*The first three authors contributed equally and are listed alphabetically.)  \emph{Crellvm:
-%     Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.
-% \end{itemize}
+\jeehoon{Mention these papers.}
+
+\begin{itemize}
+\item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
+  \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
+\item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
+  Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
+  (*The first three authors contributed equally and are listed alphabetically.)  \emph{Crellvm:
+    Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.
+\end{itemize}
 
 
 \paragraph{Organization}

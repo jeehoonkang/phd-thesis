@@ -1,17 +1,17 @@
 \section{Introduction}
 \label{sec:sepcomp:introduction}
 
-There was a key dimension in which the verification of CompCert is not realistic---namely that, for
-simplicity, it only establishes the correctness of \emph{whole-program} compilation: if CompCert is
-used to compile a self-contained C program consisting of a single file, then the output of CompCert
-preserves the semantics of that program.  But clearly this does not correspond to what many clients
-of a verified compiler would expect.  For example, it is often essential in practice to be able to
-compile a client module separately from the many standard libraries it depends on, yet be assured
-that linking the resulting binaries together will result in an executable that preserves the
-semantics of the linked source modules.  Furthermore, it is commonplace for different modules in a
-program to be compiled with different sets of optimization passes turned on.  Although the CompCert
-compiler does indeed support such forms of separate compilation, its verification statement says
-nothing about them.
+There was a key dimension in which the verification of CompCert, as well as that of the other
+existing verified compilers, is not realistic---namely that, for simplicity, it only establishes the
+correctness of \emph{whole-program} compilation: if CompCert is used to compile a self-contained C
+program consisting of a single file, then the output of CompCert preserves the semantics of that
+program.  But clearly this does not correspond to what many clients of a verified compiler would
+expect.  For example, it is often essential in practice to be able to compile a client module
+separately from the many standard libraries it depends on, yet be assured that linking the resulting
+binaries together will result in an executable that preserves the semantics of the linked source
+modules.  Furthermore, it is commonplace for different modules in a program to be compiled with
+different sets of optimization passes turned on.  Although the CompCert compiler does indeed support
+such forms of separate compilation, its verification statement says nothing about them.
 
 The technical reason for this limitation is that it makes it possible for the CompCert verification
 to be carried out straightforwardly using closed simulations: simulations between closed (\ie
@@ -224,13 +224,13 @@ We demonstrate the effectiveness of our techniques by applying them to CompCert 
 two person-months total, we adapted the existing CompCert verification to support both Level A and
 Level B compositional correctness, and much of that time was spent trying to understand the original
 CompCert proof.  \textbf{The result of this effort is the first verification of separate compilation
-  for the full CompCert compiler, which has subsequently been adopted in the official CompCert 2.7.}
-Our verification (available online~\cite{kang-phd-thesis-web}) is mostly the same as the original
-CompCert verification, and is only 2\% (for Level A) or 3\% (for Level B) larger than the original
-verification in terms of lines of Coq.  Furthermore, in the course of doing so, we uncovered two
-bugs in CompCert: one in an invalid axiom, and one (in CompCert's ``value analysis'') that was
-outside the scope of CompCert's original verification because it only showed up in the presence of
-separate compilation.  These have been confirmed and subsequently fixed in CompCert 2.5.
+  for the full CompCert compiler.}  Our verification (available online~\cite{kang-phd-thesis-web})
+is mostly the same as the original CompCert verification, and is only 2\% (for Level A) or 3\% (for
+Level B) larger than the original verification in terms of lines of Coq.  Furthermore, in the course
+of doing so, we uncovered two bugs in CompCert: one in an invalid axiom, and one (in CompCert's
+``value analysis'') that was outside the scope of CompCert's original verification because it only
+showed up in the presence of separate compilation.  These have been confirmed and subsequently fixed
+in CompCert 2.5.
 
 % \footnote{The latest version of CompCert is 2.5.  It was released on June 12, 2015, after we had
 %   already completed our verification of \sepcomp{}.  See \Cref{sec:related} for discussion of what

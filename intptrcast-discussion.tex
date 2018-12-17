@@ -279,14 +279,14 @@ void foo(int *p) {
 \subsection{Impact}
 
 In the course of doing this research, we discovered the GCC bug presented in
-\Cref{sec:introduction:problem}.  With this bug, we persuaded compiler writers that $(1)$ it is
-subtle to define the semantics of casts between pointers and integers, and $(2)$ it is safe to turn
-off some alias analyses that are too aggressive to peacefully coexist with other optimizations.
+\Cref{fig:introduction:bug}.  With this bug, we persuaded compiler writers that $(1)$ it is subtle
+to define the semantics of casts between pointers and integers, and $(2)$ it is safe to turn off
+some alias analyses that are too aggressive to peacefully coexist with other optimizations.
 
 Our idea to give semantics to more programs involving pointer operations---namely, using concrete
-and logical blocks at the same time---is subsequently refined by follow-up papers by other
-researchers~\cite{intptrcast-oopsla,intptrcast-popl}.  In particular, \cite{intptrcast-popl} is
-accompanied with promising revision proposals to the ISO C Standard.
+and logical blocks at the same time---has subsequently been refined by follow-up papers by other
+researchers~\cite{intptrcast-oopsla,intptrcast-popl}, which are accompanied with promising revision
+proposals to the LLVM compiler and ISO C Standard.
 
 % The hybrid model refines the C standard by giving semantics to more programs involving pointer
 % operations.
