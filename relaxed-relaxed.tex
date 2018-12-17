@@ -96,7 +96,7 @@ justify reordering of independent memory operations (\ie operations
 that access distinct locations), since the more weakly consistent
 architectures (like ARM) may potentially perform such reorderings.
 There are four such classes of reorderings---write-read, write-write,
-read-read, and read-write---and in \cref{sec:results} we will prove formally
+read-read, and read-write---and in \Cref{sec:results} we will prove formally
 that our semantics justifies all of them.
 
 On the other hand,
@@ -117,7 +117,7 @@ locations in different orders, they must observe writes to the
  In addition to being supported by hardware,
 per-location coherence is preserved by common compiler optimizations
 as well.  Hence, we want our semantics of relaxed accesses to
-guarantee it. (In \cref{sec:plain} we will present an even weaker mode of accesses that
+guarantee it. (In \Cref{sec:plain} we will present an even weaker mode of accesses that
 does not provide full per-location coherence.)
 
 %\jeehoon{we do not mention merges; I think it is reasonable at this stage, but I just want to make a note here.}
@@ -231,16 +231,16 @@ to be able to write using a timestamp that is not globally maximal.
 
 %As we have seen, 
 % Timestamps account for write-read and write-write
-% reorderings, and indeed (as we prove in \cref{sec:results}) they also account
+% reorderings, and indeed (as we prove in \Cref{sec:results}) they also account
 % for read-read reorderings.  
 % \ori{actually, our formal proof of WW-reordering uses promises,
 % should we just say here that timestamps dont suffice to explain RW?}
 Unfortunately, our timestamp semantics alone does not suffice
 to explain \emph{read-write} reorderings, as exemplified by the (LB)
-and (LBfd) programs from \cref{sec:oota}.  It is precisely these
+and (LBfd) programs from \Cref{sec:oota}.  It is precisely these
 reorderings that motivate our introduction of \emph{promises}.
 
-As explained in \cref{sec:promising}, a thread $T$ may at any point
+As explained in \Cref{sec:promising}, a thread $T$ may at any point
 \emph{promise} to write $x:=v$ at some timestamp $t$ (provided that
 $t$ is greater than $T$'s current view of $x$).  This promise is
 treated to a large extent like an actual write operation.  In
@@ -256,7 +256,7 @@ Indeed, we already witnessed this with the (LB) and (LBfd) executions,
 where $T_1$ read $x=0$ during the initial certification of its promised
 write to $y$, but read $x=1$ during the actual execution.
 
-% We have seen in \cref{sec:promising} how promises justify
+% We have seen in \Cref{sec:promising} how promises justify
 % the read-write reordering of (LB) and (LBfd) while prohibiting the
 % OOTA behavior of (LBd). 
 Let us now briefly touch on a few technical points concerning the
@@ -298,7 +298,7 @@ strange though it may seem, is actually allowed (though not yet
 observed) by the ARM memory model~\cite{arm8-model}.
 
 % Having explained
-% the idea of promises in \cref{sec:promising}, we will now clarify how
+% the idea of promises in \Cref{sec:promising}, we will now clarify how
 % promises interact with timestamps.
 
 % \derek{Editing here.}
@@ -315,7 +315,7 @@ observed) by the ARM memory model~\cite{arm8-model}.
 % promise cannot be made since it is impossible to fulfill
 % thread-locally.  Intuitively, our thread-local validation of promises
 % ensures that ``out of thin air'' values can never be promised: we will
-% formalize this intuition in \cref{sec:relaxed-logic}.
+% formalize this intuition in \Cref{sec:relaxed-logic}.
 % % Consider the following two
 % % variants of the load-buffering program:
 % % \begin{center}
@@ -354,7 +354,7 @@ observed) by the ARM memory model~\cite{arm8-model}.
 % More specifically, we require that the thread making the promise should be able to execute in isolation and fulfill all its outstanding promises by performing the corresponing writes.
 % Thus, in the \ref{eq:LB} and \ref{eq:LBfalsedep} examples, the first thread can promise to write $x:=1$, because by reading from the initial state it can fulfill its promise. 
 % In contrast, in \ref{eq:LBdep}, the $x:=1$ promise cannot be made since it is impossible to fulfill thread-locally.
-% Intuitively, our thread-local validation of promises ensures that ``out of thin air'' values can never be promised: we will formalize this intuition in \cref{sec:relaxed-logic}.
+% Intuitively, our thread-local validation of promises ensures that ``out of thin air'' values can never be promised: we will formalize this intuition in \Cref{sec:relaxed-logic}.
 
 % Once a write has been promised, other threads may read it. 
 % The thread making the promise cannot directly read its promise, because this would violate per-location coherence:
@@ -520,7 +520,7 @@ $\mem \cup \setofz{m}$ and is only defined if $\mem \disj \setofz{m}$.
 
 A \emph{thread state} is a triple $\lts=\tup{\sigma,\rlxcur,\lprom}$,
 where $\sigma$ is the thread's local state, $\rlxcur$ is a timemap representing
-the thread's \emph{view} of memory, %(see \cref{??}), 
+the thread's \emph{view} of memory, %(see \Cref{??}), 
 and $\lprom$ is a memory that keeps track of the thread's outstanding
 promises.  We denote by $\lts.\lstate$, $\lts.\lview$, and
 $\lts.\lprmem$ the components of a thread state $\lts$.
@@ -528,7 +528,7 @@ In turn, a \emph{thread configuration} is a pair $\tconf=\tup{\lts,\mem}$,
 where $\lts$ is a thread state and $\mem$ is a memory, called the
 \emph{global memory}. Note that we will always have $\lts.\lprmem \suq \mem$.
 
-\cref{fig:relaxed-opsem} shows the five reduction rules for thread
+\Cref{fig:relaxed-opsem} shows the five reduction rules for thread
 configurations.  The \textsc{silent} rule handles the case when the
 program performs some local computation that does not affect memory.
 The \textsc{read} rule handles the case when the program reads from a
@@ -580,7 +580,7 @@ The initial state $\mconf^0$ (for a given program) consists of
 the function $\gts^0$ mapping each thread $i$ to its initial state $\sigma_i^0$,
 a current timestamp of $\ts{0}$ for every location, and an empty set of promises;
 and the initial memory $\mem^0$ that has one initial message $\rlxmsg{x}{0}{\ts{0}}$ for each location $x$.
-A machine takes a step (see the last rule in \cref{fig:relaxed-opsem})
+A machine takes a step (see the last rule in \Cref{fig:relaxed-opsem})
 whenever a thread can take several steps to some consistent configuration.
 Note that we allow multiple thread steps in one machine step.
 This is convenient in our proofs,

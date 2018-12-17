@@ -7,11 +7,11 @@ This presentation abstracts away particular timestamp choices and thread views,
 and replaces them by formal conditions on partial orders in execution graphs.
 The promise mechanism has an inherent operational nature, 
 and thus our declarative presentation only applies to
-the \emph{promise-free machine} (see end of \cref{sec:full-formal}).
+the \emph{promise-free machine} (see end of \Cref{sec:full-formal}).
 Nevertheless, this presentation is useful for comparing our model to C++11, 
-and it is used for establishing the correctness of compilation (see \cref{sec:compilation_POWER}). 
+and it is used for establishing the correctness of compilation (see \Cref{sec:compilation_POWER}). 
 We also find this useful as a technical device for analyzing
-possible behaviors of the promise-free machine and applying \cref{thm:drfpf}.
+possible behaviors of the promise-free machine and applying \Cref{thm:drfpf}.
 
 %The declarative presentation associates programs with graphs,
 The nodes of execution graphs are called \emph{events}.
@@ -144,9 +144,9 @@ which incrementally builds a consistent execution graph
 following some interleaving of the program's threads operations.
 Formally, the declarative machine state is a pair $\tup{\Sigma,G}$, 
 where $\Sigma$ assigns a local state $\sigma$ to every thread
-(as described in \cref{sec:relaxed}), and $G$ is some consistent execution graph.
-The possible steps of this machine are given in \cref{fig:axiomatic-opsem},
-assuming the same abstract programming language discussed  in \cref{sec:full-formal}.
+(as described in \Cref{sec:relaxed}), and $G$ is some consistent execution graph.
+The possible steps of this machine are given in \Cref{fig:axiomatic-opsem},
+assuming the same abstract programming language discussed  in \Cref{sec:full-formal}.
 To define these steps, we use the following notation for execution graph extension.
 % \jeehoon{How about replacing ``assigns a local state $\sigma$ to every thread'' with ``assigns a local state to every thread''?}
 % \ori{I think that $\sigma$, even though not used, will help the reader to

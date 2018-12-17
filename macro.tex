@@ -1,3 +1,67 @@
+\definecolor{StringRed}{rgb}{.637,0.082,0.082}
+\definecolor{CommentGreen}{rgb}{0.0,0.55,0.3}
+\definecolor{KeywordBlue}{rgb}{0.0,0.3,0.55}
+\definecolor{LinkColor}{rgb}{0.55,0.0,0.3}
+\definecolor{CiteColor}{rgb}{0.55,0.0,0.3}
+\definecolor{HighlightColor}{rgb}{0.0,0.0,0.0}
+
+
+\definecolor{grey}{rgb}{0.5,0.5,0.5}
+\definecolor{red}{rgb}{1,0,0}
+\definecolor{darkgreen}{rgb}{0.0,0.7,0.0}
+
+\hypersetup{%
+  linktocpage=true, pdfstartview=FitV,
+  breaklinks=true, pageanchor=true, pdfpagemode=UseOutlines,
+  plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=3,
+  hypertexnames=true, pdfhighlight=/O,
+  colorlinks=true,linkcolor=LinkColor,citecolor=CiteColor,
+  urlcolor=LinkColor
+}
+
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{claim}{Claim}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{definition}{Definition}
+\newtheorem{notation}{Notation}
+\newtheorem*{claim*}{Claim}
+\newtheorem*{definition*}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{remark}{Remark}
+\newtheorem*{notation*}{Notation}
+
+\crefformat{section}{#2\S{}#1#3}
+\Crefname{section}{Section}{Section}
+\Crefformat{section}{Section #2#1#3}
+
+\Crefname{figure}{\text{Figure}}{\text{Figures}}
+\crefname{corollary}{\text{Corollary}}{\text{corollaries}}
+\Crefname{corollary}{\text{Corollary}}{\text{Corollaries}}
+\crefname{lemma}{\text{Lemma}}{\text{Lemmas}}
+\Crefname{lemma}{\text{Lemma}}{\text{Lemmas}}
+\crefname{theorem}{\text{Theorem}}{\text{Theorems}}
+\Crefname{theorem}{\text{Theorem}}{\text{Theorems}}
+\crefname{proposition}{\text{Prop.}}{\text{Propositions}}
+\Crefname{proposition}{\text{Proposition}}{\text{Propositions}}
+\crefname{definition}{\text{Def.}}{\text{Definitions}}
+\Crefname{definition}{\text{Definition}}{\text{Definitions}}
+
+
+% \newcommand{\derek}[1]{{\color{purple}{\bf{D: #1}}}}
+% \newcommand{\jeehoon}[1]{{\color{magenta!60!black}{\bf{J: #1}}}}
+% \newcommand{\ori}[1]{{\color{blue}{\bf{O: #1}}}}
+% \newcommand{\viktor}[1]{{\color{green!60!black}{\bf{V: #1}}}}
+% \newcommand{\gil}[1]{{\color{red}{\bf{G: #1}}}}
+
+\newcommand{\derek}[1]{}
+\newcommand{\ori}[1]{}
+\newcommand{\viktor}[1]{}
+\newcommand{\gil}[1]{}
+
 \newcommand{\jeehoon}[1]{\textbf{jeehoon: {#1}}}
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\eg}{\emph{e.g.}, }
@@ -22,7 +86,6 @@
 \newcommand{\Rng}{\f{rng}}
 \newcommand{\powset}[1]{\mathbb{P}(#1)}
 \newcommand{\finpowset}[1]{\mathbb{P}_{\mathrm{fin}}(#1)}
-\newcommand{\tup}[1]{#1}
 \newcommand{\abs}[1]{{|#1|}}
 \newcommand{\maximum}{\mathrm{max}}
 \newcommand{\Nat}{\mathbb{N}}
@@ -52,7 +115,6 @@
 
 %%% lambda calculus
 
-\newcommand{\mydefeq}{\stackrel{\mathrm{def}}{=}}
 \newcommand{\estep}[1]{\stackrel{#1}{\hookrightarrow}}
 \newcommand{\step}{\hookrightarrow}
 %\newcommand{\steps}[1]{\stackrel{#1}{\hookrightarrow}}
@@ -164,7 +226,7 @@
 \newcommand{\WK}{\mathrm{WfKnow}}
 \newcommand{\Know}{\mathrm{Know}}
 \newcommand{\vr}{G}
-\newcommand{\lr}{L}
+% \newcommand{\lr}{L}
 \newcommand{\kn}{r}
 \newcommand{\kr}{R}
 \newcommand{\skn}{R}
@@ -272,54 +334,443 @@
 \newcommand{\running}{\mathit{running}}
 \newcommand{\diverge}{\mathit{diverge}}
 
-\newcommand{\Spec}{\mathrm{LinkSpec}}
-\newcommand{\Prog}{\mathrm{Prog}}
-\newcommand{\observe}{\mathrm{observe}}
-\newcommand{\link}{\mathrm{link}}
-\newcommand{\load}{\mathrm{load}}
+\newcommand{\Spec}{\textdom{LinkSpec}}
+\newcommand{\Prog}{\textdom{Prog}}
+\newcommand{\observe}{\textdom{observe}}
+\newcommand{\link}{\textdom{link}}
+\newcommand{\load}{\textdom{load}}
 
-\newcommand{\LSpec}{\mathrm{LangSpec}}
-% \newcommand{\Config}{\mathrm{Conf}}
-\newcommand{\Val}{\mathrm{Val}}
-\newcommand{\Com}{\mathrm{Com}}
-\newcommand{\Cont}{\mathrm{Cont}}
-\newcommand{\Mem}{\mathrm{Mem}}
-\newcommand{\CodeToMem}[1]{\{#1\}_\mathrm{code}}
-\newcommand{\HeapToMem}[1]{\{#1\}_\mathrm{heap}}
-\newcommand{\plugv}{\mathrm{plugv}}
-\newcommand{\plugc}{\mathrm{plugc}}
-\newcommand{\mdisj}{\mathrm{mdisj}}
-\newcommand{\mdisjlist}{\mathrm{mdisjlist}}
-\newcommand{\mdom}{\mathrm{mdom}}
-\newcommand{\observek}{\mathrm{obsk}}
-\newcommand{\stepf}{\mathrm{step}}
-\newcommand{\oftype}{\mathrm{oftype}}
+\newcommand{\LSpec}{\textdom{LangSpec}}
+% \newcommand{\Config}{\textdom{Conf}}
+\newcommand{\Val}{\textdom{Val}}
+\newcommand{\Com}{\textdom{Com}}
+\newcommand{\Cont}{\textdom{Cont}}
+\newcommand{\Mem}{\textdom{Mem}}
+\newcommand{\CodeToMem}[1]{\{#1\}_\textdom{code}}
+\newcommand{\HeapToMem}[1]{\{#1\}_\textdom{heap}}
+\newcommand{\plugv}{\textdom{plugv}}
+\newcommand{\plugc}{\textdom{plugc}}
+\newcommand{\mdisj}{\textdom{mdisj}}
+\newcommand{\mdisjlist}{\textdom{mdisjlist}}
+\newcommand{\mdom}{\textdom{mdom}}
+\newcommand{\observek}{\textdom{obsk}}
+\newcommand{\stepf}{\textdom{step}}
+\newcommand{\oftype}{\textdom{oftype}}
 \newcommand{\nil}{\cdot}
 \newcommand{\LA}{\mc{L}_1}
 \newcommand{\LB}{\mc{L}_2}
-\newcommand{\WSpec}{\mathrm{WorldSpec}}
-\newcommand{\World}{\mathrm{World}}
-\newcommand{\DepWorld}{\mathrm{DepWorld}}
-\newcommand{\LWorld}{\mathrm{LWorld}}
-\newcommand{\InitWorld}{\mathrm{InitWorld}}
-\newcommand{\wlevel}{\mathrm{lev}}
+\newcommand{\WSpec}{\textdom{WorldSpec}}
+\newcommand{\World}{\textdom{World}}
+\newcommand{\DepWorld}{\textdom{DepWorld}}
+\newcommand{\LWorld}{\textdom{LWorld}}
+\newcommand{\InitWorld}{\textdom{InitWorld}}
+\newcommand{\wlevel}{\textdom{lev}}
 \newcommand{\wlater}[1]{{\later #1}}
 \newcommand{\wbij}{\mc{B}}
 \newcommand{\wmem}{\mc{M}}
 \newcommand{\wobs}{\Orel}
 \newcommand{\wext}{\extends}
 \newcommand{\txew}{\sqsubseteq}
-\newcommand{\wextpub}{\extends_\mathrm{pub}}
-\newcommand{\txewpub}{\sqsubseteq_\mathrm{pub}}
+\newcommand{\txtsub}[2]{{#1}_{\text{#2}}}
+\newcommand{\wextpub}{\extends_\textdom{pub}}
+\newcommand{\txewpub}{\sqsubseteq_\textdom{pub}}
 \newcommand{\wextstrict}{\sqsupset_{\later}}
 \newcommand{\future}[1]{\square #1}
 \newcommand{\restrict}[2]{{#1_{\wextstrict #2}}}
-\newcommand{\ValRel}{\mathrm{WVRel}}
+\newcommand{\ValRel}{\textdom{WVRel}}
 \newcommand{\WR}[2]{\overline{(#1,#2)}}
-\newcommand{\pbij}[1]{#1~\mathrm{pbijective}}
-% \newcommand{\List}[1]{\mathrm{List}~#1}
+\newcommand{\pbij}[1]{#1~\textdom{pbijective}}
+% \newcommand{\List}[1]{\textdom{List}~#1}
 \DeclareMathOperator{\appendl}{{+\!\!+}}
 \newcommand{\wtransit}[3]{#1[#2 \rightsquigarrow #3]}
+
+
+%% inpar
+
+\newcommand{\nocomment}[1]{{\color{red}~~\texttt{/\!\!/}\ensuremath{{\neq}}\,{#1}}}
+\newcommand{\comment}[1]{{\color{teal}~\texttt{/\!\!/}\,{#1}}}
+\newcommand{\inarr}[1]{\begin{array}{@{}l@{}}#1\end{array}}
+\newcommand{\inarrII}[2]{\begin{array}{@{}l@{~~}||@{~~}l@{}}\inarr{#1}&\inarr{#2}\end{array}}
+\newcommand{\inarrIId}[2]{\begin{array}{@{}l@{~}||@{~}l@{}}\inarr{#1}&\inarr{#2}\end{array}}
+\newcommand{\inarrIII}[3]{\begin{array}{@{}l@{~~}||@{~~}l@{~~}||@{~~}l@{}}\inarr{#1}&\inarr{#2}&\inarr{#3}\end{array}}
+\newcommand{\inarrIIId}[3]{\begin{array}{@{}l@{~}||@{~}l@{~}||@{~}l@{}}\inarr{#1}&\inarr{#2}&\inarr{#3}\end{array}}
+\newcommand{\inarrIV}[4]{\begin{array}{@{}l@{~~}||@{~~}l@{~~}||@{~~}l@{~~}||@{~~}l@{}}\inarr{#1}&\inarr{#2}&\inarr{#3}&\inarr{#4}\end{array}}
+\newcommand{\inpar}[1]{\left(\inarr{#1}\right)}
+\newcommand{\inparII}[2]{\begin{array}{@{}l@{~~}||@{~~}l@{}}\inarr{#1}&\inarr{#2}\end{array}}
+\newcommand{\inparIII}[3]{\begin{array}{@{}l@{~~}||@{~~}l@{~~}||@{~~}l@{}}\inarr{#1}&\inarr{#2}&\inarr{#3}\end{array}}
+\newcommand{\inparIV}[4]{\begin{array}{@{}l@{~~}||@{~~}l@{~~}||@{~~}l@{~~}||@{~~}l@{}}\inarr{#1}&\inarr{#2}&\inarr{#3}&\inarr{#4}\end{array}}
+
+\newcommand{\inparaII}[2]{\begin{array}{@{}l@{\qquad\qquad}l@{}}\inarr{#1}&\inarr{#2}\end{array}}
+
+
+
+%% relaxed-memory concurrency
+
+\DeclareMathOperator{\disj}{{\#}}
+\newcommand{\textdom}[1]{\mathsf{#1}}
+\newcommand{\textcode}[1]{#1}
+\newcommand{\kw}[1]{\textbf{\textcode{#1}}}
+\newcommand{\skipc}{\kw{skip}}
+\newcommand{\ite}[3]{\kw{if}\;#1\:\kw{then}\;#2\;\kw{else}\;#3}
+\newcommand{\itne}[2]{\kw{if}\;#1\:\kw{then}\;#2}
+\newcommand{\while}[2]{\kw{while}\;#1\;\kw{do}\;#2}
+\newcommand{\ALT}{\;|\;}
+%\newcommand{\print}{\kw{print }}
+%\newcommand{\assert}[1]{\kw{assert}\;#1}
+\newcommand{\fencec}{\kw{fence()}}
+\newcommand{\fencesc}{\kw{fence-sc}}
+\newcommand{\fencerel}{\kw{fence-rel}}
+\newcommand{\fenceacq}{\kw{fence-acq}}
+\newcommand{\fencerelacq}{\kw{fence-ra}}
+\newcommand{\relw}{\kw{rel}}
+\newcommand{\acqr}{\kw{acq}}
+\newcommand{\sca}{\kw{sc}}
+\newcommand{\cas}[4]{\textrm{CAS}({#1},{#2},{#3},{#4})}
+\newcommand{\wait}[1]{\kw{wait}\;#1}
+\newcommand{\when}[2]{\kw{when}\;#1\;\kw{do}\;#2}
+\newcommand{\lock}[1]{\kw{lock}({#1})}
+\newcommand{\unlock}[1]{\kw{unlock}({#1})}
+%\newcommand{\comment}[1]{\color{CommentColor}{\quad\texttt{/*}\textit{ #1 }\texttt{*/}}}
+\newcommand{\mfence}{\texttt{MFENCE}}
+\newcommand{\fai}[1]{\textrm{FAA}({#1})}
+
+
+
+\newcommand{\set}[1]{\{{#1}\}}
+\newcommand{\size}[1]{|{#1}|}
+\newcommand{\pfn}{\rightharpoonup}
+\newcommand{\suq}{\subseteq}
+\newcommand{\N}{{\mathbb{N}}}
+\newcommand{\tup}[1]{{\langle{#1}\rangle}}
+\newcommand{\block}[1]{\langle {#1}\rangle}
+\newcommand{\dom}[1]{\textit{dom}{({#1})}}
+\newcommand{\codom}[1]{\textit{codom}{({#1})}}
+\newcommand{\fv}[1]{\textit{fv}{[{#1}]}}
+\newcommand{\til}{,\ldots,}
+\newcommand{\cuptil}{\cup\ldots\cup}
+\newcommand{\uplustil}{\uplus\ldots\uplus}
+\renewcommand*{\mathellipsis}{\mathinner{{\ldotp}{\ldotp}{\ldotp}}}
+\newcommand{\finpowerset}[1]{\mathcal{P}_{<\omega}({#1})}
+\newcommand{\ttt}{\texttt}
+\newcommand{\Suc}{\mathsf{Successor}}
+\newcommand{\false}{\mathsf{False}}
+\newcommand{\true}{\mathsf{True}}
+
+\newcommand{\id}{{id}}
+\newcommand{\typ}{{typ}}
+\newcommand{\lab}{{lab}}
+\newcommand{\loc}{{loc}}
+\newcommand{\tid}{{tid}}
+\newcommand{\val}{{val}}
+\newcommand{\ord}{{ord}}
+\newcommand{\upd}{{upd}}
+
+\newcommand{\rlab}{\texttt{R}}
+\newcommand{\wlab}{\texttt{W}}
+\newcommand{\ulab}{\texttt{U}}
+\newcommand{\slab}{\texttt{S}}
+\newcommand{\tlab}{\texttt{T}}
+\newcommand{\flab}{\texttt{F}}
+\newcommand{\xlab}{\texttt{X}}
+\newcommand{\ylab}{\texttt{Y}}
+
+
+\newcommand{\relo}{{\texttt{rel}}}
+\newcommand{\acqo}{{\texttt{acq}}}
+\newcommand{\sco}{{\texttt{sc}}}
+\newcommand{\na}{\texttt{na}}
+\newcommand{\pln}{\texttt{pln}}
+\newcommand{\atm}{\texttt{atm}}
+\newcommand{\ra}{\texttt{ra}}
+\newcommand{\nf}{\texttt{nf}}
+\newcommand{\rlx}{\texttt{rlx}}
+%\newcommand{\unord}{\texttt{uno}}
+\newcommand{\relacqo}{{\texttt{relacq}}}
+
+\newcommand{\Typ}{{\textdom{Typ}}}
+\newcommand{\Lab}{{\textdom{Lab}}}
+\newcommand{\Loc}{{\textdom{Loc}}}
+\newcommand{\AVal}{{\textdom{G}}}
+\newcommand{\Tid}{{\textdom{Tid}}}
+\newcommand{\Ord}{{\textdom{Ord}}}
+\newcommand{\Reg}{{\textdom{Reg}}}
+\newcommand{\Time}{{\textdom{Time}}}
+\newcommand{\Timemap}{{\textdom{Timemap}}}
+\newcommand{\Id}{{\textdom{Id}}}
+
+\newcommand{\astep}[1]{\xrightarrow{#1}}
+\newcommand{\bstep}[1]{\xRightarrow{#1}}
+\newcommand{\cstep}[2]{\xrightarrow[{#1}]{{#2}}}
+\newcommand{\dstep}[2]{\dhxrightarrow[{#1}]{{#2}}}
+\newcommand{\Pfin}{\txtsub{P}{final}}
+\newcommand{\fin}{\text{final}}
+\newcommand{\rulename}[1]{{\textsc{({#1})}}}
+\newcommand{\onestep}[2]{{\textsc{({#1}}{({#2})}\textsc{)}}}
+
+\newcommand{\ts}[1]{\mbox{\small#1}}
+\newcommand{\rlxmsg}[3]{\tup{#1\mathbin{:}#2\text{\small@}#3}}
+\newcommand{\updmsg}[4]{\tup{#1\mathbin{:}#2\text{\small@}(#3,#4]}}
+\newcommand{\msg}[5]{\tup{#1\mathbin{:}#2\text{\small@}(#3,#4],#5}}
+%\newcommand{\updmsg}[4]{\tup{#1\mathbin{:}#2\text{\small@}(#3,#4]}}
+%\newcommand{\msg}[5]{\tup{#1\mathbin{:}#2\text{\small@}(#3,#4],#5}}
+%\newcommand{\updmsg}[4]{\tup{#1\mathbin{:}#2\text{\small@}#3\text{-}#4}}
+%\newcommand{\msg}[5]{\tup{#1\mathbin{:}#2\text{\small@}#3\text{-}#4,#5}}
+\newcommand{\vtup}[2]{#1\text{\small@}#2}
+
+\newcommand{\Msg}{{\textdom{Msg}}}
+\newcommand{\MsgId}{{\textdom{MsgId}}}
+\newcommand{\Snapshot}{{\textdom{Snapshot}}}
+\newcommand{\View}{{\textdom{View}}}
+\newcommand{\Cell}{{\textdom{Cell}}}
+\newcommand{\LState}{{\textdom{Local-State}}}
+\newcommand{\Commit}{{\textdom{Commit}}}
+\newcommand{\Memory}{{\textdom{Memory}}}
+\newcommand{\Thread}{{\textdom{Thread}}}
+
+\newcommand{\tmin}{\in}
+\newcommand{\tmle}{\leqslant}
+\newcommand{\tcom}{{\cal V}}
+%\newcommand{\tcom}{V}
+\newcommand{\gsco}{{\cal S}}
+%\newcommand{\gsco}{F}
+%\newcommand{\mem}{{\cal M}}
+\newcommand{\mem}{M}
+\newcommand{\scmap}{S}
+\newcommand{\msgid}{i}
+\newcommand{\gts}{\mathcal{T\!S}}
+\newcommand{\lts}{\mathit{TS}}
+\newcommand{\tconf}{{\mathbf{TC}}}
+\newcommand{\mconf}{{\mathbf{MS}}}
+\newcommand{\lstate}{\texttt{st}}
+\newcommand{\lview}{\texttt{view}}
+\newcommand{\lprmem}{\texttt{prm}}
+\newcommand{\lmem}{\txtsub{\mem}{p}}
+%\newcommand{\lprom}{{\cal P}}
+\newcommand{\lprom}{P}
+\newcommand{\limitedmem}{{\cal L}}
+\newcommand{\ogts}{\txtsub{\gts}{fut}}
+\newcommand{\ogsco}{\txtsub{\gsco}{future}}
+\newcommand{\olts}{\txtsub{\lts}{fut}}
+\newcommand{\omem}{\txtsub{\mem}{future}}
+\newcommand{\omsc}{\txtsub{\msc}{future}}
+\newcommand{\lr}{{\text{r}}}
+\newcommand{\lw}{{\text{w}}}
+\newcommand{\cur}{cur}
+\newcommand{\acq}{acq}
+\newcommand{\rel}{rel}
+\newcommand{\lsc}{sc}
+\newcommand{\lscm}{s\!f}
+
+\newcommand{\suc}{{succ}}
+\newcommand{\lsuc}{\texttt{succ}}
+
+\newcommand{\locprm}{P}
+\newcommand{\llocprm}{\texttt{promise}}
+\newcommand{\SUBS}{\mathit{sub}}
+\newcommand{\lSUBS}{\texttt{sub}}
+
+% some C11 notions
+
+\newcommand{\SB}{\mathit{sb}}
+\newcommand{\RF}{\mathit{rf}{}}
+\newcommand{\FR}{\mathit{fr}{}}
+\newcommand{\FRx}{\mathit{fr_x}}
+\newcommand{\FRy}{\mathit{fr_y}}
+\newcommand{\PO}{\mathit{po}}
+\newcommand{\AT}{\mathit{at}}
+\newcommand{\RMW}{\mathit{rmw}}
+\newcommand{\POAA}{\mathit{po\text{-}aa}}
+\newcommand{\MO}{\mathit{mo}}
+\newcommand{\MOx}{\mathit{mo_x}}
+\newcommand{\MOy}{\mathit{mo_y}}
+\newcommand{\MOf}{\mathit{mo_f}}
+\newcommand{\SC}{\mathit{sc}}
+\newcommand{\CO}{\mathit{co}}
+\newcommand{\ICO}{\mathit{ico}}
+\newcommand{\HB}{\mathit{hb}}
+\newcommand{\isW}{\mathsf{W}}
+\newcommand{\isR}{\mathsf{R}}
+\newcommand{\TSOr}{\mathit{tso}}
+\newcommand{\WB}{\mathit{wb}}
+\newcommand{\PORF}{(\PO \cup \RF)^+}
+\newcommand{\IPO}{\mathit{ipo}}
+\newcommand{\DEPS}{\mathit{deps}}
+\newcommand{\valr}{{val_\lr}}
+\newcommand{\valw}{{val_\lw}}
+\newcommand{\ordr}{{ord_\lr}}
+\newcommand{\ordw}{{ord_\lw}}
+\newcommand{\labf}{{lab}}
+\newcommand{\E}{{\cal E}}
+\newcommand{\ER}{{\cal R}}
+\newcommand{\EW}{{\cal W}}
+\newcommand{\EU}{{\cal U}}
+\newcommand{\ES}{{\cal S}}
+\newcommand{\EF}{{\cal F}}
+\newcommand{\AFr}{{\cal F}_\relo}
+\newcommand{\AFa}{{\cal F}_\acqo}
+\newcommand{\AF}{{\cal F}}
+
+\newcommand{\prog}{\mathcal{P}}
+\newcommand{\progb}{\mathcal{Q}}
+
+\newcommand{\lE}{{\texttt{E}}}
+\newcommand{\lM}{{\texttt{M}}}
+\newcommand{\lS}{{\texttt{S}}}
+\newcommand{\lR}{{\texttt{R}}}
+\newcommand{\lW}{{\texttt{W}}}
+\newcommand{\lU}{{\texttt{U}}}
+\newcommand{\lF}{{\texttt{F}}}
+\newcommand{\lSB}{{\color{gray!40!black} \texttt{sb}}}
+\newcommand{\lRF}{{\color{green!60!black} \texttt{rf}}}
+\newcommand{\lSYN}{{\color{red!60!black} \texttt{sw}}}
+\newcommand{\lPO}{{\color{gray} \texttt{po}}}
+\newcommand{\lHB}{{\color{blue} \texttt{hb}}}
+\newcommand{\lWB}{\texttt{wb}}
+\newcommand{\lRLX}{{\color{red} \texttt{rlx}}}
+\newcommand{\lACQ}{{\color{blue} \texttt{acq}}}
+\newcommand{\lAT}{{\color{brown} \texttt{at}}}
+\newcommand{\lRMW}{{\color{brown!90!black} \texttt{rmw}}}
+\newcommand{\lMO}{{\color{orange} \texttt{mo}}}
+\newcommand{\lMOx}{{\color{orange} \texttt{mo}}_x}
+\newcommand{\lMOy}{{\color{orange} \texttt{mo}}_y}
+\newcommand{\lRSEQ}{{\color{purple!60!black} \texttt{rs}}}
+\newcommand{\lSC}{{\color{violet!60!black} \texttt{sc}}}
+\newcommand{\lFR}{{\color{purple} \texttt{fr}}}
+\newcommand{\lREL}{{\color{olive} \texttt{rel}}}
+\newcommand{\lCONFLICT}{{\color{olive} \texttt{conflict}}}
+\newcommand{\lRACE}{{\color{olive} \texttt{race}}}
+\newcommand{\lNARACE}{{\color{olive} \texttt{na-race}}}
+\newcommand{\lURR}{{\color{purple} \texttt{urr}}}
+\newcommand{\lRWR}{{\color{purple} \texttt{rwr}}}
+\newcommand{\lSCR}{{\color{purple} \texttt{scr}}}
+
+\newcommand{\Einit}{{\texttt{E}_{\texttt{init}}}}
+\newcommand{\SBinit}{{\texttt{SB}_{\texttt{init}}}}
+
+%\newcommand{\lSCREL}{{\color{violet} \texttt{screl}}}
+\newcommand{\LOC}{\mathit{loc}}
+
+\newcommand{\lloc}{{\texttt{loc}}}
+\newcommand{\lid}{{\texttt{id}}}
+\newcommand{\ltyp}{{\texttt{typ}}}
+\newcommand{\lupd}{{\texttt{upd}}}
+
+%% blue, brown, cyan, darkgray, gray, green, lime, magenta, olive, orange, pink, purple, red, teal, violet, yellow.
+
+\newcommand{\lcur}{{\texttt{cur}}}
+\newcommand{\lrel}{{\texttt{rel}}}
+\newcommand{\lacq}{{\texttt{acq}}}
+\newcommand{\srlx}{{\texttt{srlx}}}
+\newcommand{\lacqrel}{{\texttt{acqrel}}}
+\newcommand{\lsco}{{\texttt{sc}}}
+\newcommand{\lscmo}{{\texttt{sf}}}
+\newcommand{\lread}{{\texttt{rd}}}
+\newcommand{\lwrite}{{\texttt{wr}}}
+\newcommand{\lrw}{{\texttt{rlx}}}
+\newcommand{\lur}{{\texttt{pln}}}
+\newcommand{\lall}{\ast}
+\newcommand{\lrdwr}{\setofz{\lread,\lwrite}}
+\newcommand{\lval}{{\texttt{val}}}
+\newcommand{\lfrom}{{\texttt{from}}}
+\newcommand{\lto}{{\texttt{to}}}
+\newcommand{\ltime}{{\texttt{t}}}
+%\newcommand{\lsnapshot}{{\texttt{rel}}}
+%% \newcommand{\insertadd}{\hookleftarrow^{\!\!\!\!\!\!\rotatebox{0}{\scriptsize$\uplus$}\;}}
+%% \newcommand{\insertsplit}{\hookleftarrow^{\!\!\!\!\!\rotatebox{90}{\tiny$\boxminus$}\;}}
+%% \newcommand{\insertupdate}{\hookleftarrow^{\!\!\!\!\!\!\rotatebox{0}{\scriptsize$\downarrow$}\;}}
+\newcommand{\insertadd}{\hookleftarrow^{\!\!\!\!\!\textsc{a}\;}}
+\newcommand{\insertsplit}{\hookleftarrow^{\!\!\!\!\!\textsc{s}\;}}
+\newcommand{\insertupdate}{\hookleftarrow^{\!\!\!\!\!\textsc{u}\;}}
+\newcommand{\insertsc}{\hookleftarrow^{\!\!\!\!\!\textsc{c}\;}}
+
+\newcommand{\joinupdate}{:=\!\sqcup\;}
+
+\newcommand{\mrel}{R}
+\newcommand{\lmrel}{\texttt{view}}
+\newcommand{\msc}{S}
+
+\newcommand{\I}{{\cal I}}
+
+\newcommand{\rst}[1]{|_{#1}}
+\newcommand{\imm}[1]{{#1}{\rst{\text{imm}}}}
+
+\newcommand{\add}[1]{\mathsf{Add}({#1})}
+\newcommand{\addatomic}[1]{\textsf{AddRMW}({#1})}
+\newcommand{\lX}{{\texttt{X}}}
+
+
+\newcommand{\iteb}[2]{({#1}\mathsf{\,{?}\,}{#2})}
+\newcommand{\rlxcur}{V}
+\newcommand{\lrlxcur}{\texttt{V}}
+\newcommand{\view}{V}
+
+\newcommand{\sbul}{\raisebox{.3ex}{\tiny$\bullet$\;\;}}
+
+
+\newcommand{\syscallt}{{\text{SysCall}(v)}}
+\newcommand{\silentt}{{\text{Silent}}}
+
+% \SetSymbolFont{stmry}{bold}{U}{stmry}{m}{n} % this fixes warnings when \boldsymbol is used with stmaryrd included
+
+% \extrarowheight=\jot	% else, arrays are scrunched compared to, say, aligned
+% \newcolumntype{.}{@{}}
+% % Array {rMcMl} modifies array {rcl}, putting mathrel-style spacing
+% % around the centered column. (We used this, for example, in laying
+% % out some of Iris' axioms. Generally, aligned is simpler but aligned
+% % does not work in mathpar because \\ inherits mathpar's 2em vskip.)
+% % The capital M stands for THICKMuskip. The smaller medmuskip would be
+% % right for mathbin-style spacing.
+% \newcolumntype{M}{@{\mskip\thickmuskip}}
+
+\definecolor{StringRed}{rgb}{.637,0.082,0.082}
+\definecolor{CommentGreen}{rgb}{0.0,0.55,0.3}
+\definecolor{KeywordBlue}{rgb}{0.0,0.3,0.55}
+\definecolor{LinkColor}{rgb}{0.55,0.0,0.3}
+\definecolor{CiteColor}{rgb}{0.55,0.0,0.3}
+\definecolor{HighlightColor}{rgb}{0.0,0.0,0.0}
+
+
+\definecolor{grey}{rgb}{0.5,0.5,0.5}
+\definecolor{red}{rgb}{1,0,0}
+\definecolor{darkgreen}{rgb}{0.0,0.7,0.0}
+
+\hypersetup{%
+  linktocpage=true, pdfstartview=FitV,
+  breaklinks=true, pageanchor=true, pdfpagemode=UseOutlines,
+  plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=3,
+  hypertexnames=true, pdfhighlight=/O,
+%  colorlinks=true,linkcolor=LinkColor,citecolor=CiteColor,
+%  urlcolor=LinkColor
+}
+
+
+\newcommand{\compile}[1]{{\llparenthesis{#1}\rrparenthesis}}%{{\mathtt{compile}({#1})}}
+
+\newcommand{\squishlist}[1][$\tinybullet$]{
+ \begin{list}{#1}
+  { \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+     \setlength{\topsep}{1pt}
+     \setlength{\partopsep}{0pt}
+     \setlength{\leftmargin}{1.2em}
+     \setlength{\labelwidth}{0.5em}
+     \setlength{\labelsep}{0.4em} } }
+\newcommand{\squishend}{
+  \end{list}  }
+
+
+\newcommand{\tinybullet}{\raisebox{0.25ex}{\tiny$\bullet$}}
+
+\definecolor{AssertColor}{rgb}{0,0,0.5}
+\newcommand{\asrt}[1]{
+  {\color{AssertColor}\ensuremath{
+  \left\{
+    \begin{array}{@{}l@{}}
+      #1
+    \end{array}
+  \right\}}}
+}
+
 
 
 %%% Local Variables:

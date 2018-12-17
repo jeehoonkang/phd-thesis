@@ -1,15 +1,18 @@
 \section{Future Work}\label{sec:discussion}
 
 Besides extending our model with SC accesses
-(see \cref{sec:promising}), 
+(see \Cref{sec:promising}), 
 there are a number of interesting issues remaining for future work.
 
 \paragraph{Compilation Correctness}
 Establishing the correctness of compilation of our model to ARM, as well as
 to Power using the more efficient compilation scheme for acquire reads and updates 
-(see \cref{sec:compilation_POWER}), is an important future goal. 
+(see \Cref{sec:compilation_POWER}), is an important future goal. 
 To the best of our knowledge, we know of no counterexamples
-for correctness of compilation to these architectures. 
+for correctness of compilation to these architectures.
+
+\jeehoon{Cite Anton's work}
+
 
 %\paragraph{SC accesses}
 % it seemed stupid to repeat what was already said in the intro.
@@ -57,7 +60,7 @@ all do not allow sequentialization.
 While sequentialization seems like a transformation that no compiler would perform, there might be other more useful global optimizations.
 Investigating what global optimizations are supported in our model is left for future work.
 
-\jeehoon{I think it would be nice to mention register promotion, which we currently don't support.}
+% \jeehoon{I think it would be nice to mention register promotion, which we currently don't support.}
 
 %{Transformations based on invariant-based reasoning?}
 
@@ -68,15 +71,19 @@ and it is useful and interesting to study their interaction with
  program transformations and DRF theorems.
 Liveness properties are currently mostly ignored in weak memory research.
 
-\jeehoon{DRF is irrelevant here, I think.  Liveness reduces the set of possible behaviors, making the DRF theorem easier to prove.}
+% \jeehoon{DRF is irrelevant here, I think.  Liveness reduces the set of possible behaviors, making the DRF theorem easier to prove.}
 
 \ori{I think that with Liveness one would like to have stronger DRF, that provides also SC's 
 liveness guarantees, whatever these are. No?}
 
+
 \paragraph{Program Logic}
 
-The program logic presented in \cref{sec:invariant} only establishes the very basic sanity of our memory model.
+The program logic presented in \Cref{sec:invariant} only establishes the very basic sanity of our memory model.
 Developing a useful program logic for this model is a direction for future work.
+
+\jeehoon{Cite Viktor's work}
+
 
 \paragraph{Simulation and Model Checking}
 
@@ -84,11 +91,22 @@ The high degree of nondeterminism in our model makes it hard to
 exhaustively explore all possible behaviors of a given program.
 Further work is required to develop efficient methods and tools for this purpose.
 
+\jeehoon{Cite Promising ARM}
+
+
 %% Based on our
 %% understanding of ARMv8 architecture~\cite{}, we believe that our model is
 %% weaker than ARMv8.
 
 
+\paragraph{Promise analysis}
+
+\jeehoon{promise anaysis?}
+
+
+\subsection{Impact}
+
+\jeehoon{impact!}
 
 
 

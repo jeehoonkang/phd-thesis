@@ -8,8 +8,8 @@ proven to hold of our ``promising'' model.
 % The ``promise model''?}
 
 All the results of this section \textbf{are fully validated in Coq}
-except for \cref{sec:compilation_POWER} and
-\cref{thm:drfra,thm:drflock}, for which we provide proof outlines.
+except for \Cref{sec:compilation_POWER} and
+\Cref{thm:drfra,thm:drflock}, for which we provide proof outlines.
 The {Coq} development and all proof outlines are available at~\cite{appendix}.
 
 \subsection{Compiler Transformations}
@@ -25,7 +25,7 @@ To streamline the presentation, we refer to transformations on the \emph{semanti
 as if they are applied to \emph{actions}, namely fences and (valueless) memory accesses.
 Thus, we presuppose adequate syntactic manipulations on the program level
 that implement these semantic transformations.
-For example, a syntactic transformation implementing 
+For example, a syntactic transformation implementing \\
 ${\rlab^x_\rlx;\rlab^y_\rlx \leadsto \rlab^y_\rlx;\rlab^x_\rlx}$
 is a reordering ${a:=x; b:=y \leadsto b:=y; a:=x}$
 on the program code (assuming $a \neq b$);
@@ -40,7 +40,7 @@ proves soundness of transformations on the purely \emph{syntactic} level, assumi
 
 \paragraph{Trace-Preserving Transformations}
 Transformations that do not change the set of traces of actions in a given thread are clearly sound.
-For example, $y:=a+1-a \leadsto y:=1$ is a sound transformation (recall that $a$ denotes a local register; see~\cref{sec:introduction}:\ref{eq:LBfalsedep}).
+For example, $y:=a+1-a \leadsto y:=1$ is a sound transformation (recall that $a$ denotes a local register; see~\Cref{sec:introduction}:\ref{eq:LBfalsedep}).
 Indeed, this is the crucial property that distinguishes a memory model for a higher-level language from
 a hardware memory model.
 
@@ -67,7 +67,7 @@ First, the following pairs  are reorderable (where $x$ and $y$ denote distinct l
 %\sbul  $\flab_\relo;\wlab_o$ where $o\neq\rlx$  \> \sbul $\flab_\relo;\rlab$  
 %\end{tabbing} 
 {\begin{tabbing}
-\hspace{3.8cm}\= \hspace{2.5cm}\=\kill
+\hspace{5cm}\= \hspace{3cm}\=\kill
 %\sbul $\wlab^x_{o_1};\rlab^y_{o_2}$ unless $o_1 =o_2= \sco$ \> \sbul  $\wlab^x;\wlab^y_{\sqsubseteq \rlx}$ \\[1mm]
 \sbul $\wlab^x;\rlab^y$ \> 
 \sbul  $\wlab^x;\wlab^y_{\sqsubseteq \rlx}$  \>
@@ -111,7 +111,7 @@ should access the same location. The following three kinds of pairs are mergeabl
 Using the strengthening transformation, the access modes here can be read as upper bounds
 (\eg $\rlab_\ra;\rlab_\rlx$ can be first strengthened to $\rlab_\ra;\rlab_\ra$ and then merged).
 Note that the  $\rlab$-after-$\wlab$ merge allows 
-even to eliminate a redundant acquire read after a plain/relaxed write (as in Example \ref{eq:acq_merge} in \cref{sec:relacq}).
+even to eliminate a redundant acquire read after a plain/relaxed write (as in Example \ref{eq:acq_merge} in \Cref{sec:relacq}).
 %Nevertheless, an SC-read cannot be eliminated in this case, unless it follows an SC-write.
 %Indeed, elimination of a an SC-read after a non-SC-write is unsound in our model.
 %We note that while this elimination is allowed by a certain fix of of C++ described in \cite{c11comp},
@@ -233,15 +233,15 @@ StrongPower strengthens the Power model by forbidding ``load buffering'' behavio
 (formally, it disallows cycles in the entire program order together with the reads-from relation).
 Consequently, we do not actually need promises in order to explain
 StrongPower behaviors---instead, we can just show that behaviors of $\compile{\prog}$
-under StrongPower are allowed for $\prog$ under our \emph{promise-free} machine (see end of \cref{sec:full-formal}).
+under StrongPower are allowed for $\prog$ under our \emph{promise-free} machine (see end of \Cref{sec:full-formal}).
 % This allows us to actually prove that behaviors of StrongPower are allowed
 % even without promises.
 (Note that this does not contradict the fact that
 promises are necessary to explain weak behaviors of the (non-strong) Power model, such as the \ref{eq:LB}.) 
 To ease the proof, we use an alternative, declarative presentation of our promise-free machine
-(\cref{sec:axiomatic}),
+(\Cref{sec:axiomatic}),
 which can straightforwardly be shown to be weaker than
-the StrongPower model under the compilation scheme in \cref{fig:comp}.
+the StrongPower model under the compilation scheme in \Cref{fig:comp}.
 See \cite{appendix} for details.
 
 %(that places a lightweight fence after every acquire or SC read).
@@ -251,7 +251,7 @@ See \cite{appendix} for details.
 \paragraph{Reorderings in the Compiled Program}
 Second, to account for sequences of reorderings of independent memory accesses to distinct locations in  $\compile{\prog}$,
 we would like to relate them to the reorderings in the source program $\prog$
-that we proved sound in \cref{sec:transformations}.
+that we proved sound in \Cref{sec:transformations}.
 But there is a subtle complication here: some reorderings in $\compile{\prog}$ do not correspond 
 to reorderings in $\prog$! For example, if $\prog$ is $x:=_\ra 1;y:=_\rlx 2$, its compilation $\compile{\prog}$
 has the form $\texttt{lwsync;st}\ x\ 1\texttt{;st}\ y\ 2$, but reordering the stores in $\compile{\prog}$ would produce $\texttt{lwsync;st}\ y\ 2\texttt{;st}\ x\ 1$, which
@@ -288,7 +288,7 @@ below.)  % \derek{Why is everything after ``except possibly'' in
   % reorderable.} 
 For instance, in the example given above, $\prog_1$
 would be $\fencerel;x:=_\srlx 1;y:=_\rlx 2$.  We then apply the
-compilation scheme of \cref{fig:comp}, where $\srlx$ is compiled like
+compilation scheme of \Cref{fig:comp}, where $\srlx$ is compiled like
 $\rlx$.  Clearly, by construction of $\prog_1$, the result
 $\compile{\prog_1}$ is identical to $\compile{\prog}$.  Moreover,
 sequences of reorderings of accesses applied to $\compile{\prog}$ now
@@ -301,7 +301,7 @@ program $\prog_2$ such that $\compile{\prog_2}=\progb$, and $\prog_2$
 is obtained from $\prog_1$ by applying a sequence of reorderings at
 the source level.  Crucially, the reorderings that take $\prog_1$ to
 $\prog_2$ are all sound in our model: in addition to those already
-covered in \cref{sec:transformations}, the reorderings of
+covered in \Cref{sec:transformations}, the reorderings of
 $\wlab^x_\srlx/\ulab^x_{\rlx,\srlx}$ past a
 $\rlab_\rlx^y/\wlab_\rlx^y/\ulab_{\rlx,\rlx}^y$ (where $x\neq y$) have
 also been proven sound in Coq.  (Note that the reverse
@@ -386,7 +386,7 @@ which allow threads to observe writes without observing previous writes to other
 Removing $\pln/\rlx$ accesses, namely keeping only $\ra$, % and $\sco$, 
 substantially simplifies our machine (in particular, 
 its thread views would consist of just one view, the $\lcur$ one).
-Accordingly, our second DRF result strengthens \cref{thm:drfpf}
+Accordingly, our second DRF result strengthens \Cref{thm:drfpf}
 and states that it suffices to show
 that there are only races on $\ra$ %or $\sco$-
 accesses \emph{under release/acquire semantics} 
@@ -394,7 +394,7 @@ to conclude that a program has only release/acquire behaviors.
 
 \begin{theorem}[DRF-RA]
 \label{thm:drfra}
-Let $\bstep{\ra}$ be identical to $\bstep{}$ in \cref{thm:drfpf}, except for interpreting 
+Let $\bstep{\ra}$ be identical to $\bstep{}$ in \Cref{thm:drfpf}, except for interpreting 
 $\rlx$ and $\pln$ accesses in program transitions as if they are all $\ra$-accesses.
 % (that is, \textsc{read-helper} are \textsc{write-helper} are invoked with $\max\{o,\ra\}$ instead of $o$).
 Suppose that every machine state that is $\bstep{\ra}$-reachable from the initial state of a program $\prog$ is $\rlx$-race-free.
@@ -402,7 +402,7 @@ Then, the behaviors of $\prog$ according to the full machine
 coincide with those according to the $\bstep{\ra}$-machine.
 \end{theorem}
 
-We observe that promise re-certification is necessary for the proofs of \cref{thm:drfpf,thm:drfra}:
+We observe that promise re-certification is necessary for the proofs of \Cref{thm:drfpf,thm:drfra}:
 in \cite{appendix} we show a counterexample in the absence of promise re-certification.
 
 To state a more standard DRF theorem, 
@@ -446,7 +446,7 @@ according to the $\bstep{\sco}$-machine.
 %coincide with those according to the $\bstep{\sco}$-machine.
 %\end{theorem}
 
-%\textbf{Our proof of \cref{thm:drfpf} is fully mechanized in Coq.} 
+%\textbf{Our proof of \Cref{thm:drfpf} is fully mechanized in Coq.} 
 
 %\ori{I'm glossing over some problem here: the standard result also has locks.
 %anyway if a reviewer complains, we can explain how this can be extended to locks}
@@ -461,7 +461,7 @@ and more generally, that programs cannot read values they never wrote.
 Note that even this basic logic is unsound for C++'s relaxed accesses
 (whereas it is sound in our model even if all accesses are plain).
 
-%As we proved strengthening to be a sound transformation (see~\cref{sec:transformations}), 
+%As we proved strengthening to be a sound transformation (see~\Cref{sec:transformations}), 
 %it suffices to show soundness for programs that have only plain accesses.
 %In addition, since updates are clearly stronger than a corresponding pair of a read followed by a write,
 %it suffices to consider programs without updates.

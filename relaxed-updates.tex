@@ -33,7 +33,7 @@ model semantically.  In particular, a successful update operation
 performed by one thread will often have the effect of ``winning a
 race'' and hence blocking (previously possible) update operations
 performed by other ``losing'' threads.  This stands in contrast to the
-updates-free fragment in \cref{sec:relaxed}, in which threads are free
+updates-free fragment in \Cref{sec:relaxed}, in which threads are free
 to ignore the messages of other threads.  Thus, to extend our model to
 support updates, we must ensure that threads performing
 updates cannot invalidate the already-certified promises of other
@@ -129,7 +129,7 @@ certification will involve updating $z$ from $0$ to $1$).  If,
 however, $T_3$ then updates $z$ from $0$ to $1$, that will mean that
 $T_1$ can no longer perform the update it needs to fulfill its
 promise, and its execution will eventually get stuck.
-%   The difference from the simplified model of \cref{sec:relaxed}
+%   The difference from the simplified model of \Cref{sec:relaxed}
 % is that, with relaxed the ability to perform a specific update (\eg from $0$ to $1$)
 % is tonow threads may no longer ignore messages of other threads,
 % because updates must be atomic.
@@ -181,7 +181,7 @@ and $\lts'.\lprmem = \emptyset$.
 
 Finally, we extend the operational semantics for thread configurations
 with one additional rule for update fulfillment shown in
-\cref{fig:updates}.  This rule forces its write to be adjacent in
+\Cref{fig:updates}.  This rule forces its write to be adjacent in
 modification order to its read.  As with ordinary writes, a normal
 (non-promised) update step can be simulated by a promise step
 immediately followed by fulfillment.  Note that the other rules remain

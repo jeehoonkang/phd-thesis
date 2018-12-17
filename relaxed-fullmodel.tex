@@ -165,7 +165,7 @@ o_\lw = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\\\
 \label{sec:full}
 
 In this section, we extend the basic model of
-\cref{sec:relaxed}-\ref{sec:updates} to handle all the
+\Cref{sec:relaxed}-\ref{sec:updates} to handle all the
 features of the C++ concurrency model except SC accesses and consume reads.
 % \footnote{
 % Consume reads are widely considered a somewhat
@@ -300,7 +300,7 @@ the set of promises of the executing thread must be empty.
 %   an example for this.}
 % %
 This may seem restrictive, but note that the main reason for introducing promises was to allow read-write reorderings,
-as in the \ref{eq:LB} example of \cref{sec:oota}.
+as in the \ref{eq:LB} example of \Cref{sec:oota}.
 If there is a release fence in between the read and write, then the reordering is no longer possible, and thus our motivation for promising the write is void.
 
 \paragraph{Release/Acquire Accesses}
@@ -607,6 +607,7 @@ then every behavior of $\mconf'$ is also a behavior of $\mconf$.
 \subsection{Formal Model}
 \label{sec:full-formal}
 
+\jeehoon{figure should be adjusted.}
 \figfull
 
 Finally, we formally present our full model,
@@ -616,7 +617,7 @@ The model employs three modes for memory accesses, naturally ordered as follows:
 %\[\pln ~~\sqsubset~~\rlx~~\sqsubset~~\ra~~\sqsubset~~\sco\]
 We use $o$ as a metavariable for access mode.
 The programming language is modeled by a transition system whose 
-transition labels (see \cref{sec:relaxed-formal}) are:
+transition labels (see \Cref{sec:relaxed-formal}) are:
 ``$\silentt$'' for local transitions;
 ${\rlab(o,x,v)}$  for reads;
 ${\wlab(o,x,v)}$  for writes;
@@ -627,11 +628,11 @@ Note that updates have two access modes, one for the read and one for the write;
 and that only fences may have the $\sco$ mode.
 
 \paragraph{View}
-A \emph{view} is a pair $\view=\tup{T_\lur,T_\lrw}$ of timemaps (see \cref{sec:relaxed-formal})
+A \emph{view} is a pair $\view=\tup{T_\lur,T_\lrw}$ of timemaps (see \Cref{sec:relaxed-formal})
 satisfying $T_\lur \leq T_\lrw$.
 We denote by $\view.\lur$ and $\view.\lrw$ the components of $\view$.
 $\View$ denotes the set of all views.
-%A \emph{view} is a pair $\view=\tup{T_\lur,T_\lrw,T_\lsco}$ of timemaps (see \cref{sec:relaxed-formal})
+%A \emph{view} is a pair $\view=\tup{T_\lur,T_\lrw,T_\lsco}$ of timemaps (see \Cref{sec:relaxed-formal})
 %satisfying $T_\lur \leq T_\lrw \leq T_\lsco$.
 %We denote by $\view.\lur$, $\view.\lrw$ and $\view.\lsco$ the components of $\view$.
 %$\View$ denotes the set of all views.
@@ -644,7 +645,7 @@ We denote by $m.\lloc$, $m.\lval$, $m.\lfrom$, $m.\lto$, and $m.\lmrel$ the comp
 
 \paragraph{Memory}
 A \emph{memory} is a (nonempty) pairwise disjoint finite set of messages
-(see \cref{sec:updates} for def.\ of disjointness).
+(see \Cref{sec:updates} for def.\ of disjointness).
 A memory $\mem$ supports the following insertions of a message $m=\msg{x}{v}{f}{t}{\mrel}$  :
 \begin{itemize}
 \item The \emph{additive insertion}, denoted by $\mem \insertadd m$,
@@ -682,7 +683,7 @@ where $\cur,\acq\in\View$ and $\rel\in\Loc\to\View$
 satisfying $rel(x) \leq cur \leq acq$ for all $x\in\Loc$.
 We denote by $\tcom.\lcur$, $\tcom.\lacq$, and $\tcom.\lrel$ the components of $\tcom$.
 A \emph{thread state} is a triple $\lts=\tup{\sigma,\tcom,\lprom}$
-defined just as in~\cref{sec:relaxed-formal} except with a thread view $\tcom$ instead of
+defined just as in~\Cref{sec:relaxed-formal} except with a thread view $\tcom$ instead of
 a single timemap ($\sigma$ is a local state and $\lprom$ is a memory).
 We denote by $\lts.\lstate$, $\lts.\lview$, and $\lts.\lprmem$ the components of $\lts$.
 
@@ -732,7 +733,7 @@ the zero thread view (all timestamps in all timemaps are $\ts{0}$),
 and an empty set of promises;
 the zero timemap $\gsco^0$;
 and the initial memory $\mem^0$ consisting of one message $\msg{x}{0}{\ts{0}}{\ts{0}}{\bot}$ for each location $x$.
-The machine step is defined by the last rule in \cref{fig:full-opsem-a}.
+The machine step is defined by the last rule in \Cref{fig:full-opsem-a}.
 The variable $e$ in the final thread configuration step can either be a usual step ($e$ is empty),
 or denote a system call ($e=\syscallt$).
 

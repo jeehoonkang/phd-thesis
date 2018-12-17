@@ -49,7 +49,7 @@ memory operations.
 Moreover, SC semantics is stronger (\ie more restrictive) than
 necessary for many concurrent algorithms.
 
-Hence, languages like Java and C++ have opted instead to provide
+Hence, languages like C/C++ and Java have opted instead to provide
 \emph{relaxed} (aka \emph{weak}) memory models~\cite{jmm,cppstandard},
 which enable programmers to demand SC semantics when they need it, but
 which also support a range of cheaper memory operations that trade off
@@ -84,7 +84,7 @@ find a memory model that satisfies the following properties:
   nevertheless expected to have safe, well-defined semantics.
 \end{itemize}
 \vspace{-.5ex}
-\mbox{}\indent Both Java and C++ fail to achieve some of these criteria.
+\mbox{}\indent Both C/C++ and Java fail to achieve some of these criteria.
 
 In the case of Java, the memory model fails to validate a number of
 common program transformations performed by real Java compilers, such
@@ -92,7 +92,7 @@ as redundant read-after-read elimination and ``roach motel''
 reordering~\cite{sevcik:jmm}.  Although this problem has been known
 for some time, a satisfactory solution has yet to be developed.
 
-In the case of C++, the memory model relies crucially on undefined
+In the case of C/C++, the memory model relies crucially on undefined
 behaviors to give semantics to racy programs.  Moreover, it permits
 certain ``out-of-thin-air'' executions which violate basic
 invariant-based reasoning (and DRF guarantees)~\cite{Boehm2014}.
@@ -212,7 +212,7 @@ invariant-based reasoning (and DRF guarantees)~\cite{Boehm2014}.
 
 % To understand why satisfying all these criteria is so hard, let us
 % look at a concrete example.  
-To illustrate the problem with C++, consider these two variants of the
+To illustrate the problem with C/C++, consider these two variants of the
 classic ``load buffering'' litmus test (with two threads in parallel):
 % Consider these two variants of the classic ``load buffering'' litmus
 % test (with two threads running concurrently):
@@ -232,7 +232,7 @@ classic ``load buffering'' litmus test (with two threads in parallel):
 Here, we assume that all variables are initially $0$, and that all
 memory accesses are of the weakest consistency level, \ie they are
 compiled down to plain loads and stores at the hardware level with no
-additional synchronization (in C++ this is called ``relaxed'').  The
+additional synchronization (in C/C++ this is called ``relaxed'').  The
 question is: should it be possible for these programs to assign $1$ to
 $a$?  In the case of \ref{eq:LB}, the answer is yes: architectures
 like Power and ARM may reorder the write of $y$ before the read of $x$
@@ -246,14 +246,14 @@ compiler optimizations will produce this behavior.  If they did, it
 would cause major problems: one would not be able to establish even
 basic invariants (such as $x = y = 0$), and basic sanity results like
 the aforementioned DRF theorems would cease to hold.  It is therefore
-a serious problem that the formal memory model of C++ allows such
+a serious problem that the formal memory model of C/C++ allows such
 out-of-thin-air (OOTA) behavior.
 % \footnote{Actually, the C++ model
 %   disallows this behavior with a vague English side condition, but it
 %   does not explain clearly what OOTA means~\cite{n3710}.}
 
-Intuitively, the reason C++ allows OOTA behaviors is that it is not
-clear how to distinguish them from acceptable behaviors.  The C++
+Intuitively, the reason C/C++ allows OOTA behaviors is that it is not
+clear how to distinguish them from acceptable behaviors.  The C/C++
 model formalizes valid executions as graphs of memory access events
 (think: partially-ordered traces) subject to a set of coherence
 axioms, and the same coherent event graph that describes a valid
@@ -330,13 +330,13 @@ transform \ref{eq:LBfalsedep} to \ref{eq:LB}, in which case $a$ could receive $1
 
 
 As a result, we still to this day lack a semantics for relaxed-memory
-concurrency in Java and C++ that corresponds to how these languages
+concurrency in C/C++ and Java that corresponds to how these languages
 are implemented and that provides sufficient reasoning guarantees to
 programmers and compiler-writers.  Several proposals have recently
-been made for how to fix the Java and C++ memory models (some of which
-are discussed in \cref{sec:related}), but none have been proven to
+been made for how to fix the C/C++ and Java memory models (some of which
+are discussed in \Cref{sec:related}), but none have been proven to
 validate the full range of standard optimizations/reorderings
-performed by Java and C++ compilers and by commodity hardware like
+performed by C/C++ and Java compilers and by commodity hardware like
 Power and ARM.  Furthermore, for most of the existing proposals, it is
 known that indeed they do \emph{not} validate some important
 reorderings.
@@ -346,8 +346,8 @@ reorderings.
 
 In this paper, we present what we believe is a very promising way
 forward: the first relaxed memory model to support a broad spectrum
-of features from the C++ concurrency model while also satisfying all
-three criteria listed in \cref{sec:criteria}.
+of features from the C/C++ concurrency model while also satisfying all
+three criteria listed in \Cref{sec:criteria}.
 
 
 % \begin{itemize}
@@ -443,7 +443,7 @@ certification requirement guarantees absence of bad OOTA executions by
 ensuring that $T$ can only promise to write a value $v$ to $x$ if $T$
 could have written $v$ to $x$ anyway.
 
-Returning to the examples from \cref{sec:oota}, it is easy to see how
+Returning to the examples from \Cref{sec:oota}, it is easy to see how
 promises give us the desired semantics:
 \begin{itemize}
 \item In \ref{eq:LB}, the first thread can promise to write $1$ to $y$ (since
@@ -463,15 +463,15 @@ without promises.  But since all variables are
   initially $0$, this is not possible.
 \end{itemize}
 
-Our model supports all features of C++ concurrency except consume
+Our model supports all features of C/C++ concurrency except consume
 reads and SC accesses.  Consume reads are widely considered a
-premature aspect of the C++11 standard and are currently implemented
+premature aspect of the C/C++11 standard and are currently implemented
 the same as acquire reads in mainstream compilers.  In contrast, SC
-accesses are a major feature of C++, and originally our model included
+accesses are a major feature of C/C++, and originally our model included
 an account of SC accesses as well.  However, in the course of trying
 to mechanize correctness of compilation to Power
-(\cref{sec:compilation_POWER}), we discovered that our semantics of SC
-accesses was flawed, and this led us to discover a flaw in the C++11
+(\Cref{sec:compilation_POWER}), we discovered that our semantics of SC
+accesses was flawed, and this led us to discover a flaw in the C/C++11
 standard as well!  (See \cite{repairing-sc} for further details.)
 Thus, a proper handling of SC accesses remains an open and important
 problem for future work.
@@ -561,17 +561,17 @@ problem for future work.
 
 In the rest of the paper, we will flesh out the idea of promises---as
 well as the other elements of our model---in layers.  We begin in
-\cref{sec:relaxed} by presenting the details of our model restricted
-to relaxed reads and writes.  In \cref{sec:updates}, we extend this
+\Cref{sec:relaxed} by presenting the details of our model restricted
+to relaxed reads and writes.  In \Cref{sec:updates}, we extend this
 base model further to support atomic updates (\ie read-modify-write
-operations, like CAS).  Then, in \cref{sec:full}, we scale the model
-up to handle most features of the C++ memory model.  In
-\cref{sec:results}, we present our formal results---validating many
+operations, like CAS).  Then, in \Cref{sec:full}, we scale the model
+up to handle most features of the C/C++ memory model.  In
+\Cref{sec:results}, we present our formal results---validating many
 program transformations, compilation to x86-TSO and Power, DRF
 theorems, and an invariant-based logic---most of which are fully
 mechanized in the Coq proof assistant (totalling about 37K lines of
-Coq).  In \cref{sec:related}, we compare with related work, and in
-\cref{sec:discussion}, we conclude with discussion of future work.
+Coq).  In \Cref{sec:related}, we compare with related work, and in
+\Cref{sec:discussion}, we conclude with discussion of future work.
 
 
 %%% Local Variables:
