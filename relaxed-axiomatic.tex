@@ -1,0 +1,241 @@
+\subsection{Declarative Presentation of the Promise-Free Machine}
+\label{sec:axiomatic}
+
+In this section, we provide a declarative presentation of our model, 
+in the style of C++11, namely using sets of \emph{execution graphs} to describe the possible behaviors of programs.
+This presentation abstracts away particular timestamp choices and thread views, 
+and replaces them by formal conditions on partial orders in execution graphs.
+The promise mechanism has an inherent operational nature, 
+and thus our declarative presentation only applies to
+the \emph{promise-free machine} (see end of \cref{sec:full-formal}).
+Nevertheless, this presentation is useful for comparing our model to C++11, 
+and it is used for establishing the correctness of compilation (see \cref{sec:compilation_POWER}). 
+We also find this useful as a technical device for analyzing
+possible behaviors of the promise-free machine and applying \cref{thm:drfpf}.
+
+%The declarative presentation associates programs with graphs,
+The nodes of execution graphs are called \emph{events}.
+%and use $i$ as a metavariable for thread identifiers.
+%
+An {event} consists of
+an identifier (natural number), 
+a thread identifier (taken from a finite set $\Tid$ of thread identifiers,
+or $0$ for initialization events), 
+and a \emph{label}.
+Labels have the form
+${\rlab}(o,x,v)$ or ${\wlab}(o,x,v)$ 
+(where $o$ is the access mode, 
+$x$ is the location accessed, and
+$v$ is the value read/written),
+as well as $\flab_\acqo$, $\flab_\relo$, or $\flab_\sco$
+(for fences).
+The functions $\tid$, $\lab$, $\typ$, and $\loc$
+return (when applicable) the thread identifier, 
+label, type ($\rlab,\wlab,\flab$), and location of an event.
+
+In turn, an \emph{execution graph} $G$  consists of:
+\squishlist
+\item a set $\lE$ of events.
+This set always contains a set $\lE_0$ of initialization events,
+consisting of one plain write event assigning the initial value for every location.
+We assume that all initial values are $0$.
+For $\tlab\in\{\rlab,\wlab,\flab\}$, 
+we denote by $\tlab$ the set 
+$\{a\in \lE \suchthat \typ(a)=\tlab\}$.
+We also %concatenate the event sets notations, use subscripts to denote the accessed location,
+use subscript for access modes
+(\eg $\lW_{\sqsupseteq \rlx}$ denotes the set of all events $a\in \lW$ with 
+whose access mode is at least $\rlx$).
+\item a relation $\lSB$, called \emph{sequenced before}, 
+which is a union of relations $(\lE_0\times (\lE\setminus \lE_0)) \cup \{\lSB_i \suchthat i\in\Tid\}$, 
+where every $\lSB_i$ ($i\in\Tid$) is a strict total order on $\{a\in \lE \suchthat \tid(a)=i\}$.
+\item  a relation $\lRMW$, called \emph{read-modify-write pairs}, consisting of 
+ \emph{immediate} $\lSB$-edges
+(\ie if $\tup{a,b}\in\lRMW$ then no $c$ satisfies both $\tup{a,c}\in\lSB$ and $\tup{c,b}\in\lSB$).
+In addition, for every $\tup{a,b}\in\lRMW$, we have $\typ(a)=\rlab$, $\typ(b)=\wlab$, and
+ $\loc(a)=\loc(b)$.
+\item a relation $\lRF$, called \emph{reads-from}, which relates every read event in $\lE$
+with one write event in $\lE$ that has the same location and value. 
+\item a relation $\lMO$, called  \emph{modification order},
+which is a disjoint union of relations $\{\lMOx\}_{x\in\Loc}$, 
+such that each relation $\lMOx$ is a strict total order on $\lW_x$.
+\item  a relation $\lSC$, called \emph{SC order}, which is a strict total order on $\lF_\sco$ 
+(the set of all SC fence events in $\lE$).
+\squishend
+
+\begin{notation}
+$R^?$, $R^+$, and $R^*$ respectively denote the reflexive, transitive, and reflexive-transitive closures of a binary relation $R$. 
+$R^{-1}$ denotes its inverse relation.
+%$R\rst{x}$ denotes the restriction of $R$  to events accessing location $x$,
+%while  $R\rst{\LOC}$ denotes the restriction of $R$ to events accessing the same location
+% (\ie $R\rst{x} = \{\tup{a,b} \in R \suchthat \loc(a)=\loc(b)=x\}$ and
+% $R\rst{\LOC} = \{\tup{a,b} \in R \suchthat \loc(a)=\loc(b)\}$).
+We denote by $R_1;R_2$ the left composition of two relations $R_1,R_2$.
+Finally, $[A]$ denotes the identity relation on a set $A$.
+In particular, $[A];R;[B] = R\cap (A\times B)$.
+\end{notation}
+
+Now, to define which execution graphs are allowed, 
+we derive an \emph{happens-before} order $\lHB$,
+which is defined as in C++11
+(after applying the correction suggested in \cite{c11comp} for release sequences):
+\begin{align*}
+\lSB\rst{\LOC} &=  \{\tup{a,b} \in \lSB \suchthat \loc(a)=\loc(b)\} \tag{\emph{sb-loc}}
+\\ \lRSEQ &=  [\lW];\lSB\rst{\LOC}^?;[\lW_{\sqsupseteq\rlx}];(\lRF;\lRMW;[\lW_{\sqsupseteq\rlx}])^* \tag{\emph{release-seq}}
+\\ \lREL &= ([\lW_\ra] \cup ([\lF_\relo \cup \lF_\sco];\lSB));\lRSEQ \tag{\emph{to-be-released}}
+\\ \lSYN &= \lREL;\lRF; ([\lR_\ra] \cup ([\lR_{\sqsupseteq \rlx}];\lSB;[\lF_\acqo\cup \lF_\sco])) \tag{\emph{sync}}
+\\ \lHB &= (\lSB \cup \lSYN)^+  \tag{\emph{happens-before}}
+\end{align*}
+
+Given the definition of $\lHB$, 
+an {execution graph} $G$  is \emph{consistent} if the following hold:
+\begin{itemize}
+\item $\lMO;\lHB$ is irreflexive.  \hfill(\emph{WW-coherence})
+\item $\lMO;\lRF;\lHB$ is irreflexive.  \hfill(\emph{RW-coherence})
+\item $\lMO;\lHB ; \lRF^{-1}$ is irreflexive.  \hfill(\emph{WR-coherence})
+\item $\lMO;\lRF;R;\lRF^{-1}$ is irreflexive,   \hfill(\emph{RR-coherence})
+\\ where $R=([\lR_{\sqsupseteq \rlx}];\lHB) \cup 
+(\lHB;[\lR_{\sqsupseteq \rlx}]) \cup
+(\lHB;[\lF_\sco];\lHB)$.
+\item $(\lRF;\lRMW) \cap (\lMO;\lMO) = \emptyset$.  \hfill(\emph{Atomicity})
+\item $\lMO;\lRF^?;\lHB;\lSC; \lHB;(\lRF^{-1})^?$  is irreflexive.  \hfill(\emph{SC})
+\item $\lSB \cup \lRF \cup \lSC$ is acyclic. \hfill(\emph{No-promises})
+\end{itemize}
+
+%\jeehoon{I think RW-coherence should cover rf; hb.}
+%\ori{$\lRF;\lHB$ is covered due to ``no-promises''}
+%\jeehoon{Ah, I see.  And yet I think it would be better for RW-coherence to require $\lMO^?;\lRF;\lHB$, as it better matches with C++11 definitions.  Though I am fine with the current version, too.}
+%
+%\jeehoon{I think it is easier to read if the relation begins with hb.  It matches with the rule names.}
+%\ori{I'm not sure what do you mean here.
+%Perhaps write your alternative definition, and then we decide.}
+%\viktor{I think I understand. Here it is:
+%\begin{itemize}
+%\item $\lHB;\lMO$ is irreflexive.  \hfill(\emph{WW-coherence})
+%\item $\lHB;\lMO;\lRF$ is irreflexive.  \hfill(\emph{RW-coherence})
+%\item $\lHB;\lRF^{-1};\lMO;$ is irreflexive.  \hfill(\emph{WR-coherence})
+%\item $R;\lRF^{-1};\lMO;\lRF$ is irreflexive,   \hfill(\emph{RR-coherence})
+%\\ where $R=([\lR_{\sqsupseteq \rlx}];\lHB) \cup 
+%(\lHB;[\lR_{\sqsupseteq \rlx}]) \cup
+%(\lHB;[\lF_\sco];\lHB)$.
+%\end{itemize}}
+%\noindent \jeehoon{Yes, Viktor said what I meant.  Again, I am fine with the current version, too.}
+
+
+Putting aside  differences in presentation (\eg instead of a primitive RMW event,
+we have two events related by an $\lRMW$-edge), 
+there are three essential differences between this model and the C++11 one~\cite{Batty:2011}:
+\begin{itemize}
+\item Our model disallows cycles in $\lSB\cup\lRF\cup\lSC$, and hence it does not
+permit load buffering behaviors (which are not possible in the promise-free machine).
+\item Our model lacks SC accesses, and its condition for SC fences is stronger than the one
+of C++11. In particular, unlike in C++11, placing an SC fence between every two commands
+\emph{does} guarantee SC semantics.
+%\jeehoon{I am worried if it may hamper the contribution of our scfix paper.}
+%\ori{hopefully, it'd be fine. Anyway its mimicking the operational semantics...}
+\item Our model does not have non-atomic accesses on which races imply undefined behavior.
+It does have plain accesses for which RR-coherence does not apply 
+(unless an SC fence is $\lHB$-between).
+\end{itemize}
+
+Now, to define behaviors of programs using consistent 
+execution graphs and programs, we present a ``declarative machine'', 
+which incrementally builds a consistent execution graph
+following some interleaving of the program's threads operations.
+Formally, the declarative machine state is a pair $\tup{\Sigma,G}$, 
+where $\Sigma$ assigns a local state $\sigma$ to every thread
+(as described in \cref{sec:relaxed}), and $G$ is some consistent execution graph.
+The possible steps of this machine are given in \cref{fig:axiomatic-opsem},
+assuming the same abstract programming language discussed  in \cref{sec:full-formal}.
+To define these steps, we use the following notation for execution graph extension.
+% \jeehoon{How about replacing ``assigns a local state $\sigma$ to every thread'' with ``assigns a local state to every thread''?}
+% \ori{I think that $\sigma$, even though not used, will help the reader to
+% recall (or check) what do we mean by ``local state'', since there was also a notion
+% of thread state that is irrelevant here}
+
+\begin{notation}
+For two execution graphs $G$ and $G'$,
+we write $G'\in\add{G,a}$
+if $G'$ extends $G$ with one event $a$,
+which is $\lSB\cup\lRF\cup\lSC$ maximal in $G'$.
+We write $G'\in\addatomic{G,a_\lr,a_\lw}$
+if $G'$ extends some $G_{\text{mid}}\in \add{G,a_\lr}$ with 
+one event $a_\lw$ and an $\lRMW$-edge $\tup{a_\lr,a_\lw}$,
+and $a_\lw$ is $\lSB\cup\lRF\cup\lSC$ maximal in $G'$.
+\end{notation}
+
+The initial machine state is given by $\tup{\lambda i.\sigma_i^0, G_0}$,
+where $G_0$ contains only the initialization events $\lE_0$ (its relations are empty).
+A behavior of a program under the declarative machine 
+is again taken to be the set of sequences of system calls induced by its executions.
+
+\begin{remark}
+In a purely declarative style, one considers only \emph{full} runs of a program and checks consistency only once at the end.
+However, the definition of consistent execution graphs above is ``prefix-closed''
+(that is, every $\lSB\cup\lRF\cup\lSC$-prefix of a consistent execution graph forms a consistent execution graph).  As a result, we were able to present our declarative
+semantics in a more operational style,
+which can be conveniently related to the promise-free machine.
+\end{remark}
+
+\begin{figure}[t]
+\small
+\begin{mathpar}
+%\inferrule[(silent)]
+%
+\vspace*{-1mm}
+%
+\inferrule*
+{\sigma \astep{\silentt} \sigma'}  
+{\tup{\sigma,G} \astep{i} \tup{\sigma',G}}
+~~
+%\inferrule[(read/write/fence)]
+\inferrule*
+{\sigma \astep{\lab(a)} \sigma' \\\\
+\typ(a) \in \{\rlab,\wlab,\flab\} \\\\
+\tid(a)=i \\\\
+G' \in \add{G,a}}
+{\tup{\sigma,G} \astep{i} \tup{\sigma',G'}}
+~~
+%\inferrule[(update)]
+\inferrule*
+{\sigma \astep{\ulab(x,v_\lr,v_\lw,o_\lr,o_\lw)} \sigma' \\\\
+\lab(a_\lr)=\rlab(o_\lr,x,v_\lr) \\\\
+\lab(a_\lw)=\wlab(o_\lw,x,v_\lw) \\\\
+\tid(a_\lr)=\tid(a_\lw)=i \\\\
+ G' \in \addatomic{G,a_\lr,a_\lw}}
+ {\tup{\sigma,G} \astep{i} \tup{\sigma',G'}}
+%
+\\\vspace*{-1mm}
+%
+%\inferrule[(system call)]
+\inferrule*
+{\sigma \astep{\syscallt} \sigma' \\
+\lab(a)=\flab_\sco \\\\
+\tid(a)=i \\
+G' \in \add{G,a}}
+{\tup{\sigma,G} \astep{i,\syscallt} \tup{\sigma',G'}}
+\and
+\inferrule[(machine step)]
+%\inferrule*
+{\tup{\Sigma(i),G} \astep{i,e} \tup{\sigma',G'}\\\\
+\text{$G'$ is consistent}}
+{\tup{\Sigma,G} \astep{e} \tup{\Sigma[i\mapsto \sigma'],G'}}
+\end{mathpar}
+\caption{Operational semantics based on the declarative model.}
+\label{fig:axiomatic-opsem}
+\end{figure}
+
+\begin{theorem}
+\label{thm:axiomatic}
+For every program $\prog$, the behaviors of $\prog$ according to the promise-free machine
+coincide with the behaviors of $\prog$ according to the declarative machine.
+\end{theorem}
+
+The Coq proof of this theorem involves a non-trivial simulation argument.
+The simulation relation is presented in~\cite{appendix}.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

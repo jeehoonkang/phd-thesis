@@ -1,0 +1,99 @@
+\section{Future Work}\label{sec:discussion}
+
+Besides extending our model with SC accesses
+(see \cref{sec:promising}), 
+there are a number of interesting issues remaining for future work.
+
+\paragraph{Compilation Correctness}
+Establishing the correctness of compilation of our model to ARM, as well as
+to Power using the more efficient compilation scheme for acquire reads and updates 
+(see \cref{sec:compilation_POWER}), is an important future goal. 
+To the best of our knowledge, we know of no counterexamples
+for correctness of compilation to these architectures. 
+
+%\paragraph{SC accesses}
+% it seemed stupid to repeat what was already said in the intro.
+
+\paragraph{Global Optimizations}
+In our model, we insist that promises can always be certified thread-locally. 
+This decision enables thread-local reasoning about our semantics and suffices
+to justify all the known thread-local program transformations that a compiler
+or the hardware may perform.  It does, however, render unsound some transformations of a global nature,
+such as sequentialization (aka ``thread inlining''), which merges threads together.
+To see this, consider the following:
+$$\inarrIIId{
+a:=x; \comment{1} \\
+\itne{a=0}{}\\
+\quad x:=1;
+}{
+y:=x;
+}{
+x:=y;
+}\quad
+\leadsto
+\quad
+\inarrIId{
+a:=x; \comment{1} \\
+\itne{a=0}{}\\
+\quad x:=1; \\
+y:=x;
+}{
+x:=y;
+}
+$$
+This source program disallows the specified behavior because if $T_1$ reads $1$ for $x$ after promising $x:=1$, then
+it will not be able to fulfill its promise.
+Nevertheless, the result $a=1$ \emph{is} allowed in the target program 
+(obtained by sequentializing $T_1$ before $T_2$).
+Here, $T_1$ can safely promise $y:=1$, and later read $x=1$ from $T_2$'s 
+write.\footnote{Though sequentialization is a very intuitive property that one might expect a memory
+model to validate,
+we observe that TSO~\cite{x86-tso}, Power~\cite{herding-cats}, ARMv8~\cite{arm8-model}, Java~\cite{jmm}, 
+and C/C++11~\cite{Batty:2011} (without the corrections proposed in \cite{c11comp})
+all do not allow sequentialization.
+%\ori{add references to the papers showing that sequentialization is invalid in each of them}
+%\jeehoon{Maybe we can challenge the forklore knowledge that sequentialization is very intuitive, by arguing with the JMM-05 \& 10 examples (https://github.com/jeehoonkang/memory-model-explorer/issues/28)}
+}
+While sequentialization seems like a transformation that no compiler would perform, there might be other more useful global optimizations.
+Investigating what global optimizations are supported in our model is left for future work.
+
+\jeehoon{I think it would be nice to mention register promotion, which we currently don't support.}
+
+%{Transformations based on invariant-based reasoning?}
+
+\paragraph{Liveness}
+
+It is natural to extend our operational model with liveness guarantees,
+and it is useful and interesting to study their interaction with
+ program transformations and DRF theorems.
+Liveness properties are currently mostly ignored in weak memory research.
+
+\jeehoon{DRF is irrelevant here, I think.  Liveness reduces the set of possible behaviors, making the DRF theorem easier to prove.}
+
+\ori{I think that with Liveness one would like to have stronger DRF, that provides also SC's 
+liveness guarantees, whatever these are. No?}
+
+\paragraph{Program Logic}
+
+The program logic presented in \cref{sec:invariant} only establishes the very basic sanity of our memory model.
+Developing a useful program logic for this model is a direction for future work.
+
+\paragraph{Simulation and Model Checking}
+
+The high degree of nondeterminism in our model makes it hard to 
+exhaustively explore all possible behaviors of a given program.
+Further work is required to develop efficient methods and tools for this purpose.
+
+%% Based on our
+%% understanding of ARMv8 architecture~\cite{}, we believe that our model is
+%% weaker than ARMv8.
+
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

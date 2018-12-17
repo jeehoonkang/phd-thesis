@@ -1,0 +1,663 @@
+\newcommand{\figrelaxed}{
+\begin{figure*}[t]
+\small
+\begin{mathpar}
+%
+\vspace*{-1mm}
+%
+\inferrule[\textsc{(thread: silent)}]
+{
+\sigma \astep{\silentt} \sigma' 
+}
+{\tup{\tup{\sigma, \rlxcur, \lprom}, \mem} \astep{} \tup{\tup{\sigma', \rlxcur, \lprom}, \mem}}
+\and
+\inferrule[\textsc{(thread: read)}]
+{
+ \sigma \astep{\rlab(x,v)} \sigma' \\
+\rlxmsg{x}{v}{t} \in \mem \\\\
+\rlxcur(x) \leq t \\
+\rlxcur'=\rlxcur[x\mapsto t]
+}
+{\tup{\tup{\sigma, \rlxcur, \lprom}, \mem} \astep{} \tup{\tup{\sigma', \rlxcur', \lprom}, \mem}}
+\and
+\inferrule[\textsc{(thread: write)}]
+{
+ \sigma \astep{\wlab(x,v)} \sigma' \\
+\mem'=\mem \insertadd \rlxmsg{x}{v}{t} \\\\
+\rlxcur(x) < t \\
+\rlxcur'= \rlxcur[x\mapsto t]
+}
+{\tup{\tup{\sigma, \rlxcur, \lprom},\mem} \astep{} \tup{\tup{\sigma', \rlxcur', \lprom}, \mem'}}
+%
+\\\vspace*{-1mm}
+%
+\inferrule[\textsc{(thread: promise)}]
+{
+\mem' = \mem \insertadd m \\
+\lprom' = \lprom \insertadd m 
+}
+{\tup{\tup{\sigma, \rlxcur, \lprom},\mem} \astep{} \tup{\tup{\sigma, \rlxcur, \lprom'},\mem'}}
+\and
+\inferrule[\textsc{(thread: fulfill)}]
+{
+ \sigma \astep{\wlab(x,v)} \sigma' \\
+\rlxmsg{x}{v}{t} \in \lprom \\
+\lprom'=\lprom\setminus \setofz{\rlxmsg{x}{v}{t}} \\\\
+\rlxcur(x) < t \\
+\rlxcur' = \rlxcur[x\mapsto t] 
+}
+{\tup{\tup{\sigma, \rlxcur, \lprom},\mem} \astep{} \tup{\tup{\sigma', \rlxcur', \lprom'}, \mem}}
+\and
+\inferrule[\textsc{(machine step)}]
+{\tup{\gts(i),\mem} \astep{}^+ \tup{\lts',\mem'} \\\\
+\tup{\lts',\mem'} \text{ is consistent}}
+{\tup{\gts,\mem} \astep{} \tup{\gts[i\mapsto \lts'],\mem'}}
+\end{mathpar}
+\caption{Operational semantics for the simplified model handling only relaxed read and write accesses.}
+\label{fig:relaxed-opsem}
+\end{figure*}}
+
+\section{Basic Model for Handling Relaxed Accesses}
+\label{sec:relaxed}
+
+In this section, we introduce the key ideas of our memory model, first
+by example and then more formally.  At first we will only consider a
+semantics for fully ``relaxed'' atomic read and write accesses (in the
+sense of C++).  This is a natural starting point, since the OOTA
+problem is fundamentally about how to give a reasonable semantics for
+these relaxed accesses, and the key elements of our solution are
+easiest to understand in this simpler setting.  We will see in
+subsequent sections how to extend and generalize this base model to
+account for a much richer variety of memory operations.
+
+To illustrate our semantics, we will write small programs such as the
+following:
+\begin{equation}\label{eq:SB}\tag{SB}
+\inarrII{x:=1;\\a:=y;\comment{0}}{y:=1;\\b:=x;\comment{0}}
+\end{equation}
+As a convention, we write $a$, $b$, $c$ for local variables
+(registers) and $x$, $y$, $z$ for (distinct) shared memory locations,
+and assume that all variables are initialized to $0$.  
+We refer to thread $i$ as $T_i$.  Moreover, in order to
+refer to a specific observation of the program, we annotate the
+corresponding reads with the values expected to be read (\eg in the
+above program, the comment notation indicates the observed result that
+$a = b = 0$).
+
+\subsection{Main Ideas}
+
+\paragraph{High-Level Requirements: Reorderings and Coherence}
+
+Relaxed read and write operations are intended to be compiled down
+directly to plain loads and stores at the machine level, so one of the
+main requirements of our semantics is that it be at least as
+permissive as commodity hardware.  Toward this end, our semantics must
+justify reordering of independent memory operations (\ie operations
+that access distinct locations), since the more weakly consistent
+architectures (like ARM) may potentially perform such reorderings.
+There are four such classes of reorderings---write-read, write-write,
+read-read, and read-write---and in \cref{sec:results} we will prove formally
+that our semantics justifies all of them.
+
+On the other hand,
+% to support fundamental high-level reasoning
+% principles, 
+it is also important that our semantics not be
+unnecessarily weak.  In particular, all the existing 
+implementations of C++, even for weaker architectures like Power and
+ARM, guarantee at a bare minimum a property we call \emph{per-location
+  coherence} (aka \emph{SC-per-location}).  Per-location coherence
+says that, even though threads may observe writes to different
+locations in different orders, they must observe writes to the
+\emph{same} location in a single total order (called the
+``modification order'' in C++ lingo).
+%, and it must be consistent with the
+%``program order'' (the order in which writes are issued within any
+%single thread). \ori{last sentence seems too partial to me: I suggest to remove
+ In addition to being supported by hardware,
+per-location coherence is preserved by common compiler optimizations
+as well.  Hence, we want our semantics of relaxed accesses to
+guarantee it. (In \cref{sec:plain} we will present an even weaker mode of accesses that
+does not provide full per-location coherence.)
+
+%\jeehoon{we do not mention merges; I think it is reasonable at this stage, but I just want to make a note here.}
+
+% This cut-down language is sufficient to understand
+% the core of our solution to the OOTA problem without , and it is enough to 
+% We begin with relaxed reads and writes because
+% the OOTA problem arises already in this cut-down language, In subsequent sections, we will do some more.
+% We will extend this base model to handle
+% atomic update operations in the next section, as well as more strongly
+% synchronized operations in the following sections.
+
+\paragraph{Operational Semantics with Timestamps}
+
+In contrast to the C++ memory model, which relies on declarative
+semantics over event graphs, ours employs a more standard SC-style
+operational semantics for concurrency, in which the executions of
+different threads are nondeterministically interleaved.  However, in
+order to account for weak memory behaviors, we use a more elaborate
+memory representation than the standard SC semantics does.  Instead of
+being a flat map from addresses to values, our memory records the set
+of all writes ever performed.  It may help to think of writes as
+messages, and memory as a message pool which grows monotonically.  When
+a thread $T$ reads from a location $x$, it need not read ``the
+latest'' write to $x$, since there is no shared understanding among
+threads of what the latest write is.  The thread $T$ thus retains
+flexibility in terms of which message it reads, but we must place some
+restrictions on this flexibility in order to guarantee per-location
+coherence.
+
+% Unlike SC, which
+% executes all memory writes in a total order, our relaxed semantics
+% (following C++) only guarantees that writes to any \emph{single}
+% variable are executed in some total order (called the ``modification
+% order'' in the C++ model), which must be consistent with the ``program
+% order'' (the sequential order in which writes are issued within any
+% single thread).  This property, which we call \emph{per-location
+%   coherence}, is the minimal property guaranteed by all hardware
+% implementations, and is preserved by most compiler optimizations.
+
+Specifically, we totally order the writes to each location by
+attaching a (unique) \emph{timestamp} to each write message.  Thus,
+messages are triples of the form $\rlxmsg{x}{v}{t}$ (where $x$ is a
+location, $v$ a value, and $t$ a timestamp).  (The \emph{modification
+order} for a location $x$ is thus implicitly derivable from the order
+of timestamps on $x$'s messages.)  In addition, for each thread $T$,
+we keep track of a map from locations $x$ to the largest timestamp of
+a write to $x$ that $T$ has observed or executed.  We refer to this
+map as $T$'s \emph{view} of memory, and one can think of it as
+recording the set of most recent write messages that $T$ has observed.
+Hence, when $T$ reads from a location $x$, it must read from a message with a
+timestamp \emph{at least as large} as the one recorded for $x$ in
+$T$'s view.  And when $T$ writes to $x$, it must pick a timestamp
+\emph{strictly larger} than the one recorded for $x$ in its view.
+%This simple mechanism is sufficient to directly obtain per-location coherence.
+
+Let us see now how our semantics, as explained thus far, already suffices to 
+justify desirable reorderings while ruling out violations of coherence.
+First, recall the write-read reordering exhibited by the ``store buffering'' \ref{eq:SB}
+example above, and let us see how the behavior can be justified.
+% As explained thus far, our semantics with timestamps already suffices
+% to justify the write-read reordering exhibited by the ``store buffering'' \ref{eq:SB} example above.  
+%Initially, both threads maintain a view of $x$ and $y$
+%that maps them to whatever timestamps $t_x^0$ and $t_y^0$ were
+%associated with the $0$-initializations.  When $T_1$ writes $x:=1$, it
+%will update its view of $x$ to some $t_x^1 > t_x^0$, but this will
+Initially, assume the memory contains the initialization messages 
+$\rlxmsg{x}{0}{\ts{0}}$ and $\rlxmsg{y}{0}{\ts{0}}$,
+and both threads maintain a view of $x$ and $y$ that maps them to $\ts{0}$.
+When $T_1$ performs the assignment $x:=1$, it
+will choose some timestamp $t > \ts{0}$,
+add the message $\rlxmsg{x}{1}{t}$ to the memory, 
+and update its view of $x$ to $t$. But this will
+have no effect on its view of $y$ or $T_2$'s view of $x$, which remain at $\ts{0}$.  
+Thus, when $T_1$ subsequently reads $y$, it is free to read $0$.
+(And analogously for $T_2$.)
+
+On the flip side, per-location timestamps also explain why the following coherence
+violation is forbidden.
+\begin{equation}\label{eq:COH}\tag{COH}
+\inarrII{x:=1;\\a:=x;\comment{2}}{x:=2;\\b:=x;\comment{1}}
+\end{equation}
+Here, the two writes to $x$ must be totally ordered.  Suppose, without
+loss of generality, that the $x:=1$ was written at timestamp $\ts{1}$ and
+$x:=2$ at timestamp $\ts{2}$.  Then, although $T_1$ may read value $2$,
+$T_2$ cannot read $1$, because $1$ was written at a smaller timestamp
+than the one that $T_2$ already recorded in its view when it wrote $x:=2$.
+
+% \ori{the order seems a bit strange to me, I think the last paragraph
+% should appear before the paragraph about SB}
+% \derek{I think it's OK.}
+
+One subtle point is that, when writing to a location $x$, a
+thread $T$ may select any unused timestamp $t$ larger than the one
+recorded in its view of $x$, but $t$ need not be globally maximal.
+That is, $t$ may be smaller than the timestamp that another thread has
+already used for a write to $x$.  %Though this freedom may seem odd, it
+%is in fact crucial in order to permit write-write reorderings, as
+This freedom is in fact crucial in order to permit write-write reorderings, as
+exemplified by the following test case:
+\begin{equation}\label{eq:2+2W}\tag{2+2W}
+\inarrII{x:=2;\\y:=1;\\a:=y;\comment{2}}{y:=2;\\x:=1;\\b:=x;\comment{2}}
+\end{equation}
+To get the desired weak outcome, the writes of $x:=1$ and $y:=1$ must
+pick smaller timestamps than the $x:=2$ and $y:=2$ writes,
+respectively, but at least one of the $1$-writes must be executed
+\emph{after} the $2$-write to the same location.  Thus, it is essential
+to be able to write using a timestamp that is not globally maximal.
+
+\paragraph{Promises}
+
+%As we have seen, 
+% Timestamps account for write-read and write-write
+% reorderings, and indeed (as we prove in \cref{sec:results}) they also account
+% for read-read reorderings.  
+% \ori{actually, our formal proof of WW-reordering uses promises,
+% should we just say here that timestamps dont suffice to explain RW?}
+Unfortunately, our timestamp semantics alone does not suffice
+to explain \emph{read-write} reorderings, as exemplified by the (LB)
+and (LBfd) programs from \cref{sec:oota}.  It is precisely these
+reorderings that motivate our introduction of \emph{promises}.
+
+As explained in \cref{sec:promising}, a thread $T$ may at any point
+\emph{promise} to write $x:=v$ at some timestamp $t$ (provided that
+$t$ is greater than $T$'s current view of $x$).  This promise is
+treated to a large extent like an actual write operation.  In
+particular, it adds a new message $\rlxmsg{x}{v}{t}$ to memory, which may then be
+read by other threads.  However, in order to make such a promise, $T$
+must \emph{thread-locally certify} it---that is, $T$ must demonstrate
+that it will be able to fulfill this promise (writing $x:=v$ at
+timestamp $t$) in a finite number of thread-local steps.  Certification
+is needed to guarantee plausibility of the promise, but crucially,
+there is no requirement that the specific steps of execution taken
+during certification must match the subsequent steps of actual execution.
+Indeed, we already witnessed this with the (LB) and (LBfd) executions,
+where $T_1$ read $x=0$ during the initial certification of its promised
+write to $y$, but read $x=1$ during the actual execution.
+
+% We have seen in \cref{sec:promising} how promises justify
+% the read-write reordering of (LB) and (LBfd) while prohibiting the
+% OOTA behavior of (LBd). 
+Let us now briefly touch on a few technical points concerning the
+interaction of promises and timestamps.
+
+% First of all, a key technical observation: just because a thread reads
+% a particular write message during promise validation does not mean it
+% must read that message during the subsequent actual execution.  We
+% already witnessed this with the (LB) execution, where $T_1$ read $x=0$
+% during the initial validation of its promised write to $y$, but read
+% $x=1$ during the actual execution.
+
+First of all, it is important that $T$ cannot directly read its own
+promises, because this would violate per-location coherence: for
+example, the single-threaded program $a:=x;~ x:=1$ would be able to
+return $a=1$!  Note that we do not need to explicitly enforce this
+restriction---it just falls out from our rules concerning timestamps.
+In particular, if $T$ were to promise $\rlxmsg{x}{v}{t}$, and then
+were to read from its own promise, then $T$'s view of $x$ would be
+updated to $t$, and there would be no way for $T$ to subsequently
+fulfill the promise because it would have to 
+pick a timestamp strictly greater than $t$ when performing 
+the assignment $x:=v$.
+
+That said, it is possible for $T$ to read its promised value
+indirectly via another thread, as in the \ref{eq:LB} and
+\ref{eq:LBfalsedep} programs.
+It may even read the promised value
+from the same location where it promised to write it, as in the
+following example~\cite{fm16}.
+\begin{equation}\label{eq:ARMweak}\tag{ARM-weak}
+\inarrIII{ a:=x; \comment{1} \\ x:=1; }{ y:=x; }{ x:=y; }
+\end{equation}
+This outcome can be explained by $T_1$ promising
+$\rlxmsg{x}{1}{\ts{2}}$, then $T_2$ reading $x=1$ and storing it to
+$y$, and $T_3$ reading $y=1$ and writing $x:=1$ at timestamp $\ts{1}$,
+which $T_1$ can read before fulfilling its promise.  Such behavior,
+strange though it may seem, is actually allowed (though not yet
+observed) by the ARM memory model~\cite{arm8-model}.
+
+% Having explained
+% the idea of promises in \cref{sec:promising}, we will now clarify how
+% promises interact with timestamps.
+
+% \derek{Editing here.}
+
+% At any point during execution a thread can promise to perform a write
+% of a certain value at a certain location and at a certain timestamp.
+% Naturally, when making a promise, a thread should be able to fulfill
+% it.  More specifically, we require that the thread making the promise
+% should be able to execute in isolation and fulfill all its outstanding
+% promises by performing the corresponing writes.  Thus, in the
+% \ref{eq:LB} and \ref{eq:LBfalsedep} examples, the first thread can
+% promise to write $x:=1$, because by reading from the initial state it
+% can fulfill its promise.  In contrast, in \ref{eq:LBdep}, the $x:=1$
+% promise cannot be made since it is impossible to fulfill
+% thread-locally.  Intuitively, our thread-local validation of promises
+% ensures that ``out of thin air'' values can never be promised: we will
+% formalize this intuition in \cref{sec:relaxed-logic}.
+% % Consider the following two
+% % variants of the load-buffering program:
+% % \begin{center}
+% % \begin{minipage}{.47\columnwidth}
+% % \begin{equation}\label{eq:LB}\tag{LB}
+% % \inarrII{ a:=x; \comment{1} \\ y:=1; }{ x:=y; }
+% % \end{equation}
+% % \end{minipage}
+% % ~\vrule\hfill
+% % \begin{minipage}{.49\columnwidth}
+% % \begin{equation}\label{eq:LBdep}\tag{LBd}
+% % \inarrII{ a:=x; \comment{1} \\ y:=a; }{ x:=y; }
+% % \end{equation}
+% % \end{minipage}
+% % \end{center}
+% % In the first case, the annotated behavior can easily arise if the compiler or the hardware reoders the two independent accesses on the first thread.
+% % In the second case, however, because of the data dependency between them, no accesses may be reordered.
+% % Reading $1$ is moreover totally unjustified, because it never appears in the program.
+
+% % \TODO{can LB be observed on ARM??? or Power???}
+
+% % A naive solution to this problem would be for the semantics to buffer loads and delay their execution to the point when their value is actually used.
+% % This approach has been successfully applied in definitions of hardware memory models, 
+% % but it fails to validate standard compiler optimizations, as these may remove syntactic dependencies.
+% % As a very simple example, consider the following program, 
+% % that can be trivially transformed to \ref{eq:LB} by a basic optimizing compiler.
+% % \begin{equation}\label{eq:LBfalsedep}\tag{LBfd}
+% % \inarrII{ a:=x; \comment{1} \\ y:=a+1-a; }{ x:=y; }
+% % \end{equation}
+
+% % \paragraph{Promises}
+
+% % We propose to solve this problem by a different mechanism, which we call \emph{promises}.
+% Basically, at any point during execution a thread can promise to perform a write of a certain value at a certain location and at a certain timestamp.
+% Naturally, when making a promise, a thread should be able to fulfill it.
+% More specifically, we require that the thread making the promise should be able to execute in isolation and fulfill all its outstanding promises by performing the corresponing writes.
+% Thus, in the \ref{eq:LB} and \ref{eq:LBfalsedep} examples, the first thread can promise to write $x:=1$, because by reading from the initial state it can fulfill its promise. 
+% In contrast, in \ref{eq:LBdep}, the $x:=1$ promise cannot be made since it is impossible to fulfill thread-locally.
+% Intuitively, our thread-local validation of promises ensures that ``out of thin air'' values can never be promised: we will formalize this intuition in \cref{sec:relaxed-logic}.
+
+% Once a write has been promised, other threads may read it. 
+% The thread making the promise cannot directly read its promise, because this would violate per-location coherence:
+% for example, the single-threaded program $a:=x; x:=1$ would be able to return $a=1$!
+% It may, however, read its promised value indirectly via another thread as in the \ref{eq:LBdep} and \ref{eq:LBfalsedep}.
+% It may eventually even get its promised value to the same location as in the following example.
+% \begin{equation}\label{eq:ARMweak}\tag{ARM-weak}
+% \inarrIII{ a:=x; \comment{1} \\ x:=1; }{ y:=x; }{ x:=y; }
+% \end{equation}
+% This behavior, strange though it may seem, is actually allowed by the ARM memory model~\cite{armv8}.
+% In our semantics, it can be explained by the first thread promising to write $x:=1$ at timestamp $2$,
+% then the second thread reading $x=1$ and storing it to $y$ 
+% and the third thread reading $y=1$ and writing $x:=1$ at timestamp $1$, 
+% which the first thread can read before fulfilling its promise.
+
+\figrelaxed
+
+Last but not least, we wish to ensure that promises do not lead to
+impossible situations later down the road, \ie that making a promise
+cannot cause the execution of a program to get stuck.  The
+thread-local certification that accompanies a promise step goes some way
+toward ensuring this progress condition, but it is not enough.  We
+ also amend the semantics in the following two ways:
+\begin{enumerate}
+\item Every step a thread takes, it must \emph{re-certify} all its
+  outstanding promises to make sure they can \emph{still} be
+  fulfilled.  To see why, consider a possible execution of the
+  following program:
+$$
+\inarrII{a:=x;\\ x:=1; }{ x := 2; }
+$$
+%Let's assume that $x$ has been initialized to $0$ at timestamp $0$.
+Suppose that $T_1$ (for no particularly good reason) promises $\rlxmsg{x}{1}{\ts{1}}$.
+ At first, this is easy to certify: $T_1$
+can read the initial value of $x$ (the message $\rlxmsg{x}{0}{\ts{0}}$), 
+and then perform the assignment $x:=1$ picking timestamp
+$\ts{1}$.  Suppose then that $T_2$ picks the timestamp $\ts{2}$ when performing $x:=2$. 
+If at this point in the execution $T_1$ were permitted to read the message $\rlxmsg{x}{2}{\ts{2}}$, it
+would have the effect of bumping up $T_1$'s view of $x$ to timestamp
+$\ts{2}$, which would prevent it from subsequently fulfilling its promise.
+It is thus crucial that $T_1$
+\emph{not} be allowed to read $x=2$ (in this particular execution), and
+indeed our semantics will not allow it to do so because the
+re-certification check would fail.  As the example illustrates, promises
+can restrict a thread's future nondeterministic choices concerning the
+messages it reads.
+
+% \footnote{They do not completely constrain those choices, however:
+% just because a thread reads a particular write message
+% during promise validation does not, in general, mean it must read
+% that message during the subsequent actual execution.  In fact, we
+% already witnessed this with the (LB) execution, where $T_1$ read
+% $x=0$ during the initial validation of its promised write to $y$,
+% but read $x=1$ during the actual execution.}
+
+% $a := x; x := 1$.  Suppose we first promise to write $x := 1$ at
+% timestamp $2$.
+
+% We have
+% already explained the thread-local validation that accompanies a
+% promise step, but a one-time validation is not enough: every step a
+% thread takes, it must re-validate that it can still fulfill all its
+% outstanding promises.  This re-validation check is non-trivial.
+% For example, suppose $T$ had promised to write $x$ at timestamp $2$,
+% and could validate that such a write was possible.  In the absence
+% of re-validation, the thread could 
+% but then it read from $x$ at timestamp $3$.  It would 
+% it prevents
+% threads from reading a write to $x$ with a greater timestamp than any
+% promises it has made concerning $x$.
+% promises, because then the promises cannot be fulfilled at the
+% appropriate timestamps.
+
+% we we check at every step of
+% a thread's execution that its outstanding promises can \emph{still} be
+% fulfilled.  This is a non-trivial check: juThis check prevents threads
+% from observing writes with greater timestamps than their promises,
+% because then the promises cannot be fulfilled at the appropriate
+% timestamps.  
+\item We require the total order on timestamps to be \emph{dense} (\eg
+  choosing timestamps to be rational numbers), so that there is always
+  a place to put intermediate writes before a promise.  Consider, for
+  example, the following program:
+$$
+\inarrII{x:=1;\\ x:=2; }{ x := 3; }
+$$
+%Again, let's assume that $x$ is initially set to $0$ with timestamp $0$. 
+Here, $T_1$ may promise $\rlxmsg{x}{2}{\ts{2}}$---when
+validating this promise, $T_1$ might write $\rlxmsg{x}{1}{\ts{1}}$
+before writing $\rlxmsg{x}{2}{\ts{2}}$. If, however, $T_2$
+subsequently writes $\rlxmsg{x}{3}{\ts{1}}$ before $T_1$ has actually
+written $x:=1$, then $T_1$ can no longer pick $\ts{1}$ as a timestamp for
+$x:=1$.  To make progress here, $T_1$ needs a timestamp for $x:=1$
+strictly between $\ts{0}$ and $\ts{2}$, and $\ts{1}$ is already taken.
+By requiring the timestamp order to be dense, we ensure that there is
+always some free timestamp (\eg $\ts{1.5}$) that $T_1$ can use.
+\end{enumerate}
+
+\subsection{Formal Definition}
+\label{sec:relaxed-formal}
+
+We now define our model for relaxed accesses formally.  Let
+$\Loc$ be the set of memory locations, 
+$\Val$ be the set of values, 
+and $\Time$ be an infinite
+set of \emph{timestamps}, densely totally ordered by $\leq$,
+with $\ts{0}$ being the minimum element.
+ A \emph{timemap} is a function $T:\Loc \to \Time$.  The order $\leq$ is
+extended pointwise to timemaps.
+%We write $\Timemap$ for $\Loc \to \Time$. %% NOT USED
+
+\paragraph{Programming Language}
+To keep the presentation abstract, we do not fix a particular programming language;
+we simply consider each thread $i$ as a transition system with a set of states $\textsf{State}_i$,
+initial state $\sigma_i^0\in\textsf{State}_i$ and final state $\sigma^\fin_i\in\textsf{State}_i$.
+Intuitively, these states store the values of the local registers and the program counter.
+Transitions are labeled:
+the label $\rlab(x,v)$ corresponds to a transition that reads the value $v$ from location $x$, 
+and  $\wlab(x,v)$ denotes a write of the value $v$ to $x$, 
+ while local transitions that do not access the memory are labeled with ``$\silentt$''.
+We assume \emph{receptiveness} of the transition systems---whenever an $\rlab(x,v)$-transition is possible from a state $\sigma_i$,
+so is an $\rlab(x,v')$-transition for every value $v'$---and
+% some value can be read then all values can be read),
+that they only get stuck in the $\sigma^\fin_i$ states.
+
+%\jeehoon{we didn't suppose the receptiveness in Coq; is it okay?}
+ 
+% (In the next sections we consider extensions of the programming language, that naturally employ
+% a richer set of labels).
+ 
+\paragraph{Messages}
+
+A \emph{message} $m$ is a tuple $\rlxmsg{x}{v}{t}$,
+where $x\in\Loc$, $v\in\Val$ and $t\in\Time$.
+We denote by $m.\lloc$, $m.\lval$, and $m.\ltime$ the components of a message $m$.
+%$\Msg$ denotes the set of all messages.
+Two messages $m$ and $m'$ are called \emph{disjoint},
+denoted $m \disj m'$, if $m.\lloc\neq m'.\lloc$ or $m.\ltime\neq m'.\ltime$.
+Two sets $M$ and $M'$ of messages are called \emph{disjoint},
+denoted $M \disj M'$, if $m \disj m'$ for every $m\in M$ and $m'\in M'$.
+%A set $M$ of messages is called \emph{pairwise disjoint} 
+%if each two distinct messages in $M$ are disjoint.
+
+\paragraph{Memory}
+
+A \emph{memory} is a pairwise disjoint finite set of messages.
+%$\mem(x)$ is pairwise disjoint for every $x\in\Loc$.  \derek{Is $\mem$
+%  a set of messages or a function?  We seem to want to use it both
+%  ways.}  
+A message $m$ may be \emph{(additively) inserted} into memory $\mem$ if $m$ is
+disjoint from every message in $\mem$.
+% When defined, it just adds the message $m$ to $\mem$.
+Formally, the additive insertion $\mem \insertadd m$ is given by
+$\mem \cup \setofz{m}$ and is only defined if $\mem \disj \setofz{m}$.
+%
+%\[\small
+%\mem \insertadd m \defeq \begin{cases} 
+% \mem \cup \setofz{m}  & \text{if } \mem \disj \setofz{m}  \\
+%\mathit{undefined} & \text{otherwise} \end{cases}
+%\]
+
+\paragraph{Thread States and Configurations}
+
+A \emph{thread state} is a triple $\lts=\tup{\sigma,\rlxcur,\lprom}$,
+where $\sigma$ is the thread's local state, $\rlxcur$ is a timemap representing
+the thread's \emph{view} of memory, %(see \cref{??}), 
+and $\lprom$ is a memory that keeps track of the thread's outstanding
+promises.  We denote by $\lts.\lstate$, $\lts.\lview$, and
+$\lts.\lprmem$ the components of a thread state $\lts$.
+In turn, a \emph{thread configuration} is a pair $\tconf=\tup{\lts,\mem}$,
+where $\lts$ is a thread state and $\mem$ is a memory, called the
+\emph{global memory}. Note that we will always have $\lts.\lprmem \suq \mem$.
+
+\cref{fig:relaxed-opsem} shows the five reduction rules for thread
+configurations.  The \textsc{silent} rule handles the case when the
+program performs some local computation that does not affect memory.
+The \textsc{read} rule handles the case when the program reads from a
+location $x$.  The rule nondeterministically selects some message $m$
+in the memory, whose timestamp is greater than or equal to the timestamp recorded
+for $x$ in the thread's view, and returns its value; it also updates
+the thread's view of $x$ to the timestamp of $m$.  The \textsc{write}
+rule handles the case when the program writes to location $x$.  It
+extends the memory with a new message for $x$, whose timestamp
+$t$ is greater than the one recorded for $x$ in the thread's view, and
+it updates the thread's view of $x$ to match $t$.  The
+\textsc{promise} rule extends the memory and the thread's promise set
+with an arbitrary new message $m$, whose timestamp is not already
+present in the memory.  (The promise certification is handled
+separately, as described below.)  Finally, the \textsc{fulfill} rule
+is similar to the \textsc{write} rule, except that instead of
+adding a message to the memory, it removes an appropriate message from
+the thread's promise set $\lprom$.
+
+We note that the \textsc{write} rule is redundant; we merely included it
+to improve readability.  Any application
+of \textsc{write} can be simulated by first promising the appropriate
+message with the \textsc{promise} rule and then immediately fulfilling
+the promise with the \textsc{fulfill} rule.
+
+%Note that the \textsc{write} rule is, in fact, redundant, as any application
+%Note that for conciseness, we have made the \textsc{write} rule always fulfill some outstanding promise.
+%To simulate a non-promising write, a thread can first promise the appropriate message with the \textsc{promise} rule 
+%and then immediately fulfill its promise with the \textsc{write} rule.
+
+As we have already mentioned, we have to restrict thread executions so
+that all promises a thread makes are fulfillable.  Thread
+configurations satisfying this property are called \emph{consistent}.
+Formally, a thread configuration $\tup{\lts,\mem}$ is \emph{consistent} 
+if $\tup{\lts,\mem} \astep{}^* \tup{\lts',\mem'}$
+for some $\lts'$ and $\mem'$ such that $\lts'.\lprmem = \emptyset$.
+Notice that in the certification of a promise, it is formally possible
+to make further promises.  Since, however, in the end all such
+promises must be fulfilled, it is useless to make such promises.
+(A proof of this property is included in our formal development.)
+%, it is useless to make
+%such promises except at the step right before their fulfilling \textsc{write}.
+
+\paragraph{Machine States}
+
+A \emph{machine state} $\mconf=\tup{\gts,\mem}$ consists of a
+function $\gts$ assigning a thread state to every thread, and a (global) memory $\mem$.
+The initial state $\mconf^0$ (for a given program) consists of 
+the function $\gts^0$ mapping each thread $i$ to its initial state $\sigma_i^0$,
+a current timestamp of $\ts{0}$ for every location, and an empty set of promises;
+and the initial memory $\mem^0$ that has one initial message $\rlxmsg{x}{0}{\ts{0}}$ for each location $x$.
+A machine takes a step (see the last rule in \cref{fig:relaxed-opsem})
+whenever a thread can take several steps to some consistent configuration.
+Note that we allow multiple thread steps in one machine step.
+This is convenient in our proofs,
+and can reduce the number of certifications during an execution of a program.
+
+Finally, we can easily show that a machine never gets stuck unless
+each thread $i$ has reached $\tup{\sigma_i^\fin,\rlxcur,\emptyset}$
+for some view $\rlxcur$.  For non-final states, progress follows from
+the receptiveness and progress assumptions about the programming
+language, together with the invariant that no thread has a higher view
+of any $x$ than the highest timestamp for $x$ in memory.  Another
+crucial invariant is consistency: the \textsc{machine step} rule
+demands that each machine step taken by a thread must preserve
+consistency of the thread's own configuration, and it implicitly
+preserves the consistency of other threads' configurations as well,
+since they are free to ignore any new messages the thread has added.
+When all threads reach their final states, consistency implies they
+must have no promises left to fulfill.
+
+% For final states, we know they must have no promises left to fulfill,
+% thanks to consistency.  
+
+% Finally, thanks to our receptiveness and progress assumptions about
+% the programming language, we can easily show that a machine can never
+% get stuck except when all threads have terminated (\ie when each
+% thread $i$ has reached $\tup{\sigma_i^\fin,\rlxcur,\emptyset}$ for
+% some view $\rlxcur$).  Consistency plays a crucial role in the
+% argument: the \textsc{machine step} rule explicitly demands that each
+% machine step taken by a thread must preserve consistency of the
+% thread's own configuration, and it implicitly preserves the
+% consistency of other threads' configurations as well, since they are
+% free to ignore any new messages the thread has added.  When all
+% threads reach their final states, consistency implies they must have
+% no promises left to fulfill.
+
+% We can easily show that a machine can never get stuck except when all
+% threads have terminated (\ie when each thread has reached
+% $\tup{\sigma_i^\fin,\rlxcur,\emptyset}$ for some view $\rlxcur$).
+% \emph{Preservation:} By definition, each machine step taken by a
+% thread must preserve consistency of the thread's own configuration,
+% and it is guaranteed to preserve the consistency of other threads'
+% configurations as well, since they can simply avoid observing any new
+% messages the thread has added.  \emph{Progress:} Thanks to our
+% assumptions about the programming language, the only way a thread
+% could get stuck in a non-final state is if it tried to read some $x$
+% while having a view of $x$ greater than any timestamp for $x$ in
+% memory.  However, it is an invariant of the semantics that this
+% situation is impossible.  Finally, when a thread is in a final state,
+% consistency implies it must have no promises left.
+
+
+% We can easily show that a machine can never get stuck except 
+% when all threads have terminated 
+% (\ie when each thread has reached $\tup{\sigma_i^\fin,\rlxcur,\emptyset}$ for some view $\rlxcur$).
+% By construction, each thread step preserves consistency of its configuration.
+% It is important to note that the consistency of the configurations of other threads is also preserved, 
+% since they can always avoid observing any new messages added to memory.
+% Finally, because of consistency, when a thread has terminated, it must have no promises left.
+
+
+%validation at every step is important
+%
+%$$\inarrIII{
+%a:=z \comment{1} \\
+% \itne{x=0}{y:=1}
+% }{
+%z:=y 
+%}{
+%x:=1
+%}$$
+
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

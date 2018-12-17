@@ -1,0 +1,569 @@
+\section{Results}
+\label{sec:results}
+
+In this section, we outline a number of important results we have
+proven to hold of our ``promising'' model.
+
+% \ori{we say too much ``our model''; should we give it a name?
+% The ``promise model''?}
+
+All the results of this section \textbf{are fully validated in Coq}
+except for \cref{sec:compilation_POWER} and
+\cref{thm:drfra,thm:drflock}, for which we provide proof outlines.
+The {Coq} development and all proof outlines are available at~\cite{appendix}.
+
+\subsection{Compiler Transformations}
+\label{sec:transformations}
+
+A transformation $\prog_\text{src} \leadsto \prog_\text{tgt}$ is \emph{sound} 
+if it does not introduce new behaviors under any (parallel and sequential) context, that is, 
+for every context ${\cal C}$,
+every behavior of ${\cal C}[\prog_\text{tgt}]$ is a behavior of ${\cal C}[\prog_\text{src}]$.
+
+Next, we list the program transformations proven to be sound in our model.
+To streamline the presentation, we refer to transformations on the \emph{semantic} level, 
+as if they are applied to \emph{actions}, namely fences and (valueless) memory accesses.
+Thus, we presuppose adequate syntactic manipulations on the program level
+that implement these semantic transformations.
+For example, a syntactic transformation implementing 
+${\rlab^x_\rlx;\rlab^y_\rlx \leadsto \rlab^y_\rlx;\rlab^x_\rlx}$
+is a reordering ${a:=x; b:=y \leadsto b:=y; a:=x}$
+on the program code (assuming $a \neq b$);
+while a merge of a write and an update correspond, \eg  to a transformation
+of the form $x:=a;\fai{x,1}  \leadsto  x:=a+1$.
+Nevertheless, our formal development
+proves soundness of transformations on the purely \emph{syntactic} level, assuming a simple programming language with memory operations, conditionals, and loops.
+
+
+%To this end, we identify the commands with thread events of the form $\rlab_o^x$,
+%$\wlab_o^x$, $\ulab_{o_\lr,o_\lw}^x$, $\flab_\relo$, $\flab_\acqo$, or $\flab_\sco$.
+
+\paragraph{Trace-Preserving Transformations}
+Transformations that do not change the set of traces of actions in a given thread are clearly sound.
+For example, $y:=a+1-a \leadsto y:=1$ is a sound transformation (recall that $a$ denotes a local register; see~\cref{sec:introduction}:\ref{eq:LBfalsedep}).
+Indeed, this is the crucial property that distinguishes a memory model for a higher-level language from
+a hardware memory model.
+
+ \paragraph{Strengthening}
+A simple transformation that is sound in our model is strengthening of access modes.
+A read/write action $\xlab_o$ can be transformed to $\xlab_{o'}$
+provided that $o \sqsubseteq o'$. Similarly, 
+it is sound to replace  $\ulab_{o_\lr,o_\lw}$ by $\ulab_{o'_\lr,o'_\lw}$ provided that 
+$o_\lr \sqsubseteq o'_\lr$ and $o_\lw \sqsubseteq o'_\lw$,
+or to strengthen $\flab_\relo$ or $\flab_\acqo$ to $\flab_\sco$.
+
+\paragraph{Reordering}
+Next we consider transformations of the form  $\xlab ; \ylab \leadsto \ylab;\xlab$,
+and specify the set of \emph{reorderable} pairs, that is
+the set of pairs $\xlab;\ylab$ for which we proved this reordering transformation to be sound in our model. 
+First, the following pairs  are reorderable (where $x$ and $y$ denote distinct locations):
+%\begin{tabbing}
+%\hspace{5cm}\=\kill
+%\sbul $\wlab^x_{o_1};\rlab^y_{o_2}$ where $x\neq y$, and either $o_1 \neq \sco$ or $o_2 \neq \sco$\\[1mm]
+%\sbul  $\wlab^x;\wlab^y_o$, where $x\neq y$ and $o \sqsubseteq \rlx$ \\[1mm]
+%\sbul $\rlab^x_{o_1};\rlab^y_{o_2}$, where $o_1 \sqsubseteq \rlx$, and either $x\neq y$ or $o_2=\pln$ \\[1mm]
+%\sbul $\rlab^x_{o_1};\wlab^y_{o_2}$ where $x\neq y$, $o_1 \sqsubseteq \rlx$, and $o_2 \sqsubseteq \rlx$ \\[1mm]
+%\sbul $\rlab_o;\flab_\acqo$ where $o\neq\rlx$ \> \sbul$\wlab;\flab_\acqo$ \\[1mm]
+%\sbul  $\flab_\relo;\wlab_o$ where $o\neq\rlx$  \> \sbul $\flab_\relo;\rlab$  
+%\end{tabbing} 
+{\begin{tabbing}
+\hspace{3.8cm}\= \hspace{2.5cm}\=\kill
+%\sbul $\wlab^x_{o_1};\rlab^y_{o_2}$ unless $o_1 =o_2= \sco$ \> \sbul  $\wlab^x;\wlab^y_{\sqsubseteq \rlx}$ \\[1mm]
+\sbul $\wlab^x;\rlab^y$ \> 
+\sbul  $\wlab^x;\wlab^y_{\sqsubseteq \rlx}$  \>
+\sbul$\wlab;\flab_\acqo$ \\[1mm]
+\sbul $\rlab^x_{\sqsubseteq \rlx};\rlab^y$ and $\rlab^x_{\pln};\rlab^x_{\pln}$ \>
+\sbul $\rlab^x_{\sqsubseteq \rlx};\wlab^y_{\sqsubseteq \rlx}$ \>
+\sbul $\rlab_{\neq \rlx};\flab_\acqo$ \\[1mm]
+\sbul  $\flab_\relo;\wlab_{\neq\rlx}$   \> \sbul $\flab_\relo;\rlab$  \> \sbul $\flab_\relo;\flab_\acqo$
+\end{tabbing} }
+
+
+In addition, for the purpose of specifying reorderable pairs, an update is just a combination of a read and a write.
+Thus, $\xlab;\ulab_{o_\lr,o_\lw}$ is reorderable if both $\xlab;\rlab_{o_\lr}$ and $\xlab;\wlab_{o_\lw}$ are reorderable,
+and symmetrically  $\ulab_{o_\lr,o_\lw};\xlab$ is reorderable if both $\rlab_{o_\lr};\xlab$ and $\wlab_{o_\lw};\xlab$ are reorderable.
+In particular, a pair $\ulab^x_{o^x_\lr,o^x_\lw}; \ulab^y_{o^y_\lr,o^y_\lw}$
+is reorderable if $x\neq y$, $o_\lr^x \sqsubseteq \rlx$, $o_\lw^y \sqsubseteq \rlx$.
+%, and either $o_\lw^x \neq \sco$ or $o_\lr^y \neq \sco$.
+
+The set of reorderable pairs in our model contains all pairs that are intended to be reorderable in the C++ 
+and Java memory models,
+including in particular all ``roach-motel reorderings''~\cite{c11comp,sevcik:jmm}.
+
+%\jeehoon{\cite{c11comp} presented the reordering result with a table that contains instruction-by-instruction reorderable criteria.  I think it is more readable.  Similarly to other results.  How do you think?}
+%\ori{no space, I think, and I actually find this somewhat easier to read...}
+
+\paragraph{Merging}
+These are transformations that completely eliminate an action.
+Clearly, the two actions in \emph{mergeable} pairs (pairs for which we proved the merge to be sound in our model)
+should access the same location. The following three kinds of pairs are mergeable:
+%\begin{tabbing}
+%\hspace{1.5cm}\=\hspace{3cm}=\=\hspace{1.5cm}=\=\hspace{1.5cm}=\kill
+% $\rlab$-after-$\rlab$: \>  $\rlab_o;\rlab_o$ \>  $\wlab$-after-$\wlab$: \>   $\wlab_o;\wlab_o$ \\[1mm]
+%  $\rlab$-after-$\wlab$: \> $\wlab;\rlab$ %and  $\wlab_{\sco}; \rlab_{\sco}$
+%%  $\rlab$-after-$\wlab$: \> $\wlab;\rlab_\ra$ %and  $\wlab_{\sco}; \rlab_{\sco}$
+%\end{tabbing} 
+\begin{tabbing}
+\hspace{1.4cm}\=\hspace{1.5cm}=\=\hspace{1.4cm}\=\hspace{1.5cm}=\=\hspace{1.4cm}=\=\hspace{1.5cm}=\kill
+ $\rlab$-after-$\rlab$: \>  $\rlab_o;\rlab_o$ \>  $\wlab$-after-$\wlab$: \>   $\wlab_o;\wlab_o$ \>  $\rlab$-after-$\wlab$: \> $\wlab;\rlab$
+\end{tabbing} 
+
+Using the strengthening transformation, the access modes here can be read as upper bounds
+(\eg $\rlab_\ra;\rlab_\rlx$ can be first strengthened to $\rlab_\ra;\rlab_\ra$ and then merged).
+Note that the  $\rlab$-after-$\wlab$ merge allows 
+even to eliminate a redundant acquire read after a plain/relaxed write (as in Example \ref{eq:acq_merge} in \cref{sec:relacq}).
+%Nevertheless, an SC-read cannot be eliminated in this case, unless it follows an SC-write.
+%Indeed, elimination of a an SC-read after a non-SC-write is unsound in our model.
+%We note that while this elimination is allowed by a certain fix of of C++ described in \cite{c11comp},
+%its effectiveness seems to be low, and, in fact,  
+%it is already unsound in the strengthening of the SC semantics in C++ that was proposed in~\cite{Batty:2016}
+
+In addition, the following pairs involving updates are mergeable:
+\begin{tabbing}
+\hspace{1.5cm}\=\hspace{4.4cm}\=\hspace{1.5cm}\=\hspace{1.5cm}\kill
+ $\rlab$-after-$\ulab$: \> $\ulab_{\rlx, o}; \rlab_{\rlx}$, and $\ulab_{\ra, o}; \rlab_{\ra}$ \> %, and $\ulab_{\sco,\sco}; \rlab_{\sco}$  \\[1mm]
+  $\ulab$-after-$\wlab$: \>   $\wlab_o; \ulab_{o_\lr, o}$ \\[1mm] %, provided that $\wlab_o; \rlab_{o_\lr}$ is mergeable 
+ $\ulab$-after-$\ulab$: \>   $\ulab_{o_1, o}; \ulab_{o_2, o}$, provided that $\ulab_{o_1, o}; \rlab_{o_2}$ is mergeable 
+\end{tabbing} 
+Note that read-after-update does not allow the read to be an acquire read unless the update includes an acquire read
+(unlike read-after-write elimination). This is due to release sequences:
+ eliminating an acquire read after a relaxed update may remove the synchronization 
+due to a release sequence ending in this update.
+ 
+Finally, two fences of the same type can obviously be merged.
+
+%With the exception of ``SC-read after non-SC-write'' mentioned above, 
+The set of mergeable pairs in our model contains all pairs intended to be mergeable in the C++ and Java models~\cite{c11comp,sevcik:jmm}.
+In particular, we support $\rlab$-after-$\wlab$ merging, which is the effect of local satisfaction of reads
+in hardware like TSO, Power, and ARM.
+
+\paragraph{Introducing and Eliminating Unused Reads}
+Introduction of irrelevant read accesses is sound in our model, unlike in the Java memory model~\cite{sevcik:jmm}.
+Eliminating plain read accesses whose read values are never used in the program is also sound in our model.
+In contrast, eliminating relaxed or acquire reads is not generally sound because it may remove synchronization.
+
+%\ori{why not relaxed?}
+%\jeehoon{\url{https://github.com/jeehoonkang/memory-model-explorer/blob/operational/formalization/src/opt/UnusedLoad.v\#L32}}
+
+\paragraph{Proof Technique}
+
+Our proof of these results employs the well-known approach of simulation relations between the target and the source programs.
+Importantly, our definitions ensure thread-locality, thus allowing us to define a simulation relation on thread configurations, which (as we prove)
+can be composed into a simulation relation on full machine states.
+Additionally, for thread configurations, we prove the adequacy of simulation up-to context,
+which lets us ignore the certification processes in the source and the target, 
+and just provide simulations between simple ``code snippets''.
+
+
+
+\subsection{Compilation to TSO}
+\label{sec:compilation_TSO}
+
+Like C++11, our model can be efficiently compiled to x86-TSO.
+Since this architecture provides relatively strong guarantees,
+every memory access can be compiled to a primitive hardware instruction.
+Moreover, release/acquire fences are ignored during compilation,
+and SC fences are mapped to an $\mfence$ instruction.
+Correctness of this mapping follows from a recent result by Lahav and Vafeiadis~\cite{fm16},
+which shows that all weak behaviors of TSO are explained by store-load reordering and merging.
+Accordingly, it reduces the correctness proof of compilation to TSO to:
+$(i)$ supporting write-read reordering and write-read merge;
+and $(ii)$ a correctness proof of compilation to SC.
+Since we proved the soundness of write-read reordering and merge 
+(regardless of the access modes of the two events),
+and since clearly our model is weaker than SC,
+we immediately derive the correctness of compilation to TSO.
+% \derek{What does it mean to be not limited by access modes?}
+% \jeehoon{Meaning a write and a read is reorderable regardless of their access modes.  I think it would better to just remove the phrase.}
+% \ori{I changed to regardless of their access modes}
+
+\subsection{Compilation to Power}
+\label{sec:compilation_POWER}
+
+\begin{figure}[t]
+\centering
+\small
+$\begin{array}{@{}l@{}c@{{}={}}l@{\quad}l@{}c@{{}={}}l@{}}
+\compile{\rlab_{\sqsubseteq\rlx}}&&\texttt{ld}&
+\compile{\rlab_\ra} && \texttt{ld; lwsync} \\
+\compile{\wlab_{\sqsubseteq\rlx}} && \texttt{st} &
+\compile{\wlab_\ra} && \texttt{lwsync; st} \\
+\compile{\flab_{\sqsubset \sco}}  && \texttt{lwsync} & 
+\compile{\flab_\sco} && \texttt{sync} \\
+\multicolumn{6}{@{}l@{}}{
+\compile{\ulab_{{\sqsubseteq\rlx},{\sqsubseteq\rlx}}} = \texttt{L: lwarx; cmp; bc  Lout; stwcx.; bc  L;  Lout:}}\\ 
+\compile{\ulab_{\ra,{\sqsubseteq\rlx}}} && \compile{\ulab_{\rlx,\rlx}} \texttt{; lwsync} &
+\compile{\ulab_{{\sqsubseteq\rlx},\ra}} &&  \texttt{lwsync; }\compile{\ulab_{\rlx,\rlx}} \\ 
+\compile{\ulab_{\ra,\ra}} &&  \multicolumn{4}{@{}l@{}}{\texttt{lwsync; } \compile{\ulab_{\rlx,\rlx}}\texttt{; lwsync}}
+\end{array}$
+%\begin{tabular}{@{}l@{~~~~~}l@{}}
+%$\rlab_{\sqsubseteq\rlx}$ & \texttt{ld} \\ 
+%$\wlab_{\sqsubseteq\rlx}$ & \texttt{st} \\ 
+%$\rlab_\ra$ & \texttt{ld; lwsync}\\ 
+%$\wlab_\ra$ & \texttt{lwsync; st} \\ 
+%$\ulab_{{\sqsubseteq\rlx},{\sqsubseteq\rlx}}$ & \texttt{\_loop: lwarx; cmp; bc  \_exit;}\\ 
+%& \texttt{stwcx.; bc  \_loop;  \_exit:} \\ 
+%$\ulab_{\ra,{\sqsubseteq\rlx}}$ & $\compile{\ulab_{\rlx,\rlx}}$\texttt{; lwsync} \\ 
+%$\ulab_{{\sqsubseteq\rlx},\ra}$ &  \texttt{lwsync; }$\compile{\ulab_{\rlx,\rlx}}$ \\ 
+%$\ulab_{\ra,\ra}$ &  \texttt{lwsync; }$\compile{\ulab_{\rlx,\rlx}}$\texttt{; lwsync} \\ 
+%%$\ulab^\rel$ & \texttt{lwsync;} $\compile{\ulab^\rlx}$ \\
+%%$\ulab^\acqrel$ & \texttt{lwsync;} $\compile{\ulab^\rlx}$\texttt{; isync} \\ 
+%$\flab_{\sqsubset \sco}$  & \texttt{lwsync} \\ 
+%$\flab_\sco$ & \texttt{sync} \\
+%\end{tabular} 
+%% \vskip -2mm
+\caption{Compilation to Power.}
+\label{fig:comp}
+\end{figure}
+
+\Cref{fig:comp} provides the compilation scheme of our model to Power, following the C++11 one.
+We denote by $\compile{\prog}$ the Power program obtained by applying this mapping to a source program $\prog$.
+To prove compilation correctness, we again utilize a result of \cite{fm16},
+which shows that every allowed behavior of a Power program $\progb$  
+(assuming its recent declarative model of Alglave \etal~\cite{herding-cats})
+is a behavior of a Power program $\progb'$ under a stronger model, called ``StrongPower'',
+where $\progb'$ is obtained from $\progb$ by applying a sequence of local reorderings of independent memory accesses to distinct locations.
+Accordingly, it suffices to show that, given a source program $\prog$, our model allows all behaviors 
+that StrongPower allows for some reordering of $\compile{\prog}$.
+We split this into two steps, outlined below.
+
+\paragraph{Compilation to StrongPower}
+First, we show that the compilation to StrongPower is correct, that is: every behavior of $\compile{\prog}$ under StrongPower is allowed for $\prog$ in our model.
+StrongPower strengthens the Power model by forbidding ``load buffering'' behaviors
+(formally, it disallows cycles in the entire program order together with the reads-from relation).
+Consequently, we do not actually need promises in order to explain
+StrongPower behaviors---instead, we can just show that behaviors of $\compile{\prog}$
+under StrongPower are allowed for $\prog$ under our \emph{promise-free} machine (see end of \cref{sec:full-formal}).
+% This allows us to actually prove that behaviors of StrongPower are allowed
+% even without promises.
+(Note that this does not contradict the fact that
+promises are necessary to explain weak behaviors of the (non-strong) Power model, such as the \ref{eq:LB}.) 
+To ease the proof, we use an alternative, declarative presentation of our promise-free machine
+(\cref{sec:axiomatic}),
+which can straightforwardly be shown to be weaker than
+the StrongPower model under the compilation scheme in \cref{fig:comp}.
+See \cite{appendix} for details.
+
+%(that places a lightweight fence after every acquire or SC read).
+%We believe that this axiomatic semantics is also sufficient for proving the correctness of the more efficient compilation scheme
+%(that uses a control dependency and an isync fence), but we leave this to future work.
+
+\paragraph{Reorderings in the Compiled Program}
+Second, to account for sequences of reorderings of independent memory accesses to distinct locations in  $\compile{\prog}$,
+we would like to relate them to the reorderings in the source program $\prog$
+that we proved sound in \cref{sec:transformations}.
+But there is a subtle complication here: some reorderings in $\compile{\prog}$ do not correspond 
+to reorderings in $\prog$! For example, if $\prog$ is $x:=_\ra 1;y:=_\rlx 2$, its compilation $\compile{\prog}$
+has the form $\texttt{lwsync;st}\ x\ 1\texttt{;st}\ y\ 2$, but reordering the stores in $\compile{\prog}$ would produce $\texttt{lwsync;st}\ y\ 2\texttt{;st}\ x\ 1$, which
+does not correspond to the reordering of $\prog$ to $y:=_\rlx 2;x:=_\ra 1$ (compiling the latter would yield $\texttt{st}\ y\ 2\texttt{;lwsync;st}\ x\ 1$).
+
+To solve this issue, we slightly extend our model and consider compilation as if it happens in two stages.
+First, all release/acquire accesses in $\prog$ are split into weaker accesses and corresponding fences as follows:
+\squishlist
+\item $\rlab_\ra \leadsto \rlab_\rlx ; \flab_\lacq$  and $\wlab_\ra \leadsto \flab_\lrel ; \wlab_\srlx$ 
+\item $\ulab_{\ra,o} \leadsto \ulab_{\rlx,o} ; \flab_\lacq$ and $\ulab_{o,\ra} \leadsto \flab_\lrel ; \ulab_{o,\srlx}$ where $o \sqsubseteq\rlx$
+\squishend
+Here, we introduced a new $\srlx$ (``strong relaxed'') mode, which has the same semantics as $\rlx$
+but blocks promises like $\ra$ writes (\ie in write/update steps, we require
+that  ${\forall m' \in \lprom(x).~ m'.\lmrel = \bot}$ if $o \sqsupseteq \srlx$).
+The reason for this is technical: we would have liked to just use $\rlx$ rather
+than $\srlx$, but at least for $\ulab_{o,\ra}$, the mapping to $\flab_\lrel ; \ulab_{o,\rlx}$ is unsound.  Using $\srlx$, however, we have proved the soundness of the above source-to-source mappings (in Coq) using a straightforward 
+simulation argument (the target program's promises are subject to the same constraints as the source's), and $\srlx$ is sufficient for the rest of the proof.
+% \footnote{We believe that $\wlab_\ra$ can be mapped to $\flab_\lrel ; \wlab_\rlx$ (\ie using $\wlab_\rlx$ rather than $\wlab_\srlx$), but we have not formally established the soundness of this mapping.  However, for $\ulab_{o,\ra}$, the mapping to $\flab_\lrel ; \ulab_{o,\rlx}$ is actually unsound.}
+%\TODO{show the counter example?}
+
+
+After this first step, we obtain a program $\prog_1$, which has no
+$\ra$ accesses except possibly for $\ulab_{\ra,\ra}$'s (which are
+surrounded by fences after compilation), and which has $\srlx$
+accesses only immediately after release fences. (The relevance of this
+property will become clearer
+below.)  % \derek{Why is everything after ``except possibly'' in
+  % the above sentence important?}  \jeehoon{Because (1) the split
+  % transformation shown above does not cover the case for
+  % $\ulab_{\ra,\ra}$, and (2) we proved the reordering of strong
+  % relaxed writes past other events, \emph{not} the other way around.
+  % Hence it is important to guarantee that strong relaxed writes occur
+  % only after a release fence, whose mapping to Power is clearly not
+  % reorderable.} 
+For instance, in the example given above, $\prog_1$
+would be $\fencerel;x:=_\srlx 1;y:=_\rlx 2$.  We then apply the
+compilation scheme of \cref{fig:comp}, where $\srlx$ is compiled like
+$\rlx$.  Clearly, by construction of $\prog_1$, the result
+$\compile{\prog_1}$ is identical to $\compile{\prog}$.  Moreover,
+sequences of reorderings of accesses applied to $\compile{\prog}$ now
+correspond directly to sequences of reorderings in $\prog_1$.
+
+Thus, suppose Power program $\progb$ is the result of applying some
+sequence of reorderings of accesses to the compilation result
+$\compile{\prog} = \compile{\prog_1}$.  Then, there exists a source
+program $\prog_2$ such that $\compile{\prog_2}=\progb$, and $\prog_2$
+is obtained from $\prog_1$ by applying a sequence of reorderings at
+the source level.  Crucially, the reorderings that take $\prog_1$ to
+$\prog_2$ are all sound in our model: in addition to those already
+covered in \cref{sec:transformations}, the reorderings of
+$\wlab^x_\srlx/\ulab^x_{\rlx,\srlx}$ past a
+$\rlab_\rlx^y/\wlab_\rlx^y/\ulab_{\rlx,\rlx}^y$ (where $x\neq y$) have
+also been proven sound in Coq.  (Note that the reverse
+reorderings---moving accesses \emph{past} a $\srlx$---are not needed
+because of the aforementioned property that all $\srlx$'s in $\prog_1$
+come immediately after a release fence.)  Returning to the above
+example, when matching the reordering of
+$\texttt{lwsync;st}\ x\ 1\texttt{;st}\ y\ 2$ to
+$\texttt{lwsync;st}\ y\ 2\texttt{;st}\ x\ 1$ in the target, these new
+reorderings validate the transformation of
+$\fencerel;x:=_\srlx 1;y:=_\rlx 2$ to
+$\fencerel;y:=_\rlx 2;x:=_\srlx 1$ in the source.
+
+Putting it all together: by the compilation to StrongPower result, we
+know that any behavior of $\progb$ under StrongPower is also a
+behavior of $\prog_2$ in our model; by soundness of the reorderings,
+we know this is also a behavior of $\prog_1$; and by soundness of the
+source-to-source mappings, it is also a behavior of the original
+$\prog$.
+
+% \paragraph{Putting It Together} Suppose $\prog_1$ is the result of
+% translating release/acquire accesses in $\prog$ into fences and
+% relaxed accesses (the $\leadsto$ relation defined above), and suppose
+
+
+% transforming for any reordering $\progb$ of
+% $\compile{\prog}$, there is a reordering $\prog_2$ of
+% $\prog_1$ at the source level.  every behavior allowed by StrongPower
+% for a reordering of
+% $\compile{\prog}$ is allowed for a reordering of
+% $\prog_1$ by our model, which, by soundness of the reorderings and the
+% source-to-source mappings above, implies that it is allowed for
+% $\prog$.
+
+% Putting all pieces together, 
+% every behavior allowed by StrongPower for a reordering of $\compile{\prog}$ is allowed for a reordering of $\prog_1$ by our model,
+% which, by soundness of the reorderings and the  source-to-source mappings above, implies that it is allowed for $\prog$.
+
+Finally, we note that for C++11, there is a more efficient compilation scheme of acquire reads and updates, which uses a control dependency and an \texttt{isync} fence instead of a lightweight fence (\texttt{lwsync}).
+We believe that our model is also correctly compiled using this scheme.
+Nevertheless, this will require a more direct proof (\texttt{isync} fences are beyond the reach of~\cite{fm16}),
+which we leave to future work.
+
+
+\subsection{DRF Theorems}
+\label{sec:drf}
+
+We proceed with an explanation of our DRF theorems.
+These theorems provide ways of restricting attention to better-behaved subsets
+of the model assuming certain conditions on programs.
+
+Evidently, the most complicated part of our semantics is the promises.
+Without promises, our model amounts to a usual operational model,
+where thread steps only arise because of program instructions.
+Hence, our first DRF result (and the one that is by far the most challenging to prove)
+identifies a set of programs for which promises cannot introduce additional behaviors.
+Specifically, we show that this holds for programs in which all
+racy accesses are release/acquire, % or SC, 
+assuming a promise-free semantics.
+Crucially, as usual in DRF guarantees, the races are considered under the stronger
+semantics (promise-free), not the full model, thus allowing programmers to adhere to this programming discipline
+while being completely ignorant of the weak semantics (promises).
+
+More precisely, we say that a machine state $\mconf$ is \emph{$o$-race-free},
+if whenever two different threads may take a (non-promise) step accessing the same location,
+then both accesses are reads or both have access mode strictly stronger than $o$.
+
+\begin{theorem}[Promise-Free DRF]
+\label{thm:drfpf}
+Let $\bstep{}$ denote the steps of the promise-free machine 
+(see end of \ref{sec:full-formal}).
+Suppose that every machine state that is $\bstep{}$-reachable from the initial state of a program $\prog$ is $\rlx$-race-free.
+Then, the behaviors of $\prog$ according to the full machine 
+coincide with those according to the $\bstep{}$-machine.
+%Let $\mconf=\tup{\gts,\gsco,\mem}$ be a promise-free machine state (that is, $\gts(i).\lprmem=\emptyset$ for all $i\in\Tid$),
+%and suppose that any state $\mconf'$ such that $\mconf \bstep{}^* \mconf'$ is $\rlx$-race-free.
+%Then, starting from $\mconf$, the usual step $\astep{}$ and the promise-free step $\bstep{}$ admit the same behaviors.
+\end{theorem}
+
+Putting promises aside, a counter-intuitive part of weak memory models are the relaxed accesses,
+which allow threads to observe writes without observing previous writes to other locations.
+Removing $\pln/\rlx$ accesses, namely keeping only $\ra$, % and $\sco$, 
+substantially simplifies our machine (in particular, 
+its thread views would consist of just one view, the $\lcur$ one).
+Accordingly, our second DRF result strengthens \cref{thm:drfpf}
+and states that it suffices to show
+that there are only races on $\ra$ %or $\sco$-
+accesses \emph{under release/acquire semantics} 
+to conclude that a program has only release/acquire behaviors.
+
+\begin{theorem}[DRF-RA]
+\label{thm:drfra}
+Let $\bstep{\ra}$ be identical to $\bstep{}$ in \cref{thm:drfpf}, except for interpreting 
+$\rlx$ and $\pln$ accesses in program transitions as if they are all $\ra$-accesses.
+% (that is, \textsc{read-helper} are \textsc{write-helper} are invoked with $\max\{o,\ra\}$ instead of $o$).
+Suppose that every machine state that is $\bstep{\ra}$-reachable from the initial state of a program $\prog$ is $\rlx$-race-free.
+Then, the behaviors of $\prog$ according to the full machine 
+coincide with those according to the $\bstep{\ra}$-machine.
+\end{theorem}
+
+We observe that promise re-certification is necessary for the proofs of \cref{thm:drfpf,thm:drfra}:
+in \cite{appendix} we show a counterexample in the absence of promise re-certification.
+
+To state a more standard DRF theorem, 
+we assume programs are \emph{well-locked}:
+(1) locations are partitioned into \emph{normal} and \emph{lock} locations, and
+(2) lock locations are accessed only by matching pairs of the following lock/unlock operations:
+%$$\inparaII{
+%lock(l)\ \{ \\
+%\quad \while{!\cas{l}{0}{1}{\acqr\relw}}{\skipc;} \\
+%\}
+%}{
+%unlock(l)\ \{ \\
+%\quad l_{\relw} := 0; \\
+%\}
+%}
+%$$
+\begin{align*}
+lock(l) & : \quad \while{!\cas{l}{0}{1}{\acqr\relw}}{\skipc;} \\
+unlock(l) & : \quad l_{\relw} := 0; 
+\end{align*}
+
+The theorem forbids any weak behavior in programs that, under SC semantics, race only on lock locations.
+For the SC semantics, we consider ``an interleaving machine'', 
+where reads read from the latest write to the appropriate location
+(regardless of the access modes).
+
+\begin{theorem}[DRF-LOCK]
+\label{thm:drflock}
+Let $\bstep{\sco}$ denote the steps of the interleaving machine.
+Suppose that every machine state that is $\bstep{\sco}$-reachable from
+the initial state of a well-locked program $\prog$ is race-free on normal locations.
+Then, the behaviors of $\prog$ according to the full machine coincide with those
+according to the $\bstep{\sco}$-machine.
+\end{theorem}
+
+%\begin{theorem}[DRF-SC]
+%\label{thm:drfsc}
+%Let $\bstep{\sco}$ denote the steps of the interleaving machine.
+%Suppose that every machine state that is $\bstep{\sco}$-reachable from the initial state of a program $\prog$ is $\ra$-race-free.
+%Then, the behaviors of $\prog$ according to the full machine 
+%coincide with those according to the $\bstep{\sco}$-machine.
+%\end{theorem}
+
+%\textbf{Our proof of \cref{thm:drfpf} is fully mechanized in Coq.} 
+
+%\ori{I'm glossing over some problem here: the standard result also has locks.
+%anyway if a reviewer complains, we can explain how this can be extended to locks}
+
+\subsection{An Invariant-Based Program Logic}
+\label{sec:invariant}
+Besides the DRF guarantees, to demonstrate that our model does not suffer from
+the disastrous consequences of OOTA, 
+we prove soundness of a very simple program logic for concurrent programs with respect to our model.
+In particular, it can be trivially used to show that \ref{eq:LBdep} must return $a=0$,
+and more generally, that programs cannot read values they never wrote.
+Note that even this basic logic is unsound for C++'s relaxed accesses
+(whereas it is sound in our model even if all accesses are plain).
+
+%As we proved strengthening to be a sound transformation (see~\cref{sec:transformations}), 
+%it suffices to show soundness for programs that have only plain accesses.
+%In addition, since updates are clearly stronger than a corresponding pair of a read followed by a write,
+%it suffices to consider programs without updates.
+
+We take a \emph{program proof} to be a tuple $\tup{J,S_1,S_2,\ldots}$, 
+where $J$ is a global invariant over the shared variables
+and each $S_i \subseteq \textsf{State}_i$ is a set of local states 
+(intuitively describing the reachable states of thread $i$) such that the following conditions hold:
+\begin{itemize}
+  \setlength\itemsep{-2pt}
+\item $\sigma_i^0 \in S_i$
+and $\bigwedge_{x\in\Loc} x=0 \vdash J$.
+\item
+If $\sigma_i \astep{\rlab(o,x,v)} \sigma_i'$ then
+$\sigma_i\in S_i \land J \land x = v \vdash \sigma_i'\in S_i$.
+\item
+If $\sigma_i \astep{\wlab(o,x,v)} \sigma_i'$ then
+$\sigma_i\in S_i \land J \vdash \sigma_i'\in S_i \land J[v/x]$.
+\item
+If $\sigma_i \astep{\ulab(o_\lr,o_\lw,x,v_\lr,v_\lw)} \sigma_i'$ then \\
+$\sigma_i\in S_i \land J \land x = v_\lr \vdash \sigma_i'\in S_i \land J[v_\lw/x]$.
+\item
+For $e\in \{\flab_\acqo,\flab_\relo,\flab_\sco,\silentt,\syscallt\}$,
+if $\sigma_i \astep{e} \sigma_i'$ then
+ $\sigma_i\in S_i \vdash \sigma_i'\in S_i$.
+\end{itemize}
+\Cref{fig:logic} provides an illustration of a program proof showing that \ref{eq:LBdep}
+ does not exhibit weak behaviors.
+
+Now, given a program proof for a program $\prog$, we can show that
+all the reachable states $\mconf$ from the initial state $\mconf^0$ of $\prog$
+satisfy the global invariant $J$:
+
+\begin{theorem}[Soundness]
+Let $\tup{J,S_1,S_2,\ldots}$ be a program proof, 
+and let $\mconf=\tup{\lts,\gsco,\mem}$ such that $\mconf^0 \astep{}^* \mconf$.
+Then, $\lts(i).\lstate \in S_i$ for every thread $i$, and 
+$\bigwedge_{x\in\Loc} x=f(x).\lval \vdash J$
+for every function $f$ that assigns to every location $x$ a message $m\in\mem$ such that $m.\lloc=x$.
+\end{theorem}
+
+Our Coq proof of this theorem is simple:
+it holds trivially for promise-free executions,
+and extends easily to promise steps, since every promise step has a promise-free certification.
+
+\begin{figure}[t]
+\centering
+\small
+\begin{minipage}{0.55\columnwidth}
+ \[
+\begin{array}{c}
+\begin{array}{c||c}
+ \begin{array}{l}
+\asrt{J } \\
+a:=x; \\
+\asrt{J \land (a=0)} \\
+y:=a; \\
+\asrt{J} 
+ \end{array}&
+ \begin{array}{l}
+\asrt{J } \\
+x:=y;  \\
+\asrt{J } 
+ \end{array}
+ \end{array}
+ \end{array}
+ \]
+ \end{minipage}
+\begin{minipage}{0.40\columnwidth}
+$$ J \defeq \left( x=0\right) \land \left(y=0\right)$$ 
+ \end{minipage}
+\caption{A simple derivation in the invariant-based program logic.}
+\label{fig:logic}
+\end{figure}
+
+
+%
+%We call a thread state $\gts$ valid with respect to $\tup{S_1,S_2,\ldots}$
+%if $\gts(i).\lstate \subseteq S_i$ for every thread $i$.
+%Similarly, we call a memory $\mem$ valid with respect to a global invariant $J$
+%if for every mapping $f$ of location to messages such that $\bigcup_{x\in\Loc}\tup{x,f(x)}\suq\mem$,
+%we have $\bigwedge_{x\in\Loc} x=f(x).\lval \implies J$.
+%We call a machine state $\tup{\gts,\mem}$ valid with respect to a program proof $\tup{J,S_1,\ldots}$
+%if $\mem$ is valid with respect to $J$ and $\gts$ is valid with respect to $\tup{S_1,\ldots}$.
+%
+%Given a program proof for a program, we can show that
+%all the reachable states $\mconf$ from the initial state $\mconf^0$ 
+%are valid with respect to the proof.
+%
+%\ori{make this in a theorem environment?}
+%
+%\ori{say something about the proof and refer to appendix}
+%
+%\ori{appendix has to be adapted}
+%
+%
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

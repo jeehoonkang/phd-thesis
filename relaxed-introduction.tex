@@ -1,0 +1,581 @@
+%!TEX root = main.tex
+\section{Introduction}\label{sec:introduction}
+
+\newcommand{\sevcik}{\v{S}ev\v{c}\'{\i}k}
+
+What is the right semantics for concurrent shared-memory programs
+written in higher-level languages?  For programmers, the simplest
+answer would be a \emph{sequentially consistent (SC)} semantics, in
+which all threads in a program share a single view of memory and
+writes to memory take immediate global effect.
+% Under an SC semantics, all threads in a program share a single global
+% view of memory and witness writes to memory in the same order, which
+% is consistent with the program order (the sequential order of writes
+% within any one thread).
+%
+
+However, a naive SC semantics is costly to
+implement.  % \ori{I
+  % think it is better to start with the fact that no existing hardware
+  % actually implements SC.  seems more convincing than compiler
+  % optimizations}
+First of all, commodity architectures (such as x86, Power, and ARM)
+are not SC: they execute memory operations speculatively or out of
+order, and they employ hierarchies of buffers to reduce memory
+latency, with the effect that there is no globally consistent view of
+memory shared by all threads.  To simulate SC semantics on these
+architectures, one must therefore insert expensive fence instructions
+to subvert the efforts of the hardware.  Secondly, a number of common
+compiler optimizations---such as constant propagation---are rendered
+unsound by a naive SC semantics because they effectively reorder
+memory operations.
+% Commodity
+% architectures are not SC either: they execute memory operations out of
+% order, so simulating SC behavior at the hardware level typically
+% requires the insertion of expensive fence instructions to prevent
+% reorderings.
+% Thus, to provide SC semantics for all memory
+% accesses would entail disabling many compiler optimizations and
+% inserting expensive fence instructions throughout pSa naive SC model
+% of memory is also costly to implement efficiently.  implementing such
+% a semantics for all memory accesses would be costly: it would (1)
+% preclude common compiler optimizations that merge or reorder memory
+% operations, preserving SC semantics through compilation is costly.
+% Compiler optimizations like constant propagation effectively merge or
+% reorder memory operations, and commodity hardware executes
+% instructions out of order, so to support SC semantics for all accesses
+% would require one to disable common compiler optimizations and insert
+% expensive fence instructions throughout compiled code.
+Moreover, SC semantics is stronger (\ie more restrictive) than
+necessary for many concurrent algorithms.
+
+Hence, languages like Java and C++ have opted instead to provide
+\emph{relaxed} (aka \emph{weak}) memory models~\cite{jmm,cppstandard},
+which enable programmers to demand SC semantics when they need it, but
+which also support a range of cheaper memory operations that trade off
+strongly consistent and/or well-defined behavior for efficiency.
+
+\subsection{Criteria for a Programming Language Memory Model}
+\label{sec:criteria}
+
+Unfortunately, despite many years of research, it has proven very
+difficult to develop a memory model for concurrent programming
+languages that adequately balances the conflicting desiderata of
+programmers, compilers, and hardware.  In particular, we would like to
+find a memory model that satisfies the following properties:
+% In particular, some basic properties one expects of such a memory
+% model are the following:
+\vspace{-.5ex}
+\begin{itemize}
+\item The model should be \emph{implementable}, \ie it should validate
+  common compiler optimizations, as well as standard compilation
+  schemes to the major modern architectures.  To be implementable, it
+  must justify many kinds of instruction reordering and merging.\\[-2.5ex]
+\item The model should support \emph{high-level reasoning} principles
+  that programmers and compiler analyses depend on.  At a bare
+  minimum, it should validate simple invariant-based verification, and
+  should provide some ``DRF'' guarantees~\cite{Adve:1990}, ensuring that
+  programmers who employ sufficient synchronization need not understand
+  the full complexities of relaxed-memory semantics.\\[-2.5ex]
+\item The model should ideally \emph{avoid relying on undefined
+    behavior} to define the semantics of racy programs.  This is a
+  prerequisite for applicability to type-safe languages like Java, in
+  which well-typed programs may contain data races but are
+  nevertheless expected to have safe, well-defined semantics.
+\end{itemize}
+\vspace{-.5ex}
+\mbox{}\indent Both Java and C++ fail to achieve some of these criteria.
+
+In the case of Java, the memory model fails to validate a number of
+common program transformations performed by real Java compilers, such
+as redundant read-after-read elimination and ``roach motel''
+reordering~\cite{sevcik:jmm}.  Although this problem has been known
+for some time, a satisfactory solution has yet to be developed.
+
+In the case of C++, the memory model relies crucially on undefined
+behaviors to give semantics to racy programs.  Moreover, it permits
+certain ``out-of-thin-air'' executions which violate basic
+invariant-based reasoning (and DRF guarantees)~\cite{Boehm2014}.
+%To illustrate the problem, let us give a concrete example.
+
+% \begin{itemize}
+% \item Our model supports a wide range of common compiler and hardware
+%   reorderings (including read-write, give list here, etc.)
+% \ori{should we give the list? maybe the first is enough}.  We
+%   establish the validity of these reorderings using fairly
+%   straightforward simulation arguments.
+
+% \item Our model rules out ``bad'' OOTA behaviors, such as $a$
+%   receiving $1$ in \ref{eq:LBdep}.  As a result, we are able to prove standard
+%   (and some non-standard) ``DRF theorems''.  These theorems guarantee
+%   that programmers need not understand the full complexities of our
+%   relaxed-memory semantics if they adhere to a restricted programming
+%   discipline (\eg only racing on SC accesses \ori{under Sc semantics?}). 
+%   In addition, our model supports the basic reasoning principle of global non-relational
+%   invariants.
+
+% % \item Our model supports basic invariant-based reasoning for relaxed
+% %   accesses by prohibiting ``bad'' out-of-thin-air executions that
+% %   would violate such reasoning.  It \emph{does} permit some other
+% %   out-of-thin-air-\emph{ish} executions, but only ones that do not
+% %   break invariant-based reasoning and that are arguably desirable to
+% %   allow in any case because the ARM model allows them. \gil{ARM together with common compiler optimizations}
+
+% \item Our model is designed to serve as a foundation for both C/C++
+%   and Java.  On the one hand, it supports a range of different memory
+%   operations (\eg nonatomic, SC, release-acquire, relaxed, fences) in
+%   the style of C++.\footnote{Say something about correspondence with
+%     C++ here?}  On the other hand, we do not rely on undefined
+%   behavior/values to account for data races---programs have a fully
+%   defined semantics under our model, which is a prerequisite for
+%   applicability to a type-safe language like Java.
+
+% % \item Our model validates standard (and some non-standard) ``DRF
+% %   theorems''.  These theorems ensure that programmers who use only a
+% %   subset of the supported language features (\eg only SC and nonatomic
+% %   accesses) need not understand the more complex aspects of the model
+% %   related to features they do not use.  (Is that right? What do we
+% %   want to say here?)
+
+% % \item
+% % Say something about liveness here?
+% \end{itemize}
+
+% \section{Introduction}\label{sec:introduction}
+
+% What is the right semantics for concurrent shared-memory programs
+% written in higher-level languages?  For programmers, the simplest
+% answer would be a \emph{sequentially consistent (SC)} semantics, in
+% which all threads in a program share a single view of memory and
+% writes to memory take immediate global effect.
+% % Under an SC semantics, all threads in a program share a single global
+% % view of memory and witness writes to memory in the same order, which
+% % is consistent with the program order (the sequential order of writes
+% % within any one thread).  
+% %
+% However, a naive SC semantics is costly to
+% implement.  % \ori{I
+%   % think it is better to start with the fact that no existing hardware
+%   % actually implements SC.  seems more convincing than compiler
+%   % optimizations}
+% First of all, commodity architectures (such as x86, Power, and ARM)
+% are not SC: they execute memory operations speculatively or out of
+% order, and they employ hierarchies of buffers to reduce memory
+% latency, with the effect that there is no globally consistent view of
+% memory shared by all threads.  To simulate SC semantics on these
+% architectures, one must therefore insert expensive fence instructions
+% to subvert the efforts of the hardware.  Secondly, a number of common
+% compiler optimizations---such as constant propagation---are rendered
+% unsound by a naive SC semantics because they effectively reorder
+% memory operations.
+% % Commodity
+% % architectures are not SC either: they execute memory operations out of
+% % order, so simulating SC behavior at the hardware level typically
+% % requires the insertion of expensive fence instructions to prevent
+% % reorderings.
+% % Thus, to provide SC semantics for all memory
+% % accesses would entail disabling many compiler optimizations and
+% % inserting expensive fence instructions throughout pSa naive SC model
+% % of memory is also costly to implement efficiently.  implementing such
+% % a semantics for all memory accesses would be costly: it would (1)
+% % preclude common compiler optimizations that merge or reorder memory
+% % operations, preserving SC semantics through compilation is costly.
+% % Compiler optimizations like constant propagation effectively merge or
+% % reorder memory operations, and commodity hardware executes
+% % instructions out of order, so to support SC semantics for all accesses
+% % would require one to disable common compiler optimizations and insert
+% % expensive fence instructions throughout compiled code.  
+% Moreover, SC semantics is stronger (\ie more restrictive) than
+% necessary for many concurrent algorithms.  Hence, languages like Java
+% and C++ have opted instead to provide \emph{relaxed} (aka \emph{weak})
+% memory models~\cite{jmm,cppstandard}.  These models make it possible to enforce
+% SC semantics when programmers need it, but they also support a range
+% of cheaper memory operations that trade off strongly consistent and/or
+% well-defined behavior for efficiency.
+
+\subsection{The ``Out of Thin Air'' Problem}
+\label{sec:oota}
+
+% Unfortunately, both the Java and C++ memory models suffer from serious
+% flaws  (see also \cite{Batty:2015}).  In the case of
+% Java, the memory model fails to justify \ori{validate?} a number of common program
+% transformations performed by real Java compilers, such as redundant
+% read-after-read elimination and ``roach motel''
+% reordering~\cite{sevcik:jmm}.  In the case of C++, the memory model
+% permits certain ``out-of-thin-air'' executions which violate basic
+% reasoning principles that programmers and compiler analyses depend on~\cite{Boehm2014}.
+
+% (Maybe something here about how the JMM
+% effort has stalled?) 
+
+%
+
+% To understand why satisfying all these criteria is so hard, let us
+% look at a concrete example.  
+To illustrate the problem with C++, consider these two variants of the
+classic ``load buffering'' litmus test (with two threads in parallel):
+% Consider these two variants of the classic ``load buffering'' litmus
+% test (with two threads running concurrently):
+\begin{center}
+\begin{minipage}{.46\columnwidth}
+\begin{equation}\label{eq:LB}\tag{LB}
+\inarrII{ a:=x; \\ y:=1; }{ x:=y; }\!\!\!
+\end{equation}
+\end{minipage}
+\hfill
+\begin{minipage}{.46\columnwidth}
+\begin{equation}\label{eq:LBdep}\tag{LBd}
+\inarrII{ a:=x; \\ y:=a; }{ x:=y; }
+\end{equation}
+\end{minipage}
+\end{center}
+Here, we assume that all variables are initially $0$, and that all
+memory accesses are of the weakest consistency level, \ie they are
+compiled down to plain loads and stores at the hardware level with no
+additional synchronization (in C++ this is called ``relaxed'').  The
+question is: should it be possible for these programs to assign $1$ to
+$a$?  In the case of \ref{eq:LB}, the answer is yes: architectures
+like Power and ARM may reorder the write of $y$ before the read of $x$
+in the first thread (since these are accesses to distinct variables),
+after which $a$ can be assigned $1$ by a standard interleaving
+execution. In the case of \ref{eq:LBdep}, however, the answer
+\emph{ought} to be no: all the operations simply copy one variable to
+another and all are initially $0$, so if $a$ could receive $1$, it
+would come ``out of thin air''.  No hardware reorderings or reasonable
+compiler optimizations will produce this behavior.  If they did, it
+would cause major problems: one would not be able to establish even
+basic invariants (such as $x = y = 0$), and basic sanity results like
+the aforementioned DRF theorems would cease to hold.  It is therefore
+a serious problem that the formal memory model of C++ allows such
+out-of-thin-air (OOTA) behavior.
+% \footnote{Actually, the C++ model
+%   disallows this behavior with a vague English side condition, but it
+%   does not explain clearly what OOTA means~\cite{n3710}.}
+
+Intuitively, the reason C++ allows OOTA behaviors is that it is not
+clear how to distinguish them from acceptable behaviors.  The C++
+model formalizes valid executions as graphs of memory access events
+(think: partially-ordered traces) subject to a set of coherence
+axioms, and the same coherent event graph that describes a valid
+execution of \ref{eq:LB} in which $a$ receives $1$ also describes a valid
+execution of \ref{eq:LBdep} in which $a$ receives $1$.
+
+% Naively, one might hope to solve this problem by exploiting information
+% about syntactic dependencies between instructions in the program.
+% In particular, one might hope to prohibit the OOTA behavior in \ref{eq:LBdep}
+% by observing that the write to $y$ has a data dependency on the previous
+% instruction, so the reordered execution of \ref{eq:LB} should not be applicable
+% to \ref{eq:LBdep}.  Indeed, 
+
+Hardware memory models (\eg Power and ARM) handle this problem by
+taking syntactic dependencies between instructions into account in
+determining program semantics.  Under such models, the out-of-order
+execution in \ref{eq:LB} is valid because the write to $y$ is independent of
+the read from $x$, whereas in \ref{eq:LBdep} such out-of-order execution is
+prevented by the syntactic dependency between the two instructions.
+Although this approach is suitable for modeling hardware, it is too
+brittle for a language-level semantics because it fails to validate
+standard compiler optimizations that remove syntactic dependencies (see also \cite{Boehm2014}).
+As a very simple example, consider the following variant of \ref{eq:LB} and
+\ref{eq:LBdep}:
+\begin{equation}\label{eq:LBfalsedep}\tag{LBfd}
+\inarrII{ a:=x; \\ y:=a+1-a; }{ x:=y; }
+\end{equation}
+Under the hardware models, this \ref{eq:LBfalsedep} program would be treated
+similarly to \ref{eq:LBdep} due to the syntactic data dependency, so $a$ could
+not receive $1$.  But even a basic optimizing compiler could trivially
+transform \ref{eq:LBfalsedep} to \ref{eq:LB}, in which case $a$ could receive $1$.
+%\ori{a simple answer here is that one can bake in the compiler optimizations
+%to the definition of dependency, should we explain why it is really not working?}
+%\jeehoon{Ori, I think that is too much information in the introduction.  How about saying it in the result section?}
+
+% A naive solution to this problem would be for the semantics to 
+% loads and delay their execution to the point when their value is
+% actually used.  Such a semantics would enable reordering in the case
+% of \ref{eq:LB}, but would prevent the OOTA behavior in the case of \ref{eq:LBdep}
+% because there is a syntactic dependency of $y := a$ on the previous
+% instruction.  Indeed, this approach has been successfully applied in
+% definitions of hardware memory models.  
+
+
+%   so if one can assign $1$ to
+% $a$, one can assign any value to $a$.  And, the C11 model allows
+% precisely this.  Not only is this behavior unintuitive---it also means
+% that one cannot establish even simple global invariants such as
+% $x = y = 0$, and one cannot prove standard ``sanity'' theorems like
+% the DRF property.
+
+
+
+% it suffers from the so-called ``out-of-thin-air'' (OOTA)
+% problem.  Roughly speaking, the OOTA problem is the problem of how to
+% provide a model of relaxed memory accesses that is weak enough to
+% account for the reorderings/optimizations that hardware and compilers
+% may perform, yet also strong enough to support at least some very
+% basic reasoning that compiler analyses and programmers depend on (\eg
+% global invariants on single variables).
+
+% , namely the so-called
+% ``out-of-thin-air'' problem~\cite{??,??}.  Roughly speaking, the
+% problem is how to provide a model of relaxed memory accesses that is
+% weak enough to account for the reorderings/optimizations that hardware
+% and compilers may perform, yet also strong enough to support at least
+% some very basic reasoning that compiler analyses and programmers
+% depend on (\eg global invariants on single variables).  The existing
+% models are either too strong (disallowing common compiler
+% optimizations) or too weak (permitting variables to receive arbitrary
+% ``out-of-thin-air'' values that break even basic invariant-based
+% reasoning). 
+%
+
+
+As a result, we still to this day lack a semantics for relaxed-memory
+concurrency in Java and C++ that corresponds to how these languages
+are implemented and that provides sufficient reasoning guarantees to
+programmers and compiler-writers.  Several proposals have recently
+been made for how to fix the Java and C++ memory models (some of which
+are discussed in \cref{sec:related}), but none have been proven to
+validate the full range of standard optimizations/reorderings
+performed by Java and C++ compilers and by commodity hardware like
+Power and ARM.  Furthermore, for most of the existing proposals, it is
+known that indeed they do \emph{not} validate some important
+reorderings.
+
+\subsection{A ``Promising'' Semantics for Relaxed Memory}
+\label{sec:promising}
+
+In this paper, we present what we believe is a very promising way
+forward: the first relaxed memory model to support a broad spectrum
+of features from the C++ concurrency model while also satisfying all
+three criteria listed in \cref{sec:criteria}.
+
+
+% \begin{itemize}
+% \item
+% Accounts for a broad spectrum of features of the C++11 memory model.
+% \item
+
+% \end{itemize}
+
+
+% \begin{itemize}
+% \item
+% accounts for nearly all the features of the C++11 memory model,
+% \item
+% provably validates a number of standard compiler
+%   optimizations, as well as a wide range of memory access reorderings
+%   that commodity hardware may perform,
+% \item avoids bad
+%   ``out-of-thin-air'' behaviors that break invariant-based reasoning
+% and DRF guarantees, and
+% \item defines the semantics of racy programs without relying on
+%   undefined behaviors.
+% \end{itemize}
+
+
+% \begin{itemize}
+% \item Our model supports a wide range of common compiler and hardware
+%   reorderings (including read-write, give list here, etc.)
+% \ori{should we give the list? maybe the first is enough}.  We
+%   establish the validity of these reorderings using fairly
+%   straightforward simulation arguments.
+
+% \item Our model rules out ``bad'' OOTA behaviors, such as $a$
+%   receiving $1$ in \ref{eq:LBdep}.  As a result, we are able to prove standard
+%   (and some non-standard) ``DRF theorems''.  These theorems guarantee
+%   that programmers need not understand the full complexities of our
+%   relaxed-memory semantics if they adhere to a restricted programming
+%   discipline (\eg only racing on SC accesses \ori{under Sc semantics?}). 
+%   In addition, our model supports the basic reasoning principle of global non-relational
+%   invariants.
+
+% % \item Our model supports basic invariant-based reasoning for relaxed
+% %   accesses by prohibiting ``bad'' out-of-thin-air executions that
+% %   would violate such reasoning.  It \emph{does} permit some other
+% %   out-of-thin-air-\emph{ish} executions, but only ones that do not
+% %   break invariant-based reasoning and that are arguably desirable to
+% %   allow in any case because the ARM model allows them. \gil{ARM together with common compiler optimizations}
+
+% \item Our model is designed to serve as a foundation for both C/C++
+%   and Java.  On the one hand, it supports a range of different memory
+%   operations (\eg nonatomic, SC, release-acquire, relaxed, fences) in
+%   the style of C++.\footnote{Say something about correspondence with
+%     C++ here?}  On the other hand, we do not rely on undefined
+%   behavior/values to account for data races---programs have a fully
+%   defined semantics under our model, which is a prerequisite for
+%   applicability to a type-safe language like Java.
+
+% % \item Our model validates standard (and some non-standard) ``DRF
+% %   theorems''.  These theorems ensure that programmers who use only a
+% %   subset of the supported language features (\eg only SC and nonatomic
+% %   accesses) need not understand the more complex aspects of the model
+% %   related to features they do not use.  (Is that right? What do we
+% %   want to say here?)
+
+% % \item
+% % Say something about liveness here?
+% \end{itemize}
+
+
+We achieve these ends through a combination of mechanisms (some
+standard, some not), but the most important and novel idea for the
+reader to take away from this paper is the notion of \emph{promises}.
+
+Under our model, which is defined by an operational semantics, a thread $T$ may nondeterministically ``promise''
+to write a value $v$ to a memory location $x$ at some point in the
+future.  From the point of view of other threads, a promise is no
+different from an ordinary write: once $T$ has promised to write $v$
+to $x$, other threads can read from that write.  (In contrast, $T$
+cannot read from its own promised write until $T$ has fulfilled the
+promise: this is crucial to preserve basic sanity of the semantics.)
+Intuitively, promises simulate the effect of read-write reorderings by
+allowing write events to be visible to other threads before the point
+at which they occur in the program order.
+
+We must, however, ensure that promises do not introduce bad OOTA
+behaviors.  Toward this end, we only allow $T$ to promise to write $v$
+to $x$ if it is possible to \emph{thread-locally certify} that the
+promise can be fulfilled in a finite number of steps.
+That is, we must show that $T$
+will be able to write $v$ to $x$ after some finite sequence of steps
+of $T$'s execution (\ie with no help from other threads).  The
+certification requirement guarantees absence of bad OOTA executions by
+ensuring that $T$ can only promise to write a value $v$ to $x$ if $T$
+could have written $v$ to $x$ anyway.
+
+Returning to the examples from \cref{sec:oota}, it is easy to see how
+promises give us the desired semantics:
+\begin{itemize}
+\item In \ref{eq:LB}, the first thread can promise to write $1$ to $y$ (since
+  it will indeed write $1$ to $y$ no matter what value is assigned to
+  $a$), after which the second thread can read from that promise and
+  write $1$ to $x$.  Subsequently, the first thread can execute
+  normally, reading $1$ from $x$ and assigning it to $a$.
+\item The execution of \ref{eq:LBfalsedep} may proceed in exactly the same way.  The
+  fact that the write of $y$ depends syntactically on $a$ is
+  irrelevant, because during certification of the promised write of $1$
+  to $y$, the expression $a+1-a$ will always evaluate to $1$.
+\item By contrast, the OOTA behavior will not be allowed for \ref{eq:LBdep}.
+  In order for the first thread to promise to write $1$ to $y$, it
+  would need to certify that it can write $1$ to $y$ 
+%in some finite number of steps 
+without promises.  But since all variables are
+  initially $0$, this is not possible.
+\end{itemize}
+
+Our model supports all features of C++ concurrency except consume
+reads and SC accesses.  Consume reads are widely considered a
+premature aspect of the C++11 standard and are currently implemented
+the same as acquire reads in mainstream compilers.  In contrast, SC
+accesses are a major feature of C++, and originally our model included
+an account of SC accesses as well.  However, in the course of trying
+to mechanize correctness of compilation to Power
+(\cref{sec:compilation_POWER}), we discovered that our semantics of SC
+accesses was flawed, and this led us to discover a flaw in the C++11
+standard as well!  (See \cite{repairing-sc} for further details.)
+Thus, a proper handling of SC accesses remains an open and important
+problem for future work.
+
+
+% \derek{I removed this paragraph.  It didn't seem to really add anything.}
+% In this way, promises provide a solution to the OOTA problem that does
+% not rely on tracking brittle syntactic dependencies.  Furthermore, as
+% we will see, the thread-local nature of our promise certification greatly
+% simplifies the formal development of our semantics and has enabled us
+% to straightforwardly prove the validity of read-write reorderings that
+% were out of reach for prior work~\cite{Jagadeesan2010}.
+
+% it is possible for $t$ to thread-locally \emph{validate} that $t$
+% itself will be able to write $v$ to $x$ through a sequence of steps of
+% its own execution.  (Hence, the name ``promise'': a thread can only
+% promise a write event will happen if it itself will be the one to
+% carry it out.)  Once $t$ has promised to write $v$ to $x$, other
+% threads can read from that write, but $t$ itself cannot.  The
+% validation requirement guarantees absence of ``bad'' out-of-thin-air
+% executions by ensuring that a thread can never promise to write a
+% value $v$ to $x$ unless it is possible for the thread to write $v$ to
+% $x$ without making any promises.
+
+% Intuitively, promises simulate the effect of read-write reorderings by
+% allowing write events to be visible to other threads before the point
+% where they occur in the program order.  The validation requirement
+% guarantees absence of ``bad'' out-of-thin-air executions by ensuring
+% that a thread can never promise to write a value $v$ to $x$ unless it
+% could have in fact written $v$ to $x$ in a promise-free execution.
+% Furthermore, the \emph{thread-local} nature of our promise validation
+% greatly simplifies the formal development of our semantics and has
+% enabled us to straightforwardly prove the validity of read-write
+% reorderings that were out of reach for prior work~\cite{esop10??}.
+
+% XXX
+
+% Under our semantics, a thread $t$ may nondeterministically ``promise''
+% to write a value $v$ to a memory location $x$ at some point in the
+% future, but only if it is possible for $t$ to thread-locally
+% \emph{validate} that $t$ itself will be able to write $v$ to $x$
+% through a sequence of steps of its own execution.  (Hence, the name
+% ``promise'': a thread can only promise a write event will happen if it
+% itself will be the one to carry it out.)  Once $t$ has promised to
+% write $v$ to $x$, other threads can read from that write, but $t$
+% itself cannot.
+
+% Intuitively, promises simulate the effect of read-write reorderings by
+% allowing write events to be visible to other threads before the point
+% where they occur in the program order.  The validation requirement
+% guarantees absence of ``bad'' out-of-thin-air executions by ensuring
+% that a thread can never promise to write a value $v$ to $x$ unless it
+% could have in fact written $v$ to $x$ in a promise-free execution.
+% Furthermore, the \emph{thread-local} nature of our promise validation
+% greatly simplifies the formal development of our semantics and has
+% enabled us to straightforwardly prove the validity of read-write
+% reorderings that were out of reach for prior work~\cite{esop10??}.
+
+
+
+
+
+
+
+
+
+% C11, for instance, distinguishes between
+% \emph{nonatomic} accesses (intended for normal data accesses) and
+% \emph{atomic} accesses (intended to implement synchronization between
+% threads).  The former can be compiled efficiently, and their semantics
+% is SC, but their behavior is only safe and well-defined if the programmer
+% can guarantee the absence of data races on them.  The latter are specifically
+% intended for racy access, but are available at a range of consistency 
+
+% memory accesses: the former may be compiled efficiently but
+% their behavior is only defined\emph{release-acquire} accesses (useful
+% for implementing message-passing between threads where the global
+% synchronization of SC is overkill), \emph{relaxed} accesses (useful
+% for racy accesses where order of execution is not important) and
+% \emph{non-atomic} accesses (for ``normal'' variablesand \emph{fully
+%   relaxed} accesses. but they also permit programmers to indicate when
+% the strength of SC semantics is not needed
+
+
+% \subsection{Overview of the Paper}
+% \label{sec:overview}
+
+In the rest of the paper, we will flesh out the idea of promises---as
+well as the other elements of our model---in layers.  We begin in
+\cref{sec:relaxed} by presenting the details of our model restricted
+to relaxed reads and writes.  In \cref{sec:updates}, we extend this
+base model further to support atomic updates (\ie read-modify-write
+operations, like CAS).  Then, in \cref{sec:full}, we scale the model
+up to handle most features of the C++ memory model.  In
+\cref{sec:results}, we present our formal results---validating many
+program transformations, compilation to x86-TSO and Power, DRF
+theorems, and an invariant-based logic---most of which are fully
+mechanized in the Coq proof assistant (totalling about 37K lines of
+Coq).  In \cref{sec:related}, we compare with related work, and in
+\cref{sec:discussion}, we conclude with discussion of future work.
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

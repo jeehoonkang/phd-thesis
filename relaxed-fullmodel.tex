@@ -1,0 +1,759 @@
+%!TEX root = main.tex
+\newcommand{\figfull}{
+\begin{figure*}[t]
+\small
+\begin{mathpar}
+%\inferrule[\textsc{(memory: promise)}]{
+%\hookleftarrow{}\in \setofz{\insertadd, \insertsplit, \insertupdate} 
+%}{\tup{\lprom, \mem } \astep{\text{promise}(m)} \tup{\lprom \hookleftarrow m, \mem \hookleftarrow m}}
+%\and
+%\inferrule[\textsc{(memory: write)}]{
+%o \sqsupseteq \ra \implies \forall m'{\in}\lprom.\; m'.\lloc \neq m.\lloc \\\\
+%\tup{\lprom, \mem} \astep{\text{promise}(m)} \tup{\lprom', \mem'}
+%}{\tup{\lprom, \mem}  \astep{\text{write}(o,m)} \tup{\lprom' \setminus \setofz{m}, \mem'}}
+%\and
+%
+\vspace*{-1mm}
+%
+\inferrule[\textsc{(memory: new)}]{
+\ %o \sqsupseteq \ra \implies \forall m' \in \lprom.\; m'.\lloc \neq m.\lloc 
+}{\tup{\lprom, \mem}  \astep{m} \tup{\lprom, \mem \insertadd m}}
+\and
+\inferrule[\textsc{(memory: fulfill)}]{
+\hookleftarrow \in \setofz{\insertsplit, \insertupdate} \\
+\lprom'= \lprom \hookleftarrow m\\ \mem'= \mem \hookleftarrow m 
+}{\tup{\lprom, \mem}  \astep{m} \tup{\lprom' \setminus \setofz{m}, \mem'}}
+%
+\\\vspace*{-1mm}
+%
+\inferrule[\textsc{(read-helper)}]{
+ {\begin{array}{@{}c@{}c@{~}c@{~}c@{}}
+o =\pln  & \implies & \cur.\lur(x) &\leq t \\
+o \in \{\rlx,\ra\}  & \implies & \cur.\lrw(x) &\leq t  
+\end{array}}\\\\
+ {\begin{array}{@{}c@{~}c@{~}l@{}l@{}}
+\cur' & = & \cur  \sqcup \view \sqcup  \iteb{o \sqsupseteq {\makebox[0pt][l]{$\ra$}\phantom{\rlx}}}{\mrel}  \\
+\acq' &=& \acq \sqcup  \view \sqcup \iteb{o \sqsupseteq \rlx}{\mrel}   
+\end{array}}\\\\
+\textit{where\ }\view=[\lur:\iteb{o \sqsupseteq \rlx}{\{\vtup{x}{t}\}}, \lrw: \{\vtup{x}{t}\}]
+}
+%{\tup{\tup{\cur,\acq,\rel},\gsco}  \astep{\rlab:o,x,t,\mrel} \tup{\tup{\cur',\acq',\rel},\gsco}}
+{{\tup{\cur,\acq,\rel}}  \astep{\rlab:o,x,t,\mrel} {\tup{\cur',\acq',\rel}}}
+\and
+\inferrule[\textsc{(write-helper)}]{
+\cur.\lrw(x) < t \\\\
+\cur'  = \cur \sqcup \view \\
+\acq'   =  \acq \sqcup \cur' \\\\  
+\rel'  = \rel[x\mapsto \rel(x) \sqcup \view \sqcup \iteb{o\sqsupseteq\ra}{\cur'}]\\\\ 
+\mrel_\lw = \iteb{o \sqsupseteq \rlx}{(\rel'(x) \sqcup \mrel_\lr)} \\\\
+\textit{where\ }\view=[\lur:\{\vtup{x}{t}\}, \lrw: \{\vtup{x}{t}\}]
+}
+%{\tup{\tup{\cur,\acq,\rel},\gsco}  \astep{\wlab:o,x,t,\mrel_\lr,\mrel_\lw} \tup{\tup{\cur',\acq',\rel'},\gsco}}
+{{\tup{\cur,\acq,\rel}}  \astep{\wlab:o,x,t,\mrel_\lr,\mrel_\lw} {\tup{\cur',\acq',\rel'}}}
+\and
+%\inferrule[\textsc{(acq-fence-helper)}]{
+%\cur'=\acq
+%}{\tup{\tup{\cur,\acq,\rel},\gsco}  \astep{\flab_\acqo} \tup{\tup{\cur',\acq,\rel},\gsco}}
+%~
+%\inferrule[\textsc{(rel-fence-helper)}]{
+%\rel'= \lambda \_.\cur
+%}{\tup{\tup{\cur,\acq,\rel},\gsco}   \astep{\flab_\relo} \tup{\tup{\cur,\acq,\rel'},\gsco}}
+%~
+\raisebox{9pt}{
+\inferrule[\textsc{(sc-fence-helper)}]{
+\gsco'=\acq.\lrw \sqcup \gsco \\\\
+\cur'=\acq'=\tup{\gsco',\gsco'} \\\\
+\rel'=\lambda \_.\tup{\gsco',\gsco'}
+}{\tup{\tup{\cur,\acq,\rel},\gsco}  \astep{\flab_\sco}\\\\\quad \tup{\tup{\cur',\acq',\rel'},\gsco'}}
+}
+%
+\\\vspace*{-1mm}
+%
+\inferrule[\textsc{(read)}]{
+\sigma \astep{\rlab(o,x,v)} \sigma'  \\\\ \msg{x}{v}{\_}{t}{\mrel}\in\mem\\\\
+%\tup{\tcom,\gsco} {\astep{\rlab:o,x,t,\mrel}}  \tup{\tcom',\gsco} 
+{\tcom} {\astep{\rlab:o,x,t,\mrel}}  {\tcom'} 
+}{\tup{\tup{\sigma, \tcom, \lprom},\gsco, \mem} \astep{} \tup{\tup{\sigma', \tcom', \lprom}, \gsco, \mem}}
+\and
+\inferrule[\textsc{(write)}]{
+\sigma \astep{\wlab(o,x,v)} \sigma' \\\\
+o = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\\\
+m=\msg{x}{v}{\_}{t}{\mrel}\\\\
+%\tup{\lprom, \mem}  \astep{\text{write}(o,m)} \tup{\lprom', \mem'} \\\\
+\tup{\lprom, \mem}  \astep{m} \tup{\lprom', \mem'} \\\\
+%\tup{\tcom,\gsco} {\astep{\wlab:o,x,t,\bot,\mrel}} \tup{\tcom',\gsco'} 
+{\tcom} {\astep{\wlab:o,x,t,\bot,\mrel}} {\tcom'} 
+}{\tup{\tup{\sigma, \tcom, \lprom},\gsco, \mem} \astep{} \tup{\tup{\sigma', \tcom', \lprom'}, \gsco, \mem'}}
+\and
+\inferrule[\textsc{(update)}]{
+\sigma \astep{\ulab(o_\lr,o_\lw,x,v_\lr,v_\lw)} \sigma'  \\\\
+o_\lw = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\\\
+ {\begin{array}{@{}c@{}l@{}}
+& \msg{x}
+{\makebox[0pt][l]{$v_\lr$}\phantom{v_\lw}}
+{\makebox[0pt][l]{$\_$}\phantom{t_\lr}}
+{\makebox[0pt][l]{$t_\lr$}\phantom{t_\lw}}
+{\makebox[0pt][l]{$\mrel_\lr$}\phantom{\mrel_\lw}} \in\mem\\
+ m_\lw=&\msg{x}{v_\lw}{t_\lr}{t_\lw}{\mrel_\lw}
+\end{array}}\\\\
+%\tup{\lprom, \mem}  \astep{\text{write}(o_\lw,m_\lw)} \tup{\lprom', \mem'} \\\\
+\tup{\lprom, \mem}  \astep{m_\lw} \tup{\lprom', \mem'} \\\\
+%\tup{\tcom,\gsco} {\astep{\rlab: o_\lr,x,t_\lr,\mrel_\lr}} %\tup{\tcom_0,\gsco} {\astep{\wlab:o_\lw,x,t_\lw,\mrel_\lr,\mrel_\lw}} \tup{\tcom',\gsco'}
+%{\astep{\wlab:o_\lw,x,t_\lw,\mrel_\lr,\mrel_\lw}} \tup{\tcom',\gsco'}
+{\tcom} {\astep{\rlab: o_\lr,x,t_\lr,\mrel_\lr}} %\tup{\tcom_0,\gsco} {\astep{\wlab:o_\lw,x,t_\lw,\mrel_\lr,\mrel_\lw}} \tup{\tcom',\gsco'}
+{\astep{\wlab:o_\lw,x,t_\lw,\mrel_\lr,\mrel_\lw}} {\tcom'}
+}{\tup{\tup{\sigma,\tcom,\lprom}, \gsco,\mem} \astep{} \tup{\tup{\sigma',\tcom',\lprom'}, \gsco,\mem'}}
+%\and
+%\inferrule[\textsc{(fence)}]{
+%\tlab\in\{\acqo,\relo,\sco\}\\ \sigma \astep{\flab_\tlab} \sigma' \\ \tup{\tcom,\gsco}  \astep{\flab_\tlab} \tup{\tcom',\gsco'} \\\\
+%\tlab \neq \acqo \implies \forall m' \in \lprom.~ m'.\lmrel = \bot
+%}{\tup{\tup{\sigma, \tcom, \lprom}, \gsco,\mem} \astep{} \tup{\tup{\sigma', \tcom', \lprom}, \gsco',\mem}}
+%
+\\\vspace*{-1mm}
+%
+\inferrule[\textsc{(acq-fence)}]{
+\sigma \astep{\flab_\acqo} \sigma' \\ 
+\cur'=\acq
+}{\tup{\tup{\sigma, \tup{\cur,\acq,\rel}, \lprom}, \gsco,\mem} \astep{} \\\\\quad \tup{\tup{\sigma', \tup{\tup{\cur',\acq,\rel}, \lprom}, \gsco,\mem}}}
+\and
+\inferrule[\textsc{(rel-fence)}]{
+\sigma \astep{\flab_\relo} \sigma' \\ 
+\rel'= \lambda \_.\cur \\\\
+\forall m \in \lprom.~ m.\lmrel = \bot
+}{\tup{\tup{\sigma, \tup{\cur,\acq,\rel}, \lprom}, \gsco,\mem} \astep{} \\\\\quad \tup{\tup{\sigma', \tup{\tup{\cur,\acq,\rel'}, \lprom}, \gsco,\mem}}}
+\and
+\inferrule[\textsc{(sc-fence)}]{
+\sigma \astep{\flab_\sco} \sigma' \\\\ 
+\tup{\tcom,\gsco}  \astep{\flab_\sco} \tup{\tcom',\gsco'} \\\\
+\forall m \in \lprom.~ m.\lmrel = \bot
+}{\tup{\tup{\sigma, \tcom, \lprom}, \gsco, \mem} \astep{} \\\\\quad\tup{\tup{\sigma', \tcom', \lprom}, \gsco', \mem}}
+\and
+\inferrule[\textsc{(system call)}]{
+\sigma \astep{\syscallt} \sigma' \\\\
+\tup{\tcom,\gsco}  \astep{\flab_\sco} \tup{\tcom',\gsco'}\\\\
+\forall m \in \lprom.~ m.\lmrel = \bot
+}{\tup{\tup{\sigma, \tcom, \lprom}, \gsco, \mem} \astep{\syscallt} \\\\\quad\tup{\tup{\sigma', \tcom', \lprom}, \gsco', \mem}}
+%
+\\\vspace*{-1mm}
+%
+\inferrule[\textsc{(silent)}]{
+\sigma \astep{\silentt} \sigma'
+}{\tup{\tup{\sigma, \tcom, \lprom}, \gsco, \mem} \astep{} \tup{\tup{\sigma', \tcom, \lprom}, \gsco, \mem}}
+\and
+%\inferrule[\textsc{(promise)}]{
+%\tup{\lprom, \mem} \astep{\text{promise}(m)} \tup{\lprom', \mem'} \\\\ 
+%m.\lmrel \tmin \mem'
+%}{\tup{\tup{\sigma, \tcom, \lprom},\gsco,\mem} \astep{} \tup{\tup{\sigma, \tcom, \lprom'},\gsco,\mem'}}
+\inferrule[\textsc{(promise)}]{
+\hookleftarrow \in \setofz{\insertadd, \insertsplit, \insertupdate} \\ \lprom'= \lprom \hookleftarrow m\\\\
+ \mem'= \mem \hookleftarrow m \\
+ m.\lmrel \tmin \mem'
+}{\tup{\tup{\sigma, \tcom, \lprom},\gsco,\mem} \astep{} \tup{\tup{\sigma, \tcom, \lprom'},\gsco,\mem'}}
+\and
+\inferrule[\bf \textsc{(machine step)}]{
+\tup{\gts(i),\gsco,\mem} \astep{}^* \tup{\lts',\gsco',\mem'}  \\\\
+\tup{\lts',\gsco',\mem'} \astep{e} \tup{\lts'',\gsco'',\mem''}  \\\\
+\tup{\lts'',\gsco'',\mem''} \text{ is consistent}
+}{\tup{\gts,\gsco,\mem} \astep{e} \tup{\gts[i\mapsto \lts''],\gsco'',\mem''}}
+\end{mathpar}
+\caption{Full operational semantics.}
+\label{fig:full-opsem-a}
+\end{figure*}}
+
+
+\section{Full Model}
+\label{sec:full}
+
+In this section, we extend the basic model of
+\cref{sec:relaxed}-\ref{sec:updates} to handle all the
+features of the C++ concurrency model except SC accesses and consume reads.
+% \footnote{
+% Consume reads are widely considered a somewhat
+%   premature aspect of the C++ standard and are implemented as acquire reads in mainstream compilers.}
+
+
+\subsection{Release/Acquire Synchronization}
+\label{sec:relacq}
+
+\paragraph{Release/Acquire Fences}
+
+A crucial feature of the C++ model is the ability for threads to synchronize using memory fences or stronger kinds of atomic accesses.
+Consider the message-passing test case:
+\begin{equation}\label{eq:MPfences}\tag{MP+fences}
+\inarrII{ x:=1 ;\\ \fencerel ;\\ y:=1; }{  a:=y; \comment{1} \\ \fenceacq;\\ b:=x; \nocomment{0} }
+\end{equation}
+The release fence between the writes, together with the acquire fence
+between the reads, prevents the weak behavior of the example (\ie that
+of returning $a=1$ and $b=0$).  Roughly speaking, the C++ model
+forbids this behavior by requiring that whenever a read before an
+acquire fence reads from a write after a release fence, the two fences
+synchronize, which in turn means that any write that happens-before the release
+fence must be visible to any read that happens-after the acquire fence.  So, if $T_2$
+reads $y=1$, then after the acquire fence it \emph{must} read $x=1$.
+
+% \jeehoon{Actually, any \emph{read/write} before the release fence is
+%   visible to any \emph{read/write} after the acquire fence.  I think
+%   specialization to only read (and write) here is a little bit
+%   confusing.} \ori{I added `happens-' to make it precise}
+
+To implement this semantics, we extend our model in two ways.
+
+First, we refine each thread's view.  Rather than having a single view
+of which messages it has observed, a thread now has three views:
+$\tcom=\tup{\cur,\acq,\rel}$.  We denote by $\tcom.\lcur$,
+$\tcom.\lacq$ and $\tcom.\lrel$ the components of a thread view
+$\tcom$.  A thread's \emph{current view}, $\lcur$, is as before: it records
+which messages the thread has observed and restricts which messages a
+read may return and a write may create.  Its \emph{release view}, $\lrel$,
+records what the thread's $\lcur$ view \emph{was} at the point of its
+last release fence.
+% which are intuitively the messages that have necessarily happened
+% before the current point.
+Dually, its \emph{acquire view}, $\lacq$, records what the thread's $\lcur$
+view \emph{will become} if it performs an acquire fence.
+Consequently, the views are related as follows:
+$\lrel \leq \lcur \leq \lacq$.
+
+Second, we extend write messages to record a \emph{message
+  view}~$\mrel$, which records the release view of the writing thread
+at the time the write occurred (updated to include the write itself).
+Thus, a message now takes the form $m=\msg{x}{v}{f}{t}{\mrel}$, where
+$\mrel(x) = t$.  We write $m.\lmrel$ for the message view of $m$.
+% Second, we extend write messages to additionally record the release
+% view of the writing thread at the point when the write occurred.
+% Thus, a message now takes the form $m=\msg{x}{v}{f}{t}{\mrel}$, where
+% $x,v,f,t$ are as before, and $\mrel$ is the \emph{message view},
+% satisfying $\mrel(x)\leq t$.  We write $m.\lmrel$ to mean the message
+% view $\mrel$ of $m$.
+
+% The message view, $R$,  in order to maintain the acquire view, joins the thread's $\lcur$ view
+% together with the views of the messages that the thread has observed,
+
+During execution of relaxed accesses, a thread's views drift apart.
+When a thread reads a message, it incorporates the message's view into
+the thread's $\lacq$ view, but not into its $\lcur$ or $\lrel$ views.
+When a thread writes a message, it uses the thread's $\lrel$ view as
+the basis for the message's view, but only incorporates the message
+itself into the thread's $\lcur$ and $\lacq$ views, not its $\lrel$
+view.
+% Reading a message increases the thread's $\lacq$ to include both the message
+% and its view, but increases the thread's $\lcur$ only to include the message,
+% not its view.  Writing a message increases the thread's $\lcur$ to include
+% the message written, but does not increase 
+% but   increase the thread's $\lcur$ to include the message read, and
+% increase the thread's $\lacq$ to include both the message and its
+% view.  
+% Writes increase all the views to include the message's view,
+% which itself is derived from the thread's $\lrel$ view.
+
+Fence commands bring these diverging views closer to one another.
+Specifically, an acquire fence increases the thread's $\lcur$ view to
+match its $\lacq$ view, thereby ensuring that the thread is up to date
+with respect to views of all the messages read before the fence.
+Symmetrically, a release fence increases the thread's $\lrel$ view to
+match its $\lcur$ view, thereby ensuring that the views of all
+messages the thread writes after the release fence will contain the
+messages observed before the fence.
+
+Returning to the \ref{eq:MPfences} program, suppose that 
+$T_1$ emitted messages $\msg{x}{1}{\_}{t_x}{\_}$
+and $\msg{y}{1}{\_}{t_y}{\mrel_y}$. 
+Then, $T_1$'s $\lcur$ view before the release fence 
+maps $x$ to $t_x$. % $[\vtup{x}{t_x},\vtup{y}{\ts{0}}]$. 
+The fence then updates $T_1$'s $\lrel$ view to match
+its $\lcur$ view, so that the message view accompanying the subsequent write to $y$ will map $x$ to $t_x$ as well.  % $\mrel_y=[\vtup{x}{t_x},\vtup{y}{t_y}]$.  
+(Without the release fence, 
+this message view would map $x$ to $\ts{0}$.) %$\mrel_y=[\vtup{x}{\ts{0}},\vtup{y}{\ts{0}}]$.)
+ On $T_2$'s side, the read of
+$y=1$ updates $T_2$'s $\lcur$ view to
+$[\vtup{x}{\ts{0}},\vtup{y}{t_y}]$, and its $\lacq$ view to
+$[\vtup{x}{t_x},\vtup{y}{t_y}]$.  The acquire fence then updates
+$T_2$'s $\lcur$ view to match its $\lacq$ view, and hence the
+subsequent read of $x$ must see the $x:=1$ write.  If either the
+release or the acquire fence were missing, then $T_2$'s $\lcur$ view
+at the read of $x$ would have been $[\vtup{x}{\ts{0}},\vtup{y}{t_y}]$,
+allowing it to read $x=0$.
+
+\paragraph{Interaction with Promises}
+
+Promises (like every other message) now carry a view,
+and threads reading a promise are subject to the same constraints as if they were reading a normal message.
+In particular, after reading a promise and performing an acquire fence, a thread can only read messages
+with timestamp greater than or equal to the view carried in the promise message.
+In order to avoid cases where execution gets stuck, we must ensure that \emph{some} message can be read
+for every location. Thus we require that the view attached to a promise message includes only timestamps of messages that exist in memory at the time the promise is made.
+%Formally, we impose a \emph{closedness} condition on the memory at every step of the execution:
+%we write $\mrel\in\mem$ if for every $x\in\Loc$, $\mrel(x)=m.\lto$ for some $m\in\mem$ with $m.\lloc=x$,
+%and say that a memory $\mem$ is \emph{closed} if $m.\lmrel\in\mem$ for every $m\in\mem$.
+
+Going back to \ref{eq:MPfences}, note that $T_1$ cannot promise $y:=1$
+before performing $x:=1$. Indeed, because of the release fence, the view in the $y:=1$ message must include the message
+that will be produced for the $x:=1$ assignment, but at the beginning the only message for $x$ in memory is the initial one (at timestamp $\ts{0}$).
+Hence, release fences effectively serve also as barriers for promises.
+We find it convenient to explicitly require this in our semantics: whenever a release fence is performed,
+the set of promises of the executing thread must be empty.
+% %
+% \ori{is it only convenient?}
+% %
+% \gil{We explicitly need it because one may be able to satisfy a
+%   promise over a release fence by raising undefined behavior. We have
+%   an example for this.}
+% %
+This may seem restrictive, but note that the main reason for introducing promises was to allow read-write reorderings,
+as in the \ref{eq:LB} example of \cref{sec:oota}.
+If there is a release fence in between the read and write, then the reordering is no longer possible, and thus our motivation for promising the write is void.
+
+\paragraph{Release/Acquire Accesses}
+
+In addition to release and acquire fences, C++ offers a more fine-grained way
+of achieving synchronization, via \emph{acquire reads} and \emph{release writes}.
+Intuitively speaking, an acquire read is a relaxed read followed by an acquire fence,
+whereas a release write is a release fence followed by a relaxed write,
+with the restriction that these fences induce synchronization \emph{only} on the location of the access.
+For example, in the following program,\footnote{In this and in following code snippets, we annotate non-relaxed accesses with their access mode; 
+all non-annotated accesses are relaxed.} 
+only the second thread synchronizes with the first one.
+$$
+\inarrIII{ x:=1 ;\\ y_{\relw}:=1;\\ z:=1; }
+         { a:=y_{\acqr}; \comment{1} \\ b:=x; \nocomment{0} }
+         { c:=z_{\acqr}; \comment{1} \\ d:=x; \comment{0} }
+$$
+Hence, $b$ must get the value $1$, while $d$ may get $0$.
+
+
+
+
+To model these accesses, we treat the $\lrel$ view of each thread not as a single view,
+but rather as one separate view per location, 
+recording the thread's current view at the latest release fence or release write to that location.
+Thus, when a thread performs a release write to location $x$, we update its release view of $x$ to match its $\cur$ view,
+while a release fence effects this update on the release views of \emph{all} locations.
+Then, a write to $x$ (either release or relaxed) will use the release view of $x$ (newly updated, if it is a release write) to form the view of the write message, and an acquire read
+will incorporate the message's view into the reading thread's current view.
+% On the other side, an acquire read updates the thread's current view to include the message's view.
+
+In the example above, at the end of $T_1$'s execution,
+its thread view has $\lrel(y)=[\vtup{x}{t_x},\vtup{y}{t_y},\vtup{z}{\ts{0}}]$,
+whereas $\lrel(z)=[\vtup{x}{\ts{0}},\vtup{y}{\ts{0}},\vtup{z}{t_z}]$.
+As a result, the $y_{\acqr}$ read increases $T_2$'s $\lcur$ view to $[\vtup{x}{t_x},\vtup{y}{t_y},\vtup{z}{\ts{0}}]$, 
+which forces it to then read $x=1$,
+whereas the $z_{\acqr}$ read increases $T_3$'s $\lcur$ view to $[\vtup{x}{\ts{0}},\vtup{y}{\ts{0}},\vtup{z}{t_z}]$, 
+which allows it to later read $x=0$.
+
+\paragraph{Release Sequences}
+
+Using the per-location release views, 
+we can straightforwardly handle C++-style \emph{release sequences}
+(following the  definition of release sequences given in \cite{c11comp}).
+%.\footnote{%
+%We follow the corrected definition of release sequences in \cite{c11comp}.}
+%%because the definition in the C++ standard is flawed. See \citet{c11comp} for details.}
+In C++, an acquire read synchronizes with a release write $w$ to $x$ not only if it reads from $w$
+but also if it reads from a write in $w$'s release sequence.
+The release sequence of $w$ is inductively defined to include all the same-thread writes/updates to $x$ after $w$, 
+as well as all updates reading from an event in the release sequence of $w$.
+For example, in the following program, the $y_{\acqr}$ synchronizes with the $y_{\relw}:=1$ 
+because it reads from the $\fai{y,1}$, which in turn reads from the $y:=2$.
+$$
+\inarrIII{ x:=1 ;\\ y_{\relw}:=1;\\ y:=2; }
+         { \fai{y,1}; }
+         { a:=y_{\acqr}; \comment{3} \\ b:=x; \nocomment{0} }
+$$
+Our operational semantics already handles the case of reading from a later write of the same thread,
+because the thread's release view for $y$ is included in the message's view.
+To handle the updates that read from elements of the release sequence, 
+we insist that the view of the write message of an update must incorporate the view of the read message of the update.
+Thus, in this example, the views of all the $y$ messages contain $\vtup{x}{t_x}$,
+and hence $T_3$ must read $x=1$.
+
+\paragraph{Promises Over Release/Acquire Accesses}
+We finally point out another delicate issue related to the interaction between
+promises and release/acquire accesses.
+Consider the following variants of the \ref{eq:LB} example:
+\begin{center}
+\hspace*{-2mm}
+\begin{minipage}{.5\columnwidth}
+\begin{equation}\label{eq:LBrel}\tag{LBr}
+\inarrII{ a:=x; \nocomment{1}\hspace*{-2pt}\\ y_{\relw}:=1; }{\hspace*{-2pt} x:=y; }
+\end{equation}
+\end{minipage}
+\hfill
+\begin{minipage}{.5\columnwidth}
+\begin{equation}\label{eq:LBacq}\tag{LBa}
+\inarrII{ a:=x_{\acqr}; \comment{1}\hspace*{-2pt} \\ y:=1; }{\hspace*{-2pt} x:=y; }
+\end{equation}
+\end{minipage}
+\end{center}
+%
+In the first variant (\ref{eq:LBrel}), the promise of $y_{\relw}:=1$ should be forbidden
+for the same reason that a promise over a release fence is forbidden,
+and hence the specified behavior is disallowed.
+We note that this behavior is possible under the C++ model, 
+but is not possible under the usual compilation of release writes
+to Power and ARM (using a \texttt{lwsync}/\texttt{dmb\_sy} fence in the first thread).\footnote{%
+Moreover, we observe that even the C++ model forbids this outcome, 
+if we additionally make the read of $y$ in the second thread into a consume read 
+(which is supposed to be compiled exactly as a relaxed read, but preserving syntactic dependencies).}
+More generally, our model forbids promises over release writes to the same location.
+%\ori{maybe just add: ``More generally, our model forbids promises over release accesses to the same location, and forbids the specified behavior in \ref{eq:LBrel}''.
+%I actually dislike our $\neq$ notation, program comments are needed just to specify a behavior,
+%so we can later say ``the specified behavior in ...''. When we put $\neq$ we choose 
+%arbitrarily where to put it...}
+%(release writes to location $x$ can only be performed by a thread $T$ when 
+%the set of promises of $T$ do not include a promise for $x$).
+%This restriction simplifies one part in the DRF proof.
+
+In the second variant (\ref{eq:LBacq}), we allow the promise of $y:=1$ and thus the $a=1$ outcome.
+The reason is that we want to enable optimizations that 
+result in the elimination of an acquire read and thus remove the reordering constraints of the acquire.
+Consider, for example, the following program transformation:
+\begin{equation}\label{eq:acq_merge}\tag{LBa$'$}
+\inarrII{a:=x;\comment{2}\\ y:=1;\\b := y_{\acqr};\\y:=2;}{x:=y;} \quad \leadsto \quad
+\inarrII{y:=1;\\b := 1;\\y:=2;\\ a:=x;\comment{2}}{x:=y;}
+\end{equation}
+which may in effect reorder the $y:=2$ write before the $a:=x$ read even though there is an acquire read in between
+(by first replacing $y_{\acqr}$ with $1$ and then reordering $a:=x$ past both writes to $y$).
+Thus, our semantics has to allow promises over acquire actions.
+Note that there is no need to do so for release writes, because release writes cannot simply be eliminated in this way.
+%They may be only merged with adjacent writes to the same location.\ori{and why is this not a problem? to continue here}
+
+
+%\begin{remark}
+%\label{explicit_np}
+%Our model explicitly forbids promises over release accesses to the same location
+%(release writes to location $x$ can only be performed by a thread $T$ when 
+%the set of promises of $T$ do not include a promise for $x$).
+%This restriction allows us to simplify one part in the DRF proof.
+%Nevertheless, we believe it is redundant as an explicit condition, 
+%and we leave its removal to future work.
+%\end{remark}
+
+\subsection{Sequentially Consistent (SC) Fences}
+\label{sec:sc}
+
+We now extend the model with sequentially consistent (SC) fences, 
+whose purpose is to allow the programmer
+to enforce strong ordering guarantees among memory accesses. 
+In particular, full
+sequential consistency is restored if an SC fence is  
+placed between every two shared memory accesses of
+a program.\footnote{In this regard, our semantics is stronger than the C++ model~\cite{Batty:2011},
+which fails to validate this basic property, and follows Lahav~\etal~\cite{sra,repairing-sc} instead.} 
+%and is stronger than the original C++
+%model~\cite{Batty:2011} as well as that of Batty~\etal~\cite{Batty:2016}, both of which fail to validate
+%this basic property. \derek{Cite our PLDI TR?  We need something to back up
+%claim of others' failure.}}
+
+To handle SC fences, we extend our machine state with a \emph{global} timemap $\gsco$,
+which records the latest messages written by any thread before an SC fence.
+When a thread $T$ executes an SC fence, in addition to the effect of both an acquire and a release fence, 
+$T$ increases both its $\lcur$ view and the global timemap to the maximum of the two.
+Consider the following variant of the \ref{eq:SB} example:
+\begin{equation}\label{eq:SBfences}\tag{SB+fences}
+\inarrII{ x:=1 ;\\ \fencesc;\\ a:=y; \comment{0} }{  y:=1; \\ \fencesc;\\ b:=x; \nocomment{0} }
+\end{equation}
+Here, the current views of the two threads
+just before their SC fences are $[\vtup{x}{t_x},\vtup{y}{\ts{0}}]$ and 
+$[\vtup{x}{\ts{0}},\vtup{y}{t_y}]$, respectively, while the global view is
+$[\vtup{x}{\ts{0}},\vtup{y}{\ts{0}}]$.  If the fence of $T_1$ is executed
+first, it will update $\gsco$ to $[\vtup{x}{t_x},\vtup{y}{\ts{0}}]$.
+So, when the fence of $T_2$ is executed, both its $\lcur$ view and
+$\gsco$ become $[\vtup{x}{t_x},\vtup{y}{t_y}]$, from which point
+onwards $T_2$ \emph{must} read $x=1$.
+
+
+%\paragraph{SC Accesses } %Ori: if i remove the space here, my latex goes crazy 
+%
+%Besides SC fences, C++ also provides the notion of SC accesses, which can be
+%thought of roughly as release/acquire accesses bundled with a ``location-specific SC fence''. 
+%In the case of the \ref{eq:SB} example, ruling out the weak behavior without
+%fences requires one to make \emph{all four} accesses be SC accesses.
+%
+%To handle these accesses, we need more machinery.
+%First, we extend the notion of a view $\view$---both message views $\mrel$ and the
+%three component views of a thread $(\lcur,\lacq,\lrel)$---from being a single timemap to a pair of timemaps:
+%one ``normal'' one ($\view.\lrw$) as before, and one for SC accesses ($\view.\lsco$), which must be higher in timestamp order than $\view.\lrw$ and which serves to restrict the possible timestamps available to future SC accesses.
+%% The normal timemap is interpreted as before: it records the most recent writes that have so
+%% far been observed.
+%% The SC timemap is generally larger ($\view.\lrw\leq \view.\lsco$), and it serves to record
+%% the  and in the case of an SC write, 
+%% it additionally records all the SC writes (as well as the normal writes before SC fences) that were executed before it.
+%% We likewise extend the three component views of a thread $(\lrel,\lcur,\lacq)$ to consist of such pairs of timemaps.
+%When performing an SC read,
+%a thread has to respect its $\lcur.\lsco$ timemap,
+%and update its views similarly to an acquire read.
+%When performing an SC write, again, a thread has to respect its $\lcur.\lsco$ timemap,
+%and update its views similarly to a release write;
+%but it also has to respect the global SC timemap $\gsco$ (by picking a timestamp greater than 
+%the one recorded in $\gsco$), and include $\gsco$ in its new timemap $\lcur.\lsco$.
+%% Together, we have that the $\lrw$ timemaps in the thread views are interpreted as before, whereas the $\lsco$ timemaps also record
+%% the latest access that was executed (perhaps by another thread) before an SC access by the current point ($\lcur$),
+%% or before the last release fence ($\lrel$) or will be seen by the next acquire fence ($\lacq$).
+%
+%% \ori{maybe a bit better- but still unreadable....}
+
+\subsection{``Plain'' Non-Synchronizing Accesses}
+\label{sec:plain}
+
+Both C++ and Java provide some form of \emph{non-synchronizing} accesses, \ie accesses that are meant to be used only for non-racy data accesses
+(C++'s non-atomic accesses and Java's normal accesses).
+Such accesses can never achieve synchronization, even together with fences.
+Consequently, compilers are free to reorder non-synchronizing reads across acquire fences, and to reorder release fences across non-synchronizing writes.
+These non-synchronizing accesses, which we refer to as \emph{plain} accesses, are easily supported in our model.
+The difference from relaxed accesses is simple:
+a plain read from a message $m$ should not incorporate $m.\lmrel$ into the thread's $\lacq$ view;
+and a message $m$ produced by a plain write should only carry the $\ts{0}$-view (\ie $\bot$ in the lattice of views).
+Moreover, plain writes can be promised even beyond a release fence or a release write to the same location.
+
+Besides the reordering mentioned above, compilers can (and do) utilize further the assumption that some accesses 
+are intended to be non-racy.
+Indeed, assuming two non-racy reads, a compiler may reorder them even if they are reading \emph{the same} location.
+In a broader context, it may pave the way to further optimizations 
+(\eg a compiler may prefer to unconditionally optimize $a:=x; b:=*p;$ $c:=x$ to $b:=*p; a:=x; c:=a$, 
+without the burden of analyzing whether the pointer $p$ points to $x$ or not).
+Since we followed C++'s assumption of full per-location coherence for our relaxed accesses, 
+the reordering of two reads from the same location is unsound for them. 
+Concretely, consider the following example:
+$$
+\inarrII{x:=1;\\ x:=2;}{a:=x;\comment{2}\\ b:=x;\comment{1}} \quad \leadsto \quad
+\inarrII{x:=1;\\ x:=2;}{b:=x;\comment{1}\\ a:=x;\comment{2}}
+$$
+The target program obviously allows the specified behavior, while the source does not.
+Fortunately, it is not hard to adapt our plain accesses to provide only partial per-location coherence
+(in C++11 terms, dropping ``coherence-RR'' for plain accesses), consequently allowing this reordering.
+The idea is to extend the notion of a view $\view$---both message views $\mrel$ and the
+three component views of a thread $(\lcur,\lacq,\lrel)$---from being a single timemap to a pair of timemaps:
+a ``normal'' one ($\view.\lrw$) as before, and one for plain accesses ($\view.\lur$).
+The $\view.\lur$ timemap is generally smaller than the normal timemap ($\view.\lur \leq \view.\lrw$),
+and restricts the possible timestamps available to plain reads.
+A plain read from a message $m$ with location $x$ and time $t$ only consults this new timemap,
+checking that $\lcur.\lur(x) \leq t$, and only updates $\lcur.\lrw(x)$ to include $t$.
+ A plain write, on the other hand, cannot pick a timestamp smaller than $\lcur.\lrw(x)$ 
+(since we do maintain the other coherence properties besides ``coherence-RR'').
+
+Importantly, we do not exploit ``catch-fire'' semantics (\`a la C++) to accommodate our plain accesses,
+but rather give a well-defined semantics to arbitrary racy programs.
+In addition, we note that it is easy to decouple the two weaknesses of plain accesses compared to relaxed ones,
+by introducing a middle access mode that allows synchronization
+(together with release and acquire fences) but supports only partial per-location coherence.  
+
+\begin{remark}
+Our model handles only hardware-atomic memory accesses.
+To handle non-atomic reads/writes, such as Java double and C struct accesses, our semantics could be extended 
+by introducing ``garbage values'' (LLVM-style undefined values~\cite{llvm}) as in \cite{Soham17}.
+% \derek{I never understood this paragraph.  Is the point that we are not handling mixed-size accesses?}
+% \viktor{Updated.}
+\end{remark}
+
+\subsection{System Calls}
+\label{sec:sys_call}
+For the purpose of  defining the behaviors of programs (as needed to prove soundness of transformations),
+we augment our language and semantics with system calls labeled with ``$\syscallt$''.
+These are operations that  are visible to an external observer (\eg printing statements). 
+For simplicity, we assume that these take one value (input or output),
+and more importantly, that they do not access the memory, and serve as the strongest barrier for reordering.
+Thus, we simply model system calls as SC fences.
+
+\subsection{Modifying Existing Promises}
+
+So far, our model does not allow promises, once made, to be changed.
+However, our full model does allow two forms of promise adjustment,
+both of which are defined in such a way that threads that have already
+read from the promised message are unaffected.
+
+% our full model does allow two kinds of modification of promised messages.
+% Obviously, both are defined in a way that other threads, that already read the promised message,
+% could have continued the same had they read from the modified promise.
+
+\paragraph{Split}
+
+The first form of promise adjustment is \emph{splitting}.
+Consider the following example:
+$$
+\inarrII{ a := x ;  \comment{2} \\  \ite{a = 2}{\fai{y,1}; \fai{y,1};}{\fai{y,2};} }{ x := y; }
+$$
+%Here, $y\texttt{+=}2$ denotes a fetch-and-add instruction that increments $y$ by $2$.
+We find it natural to allow the specified behavior, as it can be obtained by benign compiler optimizations:
+first $\fai{y,1}; \fai{y,1}$ can be merged to $\fai{y,2}$, and then the whole if-then-else statement can be replaced by $\fai{y,2}$.
+Nevertheless, the model described so far forbids this behavior.
+Indeed, clearly, an execution obtaining this behavior must start with $T_1$ promising $\updmsg{y}{2}{f}{t}$.
+Since this promise must be certified under an arbitrary future memory, $T_1$ must pick $f=\ts{0}$ (or else, it cannot fulfill its promise for a 
+memory that includes, say, $\updmsg{y}{42}{\ts{0}}{\ts{5}}$). Then, $T_2$ can read the promise and add a message of the form $\updmsg{x}{2}{\_}{t_x}$ to the memory.
+Now, $T_1$ would like to read this message.
+However, if it does so, it will not be able to fulfill its promise $\updmsg{y}{2}{\ts{0}}{t}$, simply because there is no available timestamp
+interval in which it can put the first $y=1$ message.
+To solve this, we allow threads to split their own promises in two pieces, keeping the original promise with the same $m.\lto$
+value.
+For the example above, $T_1$ could proceed by splitting its promise $\updmsg{y}{2}{\ts{0}}{t}$ into 
+$\updmsg{y}{1}{\ts{0}}{t/\ts{2}}$  and $\updmsg{y}{2}{t/\ts{2}}{t}$, reading the message $\updmsg{x}{2}{\_}{t_x}$ and fulfilling both promises.
+
+
+% \ori{also: splits allows us to have simple simulation relation for proving soundness of merging that eliminate writes.}
+
+
+\paragraph{Lower}
+
+The second form of promise adjustment is \emph{lowering} of the promised message's view.
+Note that by promising a message carrying a high view, a thread places \emph{more} restrictions on the readers of that promise.
+Thus, changing the view of a promise $m$ to a view $\mrel'\leq m.\lmrel$ can never cause any harm.
+Technically, including this option simplifies our simulation arguments used to prove the soundness of program transformations,
+by allowing us to have a simpler simulation relation between the source and target memories.
+%\ori{is this correct?}  \jeehoon{Yes; if the promised messages of the source and the target are fulfilled with different released views, lowering is essential in the current simulation technique.  It may be a future work to remove lowering in the model and yet prove optimizations.}
+More generally speaking, it allows us to prove and use the following natural property:
+if all the views included in some machine state $\mconf$ (in its memory's messages and its threads' views)
+are less than or equal to all views in another machine state $\mconf'$, 
+then every behavior of $\mconf'$ is also a behavior of $\mconf$.
+
+\subsection{Formal Model}
+\label{sec:full-formal}
+
+\figfull
+
+Finally, we formally present our full model,
+combining and making precise all the ideas outlined above.
+The model employs three modes for memory accesses, naturally ordered as follows:
+\[\pln ~~\sqsubset~~\rlx~~\sqsubset~~\ra\]
+%\[\pln ~~\sqsubset~~\rlx~~\sqsubset~~\ra~~\sqsubset~~\sco\]
+We use $o$ as a metavariable for access mode.
+The programming language is modeled by a transition system whose 
+transition labels (see \cref{sec:relaxed-formal}) are:
+``$\silentt$'' for local transitions;
+${\rlab(o,x,v)}$  for reads;
+${\wlab(o,x,v)}$  for writes;
+${\ulab(o_\lr,o_\lw,x,v_\lr,v_\lw)}$  for updates;
+${\flab_\acqo},{\flab_\relo},{\flab_\sco}$ for fences;
+and  ${\syscallt}$ for system calls.
+Note that updates have two access modes, one for the read and one for the write;
+and that only fences may have the $\sco$ mode.
+
+\paragraph{View}
+A \emph{view} is a pair $\view=\tup{T_\lur,T_\lrw}$ of timemaps (see \cref{sec:relaxed-formal})
+satisfying $T_\lur \leq T_\lrw$.
+We denote by $\view.\lur$ and $\view.\lrw$ the components of $\view$.
+$\View$ denotes the set of all views.
+%A \emph{view} is a pair $\view=\tup{T_\lur,T_\lrw,T_\lsco}$ of timemaps (see \cref{sec:relaxed-formal})
+%satisfying $T_\lur \leq T_\lrw \leq T_\lsco$.
+%We denote by $\view.\lur$, $\view.\lrw$ and $\view.\lsco$ the components of $\view$.
+%$\View$ denotes the set of all views.
+
+\paragraph{Messages}
+A \emph{message} $m$ is a tuple $\msg{x}{v}{f}{t}{\mrel}$,
+where $x\in\Loc$, $v\in\Val$, $f,t\in\Time$, and $\mrel\in \View$,
+such that $f<t$ or $f=t=\ts{0}$, and $\mrel.\lrw(x) = t$ or $\mrel = \bot$.
+We denote by $m.\lloc$, $m.\lval$, $m.\lfrom$, $m.\lto$, and $m.\lmrel$ the components of $m$.
+
+\paragraph{Memory}
+A \emph{memory} is a (nonempty) pairwise disjoint finite set of messages
+(see \cref{sec:updates} for def.\ of disjointness).
+A memory $\mem$ supports the following insertions of a message $m=\msg{x}{v}{f}{t}{\mrel}$  :
+\begin{itemize}
+\item The \emph{additive insertion}, denoted by $\mem \insertadd m$,
+ is only defined if $\setofz{m}\disj \mem$,  in which case it is given by
+ $\setofz{m} \cup \mem$.
+\item The \emph{splitting insertion}, denoted by $\mem \insertsplit m$,
+is only defined if there exists $m'=\msg{x}{v'}{f}{t'}{\mrel'}$ with $t<t'$ in $\mem$, 
+in which case it is given by $\mem{\setminus}\setofz{m'} \cup \setofz{m, \msg{x}{v'}{t}{t'}{\mrel'}}$.
+\item The \emph{lowering insertion}, denoted by $\mem \insertupdate m$,
+is only defined if there exists $m'=\msg{x}{v}{f}{t}{\mrel'}$ with $\mrel \leq \mrel'$ in $\mem$,
+in which case it is given by $\mem{\setminus}\setofz{m'} \cup \setofz{m}$.
+\end{itemize}
+We write $M(x)$ for the sub-memory $\setof{m \in M \suchthat m.\lloc = x}$.
+%We write ${\mem \astep{} \mem'}$ if $\mem'\in\{\mem\insertadd m,\mem \insertsplit m,\mem \insertupdate m\}$
+%for some message $m$.
+%Note that $\mem \astep{} \mem$ (by def.\ of $\mem \insertupdate m$).
+
+\paragraph{Closed Memory}
+Given a timemap $T$ and a memory $\mem$, we write $T\tmin\mem$ 
+if, for every $x\in\Loc$, we have $T(x)= m.\lto$ for some 
+$ m\in\mem$ with $m.\lloc = x$.
+For a view $\view$, we write $\view \tmin \mem$ if $T \tmin \mem$ for each component timemap $T$ of $\view$.
+A memory $\mem$ is \emph{closed} if $m.\lmrel \tmin \mem$ for every $m\in \mem$.
+
+\paragraph{Future Memory}
+For memories $\mem,\mem'$, we write ${\mem \astep{} \mem'}$ if 
+$\mem'\in\{\mem\insertadd m,\mem \insertsplit m,\mem \insertupdate m\}$
+for some message $m$, and $\mem'$ is closed.
+We say that $\mem'$ is a \emph{future memory} of $\mem$ w.r.t. a memory $\lprom$,
+if $\lprom \subseteq \mem'$ and  $\mem \astep{}^* \mem'$.
+
+\paragraph{Threads}
+A \emph{thread view} is a triple $\tcom=\tup{\cur,\acq,\rel}$,
+where $\cur,\acq\in\View$ and $\rel\in\Loc\to\View$
+satisfying $rel(x) \leq cur \leq acq$ for all $x\in\Loc$.
+We denote by $\tcom.\lcur$, $\tcom.\lacq$, and $\tcom.\lrel$ the components of $\tcom$.
+A \emph{thread state} is a triple $\lts=\tup{\sigma,\tcom,\lprom}$
+defined just as in~\cref{sec:relaxed-formal} except with a thread view $\tcom$ instead of
+a single timemap ($\sigma$ is a local state and $\lprom$ is a memory).
+We denote by $\lts.\lstate$, $\lts.\lview$, and $\lts.\lprmem$ the components of $\lts$.
+
+\paragraph{Thread Configuration Steps}
+A \emph{thread configuration} is a triple $\tup{\lts,\gsco,\mem}$,
+where $\lts$ is a thread state, $\gsco$ is a timemap (the global SC timemap), and $\mem$ is a memory.
+
+\Cref{fig:full-opsem-a} presents the full list of thread configuration steps.
+To avoid repetition, we use the additional 
+rules \textsc{read-helper}, \textsc{write-helper}, and \textsc{sc-fence-helper}.
+These employ several helpful notations:
+$\bot$ and $\sqcup$ denote the natural bottom elements and join operations for timemaps and for views 
+(pointwise extensions of the initial timestamp $\ts{0}$ and the $\sqcup$---\ie $\max$---operation on timestamps);
+$\{\vtup{x}{t}\}$ denotes the timemap assigning $t$ to $x$ and $\ts{0}$ to other locations;
+and $\iteb{cond}{X}$ is defined to be $X$ if $cond$ holds, 
+and $\bot$ otherwise.
+
+%Promise steps use the \textsc{memory:promise} rule,
+%that inserts a message to the global memory as well as to the set of promises (that is always a subset of the global memory).
+%This insertion may be of any of the three insertion kinds mentioned earlier.
+
+The write and the update steps cover two cases: a fresh write to memory (\textsc{memory:new}) and a fulfillment of an outstanding promise (\textsc{memory:fulfill}).
+The latter allows to split the promise or lower its view before its fulfillment 
+(note that when $m\in \lprom \suq \mem$, we have  
+$\lprom=\lprom \insertupdate m$
+and 
+$\mem=\mem \insertupdate m$ by def.\ of $\insertupdate$).
+%Both rules check that there are no outstanding promises for the same location when the write has mode $\sqsupseteq \ra$ (see \remarkref{explicit_np}).
+
+\paragraph{Consistency}
+A {thread configuration} $\tup{\lts,\gsco,\mem}$ is called \emph{consistent} if
+for every future memory $\omem$ of $\mem$ w.r.t. $\lts.\lprmem$
+and every timemap $\ogsco$ with ${\gsco \leq \ogsco \tmin \omem}$,
+there exist $\lts'$, $\gsco'$, $\mem'$ such that:
+\[
+\tup{\lts,\ogsco,\omem} \astep{}^* \tup{\lts',\gsco',\mem'}
+~~\land~~ \lts'.\lprmem = \emptyset
+\]
+
+\paragraph{Machine and Behaviors}
+
+A \emph{machine state} is a triple $\mconf = \tup{\gts,\gsco,\mem}$ consisting of a
+function $\gts$ assigning a thread state to every thread, an SC timemap $\gsco$, and a memory $\mem$.  
+The initial state $\mconf^0$ (for a given program) consists of 
+the function $\gts^0$ mapping each thread $i$ to its initial state $\sigma_i^0$,
+the zero thread view (all timestamps in all timemaps are $\ts{0}$),
+and an empty set of promises;
+the zero timemap $\gsco^0$;
+and the initial memory $\mem^0$ consisting of one message $\msg{x}{0}{\ts{0}}{\ts{0}}{\bot}$ for each location $x$.
+The machine step is defined by the last rule in \cref{fig:full-opsem-a}.
+The variable $e$ in the final thread configuration step can either be a usual step ($e$ is empty),
+or denote a system call ($e=\syscallt$).
+
+To define the set of behaviors of a program $\prog$ 
+(namely, what is externally observable during $\prog$'s executions), 
+we use the system calls that $\prog$'s executions perform.
+More precisely, every execution induces a sequence of system calls 
+(each includes a specific value for input/output),
+and the set of behaviors of $\prog$ is taken to be the set of all system call sequences induced by executions of $\prog$.
+
+\paragraph{Promise-Free Machine}
+In several of our results below, we make use of the fragment of our
+model obtained by revoking the ability to make promises (\ie omitting
+the \textsc{promise} rule).  We call this the \emph{promise-free
+  machine}.
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:

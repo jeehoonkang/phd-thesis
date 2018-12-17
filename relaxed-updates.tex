@@ -1,0 +1,401 @@
+\newcommand{\figupdates}{
+\begin{figure}[t]
+\small
+\begin{mathpar}
+%
+\vspace*{-1mm}
+%
+\inferrule[\textsc{(thread: fulfill update)}]
+{
+\sigma \astep{\ulab(x,v_\lr,v_\lw)} \sigma'  \\
+\updmsg{x}{v_\lr}{f_\lr}{t_\lr} \in \mem \\\\
+m_\lw=\updmsg{x}{v_\lw}{t_\lr}{t_\lw} \\ m_\lw \in \lprom \\ \lprom'=\lprom \setminus \setofz{m_\lw}\\\\
+\rlxcur(x) \leq t_\lr \\
+\rlxcur'  = \rlxcur[x\mapsto t_\lw]
+}
+{\tup{\tup{\sigma, \rlxcur, \lprom}, \mem} \astep{} \tup{\tup{\sigma', \rlxcur', \lprom'}, \mem}}
+\end{mathpar}
+\caption{Additional rule for updates (all other rules are as before except all
+messages $\rlxmsg{x}{v}{t}$ are replaced by $\updmsg{x}{v}{f}{t}$).}
+\label{fig:updates}
+\end{figure}}
+
+
+\section{Supporting Atomic Updates}
+\label{sec:updates}
+
+In this section, we extend our basic model for relaxed accesses to
+also handle (relaxed) \emph{atomic update}---aka \emph{read-modify-write}
+(RMW)---instructions, such as fetch-and-add and compare-and-swap.
+Updates are essential as a means to implement synchronization (\eg
+mutual exclusion) between threads, but this also makes them tricky to
+model semantically.  In particular, a successful update operation
+performed by one thread will often have the effect of ``winning a
+race'' and hence blocking (previously possible) update operations
+performed by other ``losing'' threads.  This stands in contrast to the
+updates-free fragment in \cref{sec:relaxed}, in which threads are free
+to ignore the messages of other threads.  Thus, to extend our model to
+support updates, we must ensure that threads performing
+updates cannot invalidate the already-certified promises of other
+threads.
+
+%  and avoid the possibility of threads getting stuck, we
+% must modify our promises mechanism so as to ensure that threads
+% performing updates cannot invalidate the already-certified promises of
+% other threads.
+
+An update is an atomic composition of a read and a write to the same
+location $x$. However, unlike under SC, atomicity requires more than
+just avoiding interference of other threads between the two operations.
+Consider the following example
+(taking $\fai{x,1}$ to be an atomic \emph{fetch-and-add} of $1$ to $x$,
+which returns the value of $x$ before the increment):
+% \jeehoon{We use FAA for the abbreviation for fetch-and-increment.  I think we should be consistent and say fetch-and-add here.}
+\begin{equation}\label{eq:par-inc}\tag{Par-Inc}
+\inarrII{ a:= \fai{x,1};}{b:=\fai{x,1};}
+\end{equation}
+Atomicity ensures that it is not possible for both threads to
+increment $x$ from $0$ to $1$ (we must either get $a=1$ or $b=1$). To
+obtain this, we require that the \emph{read timestamp} of the update
+(\ie the timestamp of the write message that the update reads from)
+immediately precede its \emph{write timestamp} (\ie the timestamp of
+the write message that the update generates) in $x$'s modification
+order, and that future writes to $x$ may not be assigned timestamps in
+between them.  In the example above, if both of the updates were to
+increment $x$ from $0$ to $1$, the write timestamp for one of the
+updates would have to come between the read and write timestamps for
+the other update.
+
+To enforce this restriction, we extend messages to store a
+continuous range of timestamps rather than a single timestamp.  Thus,
+messages are now tuples of the form $\updmsg{x}{v}{f}{t}$ where
+$x\in\Loc$, $v\in\Val$, and $f,t\in \Time$ satisfying
+${f < t}$ or $f=t=\ts{0}$.
+%\ori{to add: (unless $f=t=\ts{0}$ for messages appearing in the initial memory)}
+We write $m.\lfrom$ and $m.\lto$ to denote the $f$
+and $t$ components of a message $m$.  Intuitively, $m$ can be
+thought of as \emph{reserving} the timestamps in the range
+$(m.\lfrom,m.\lto]$; among these, $m.\lto$ is the ``real'' timestamp
+of $m$, but the remaining timestamps in the range are
+reserved so that other messages cannot use them.  Timestamp
+reservation is reflected in the following revised definition of
+message disjointness, which enforces that disjoint messages for the
+same location must have disjoint ranges:
+%\begin{multline*}
+%\hspace{-9pt} m\disj m' ~\triangleq ~ m.\lloc \neq m'.\lloc ~\lor \\
+%~ (m.\lto \neq m'.\lto ~ \land ~  (m.\lfrom,m.\lto] \cap (m'.\lfrom,m'.\lto] =\emptyset)
+%\end{multline*}
+\begin{multline*}
+\updmsg{x}{v}{f}{t}\disj \updmsg{x'}{v'}{f'}{t'} ~\triangleq ~  \\ x \neq x' ~~\lor~~
+%% (t \neq t' ~ \land ~  
+t\leq f' < t' ~~\lor~~ t'\leq f < t
+%% (f,t] \cap (f',t'] =\emptyset
+%% )
+\end{multline*}
+With timestamp reservation, we can easily ensure that the write timestamp of
+an update is adjacent to its read timestamp in the modification order.
+% $m.\lto$ can be thought of
+% as the ``real'' timestamp marking when the message was sent; 
+% in the timestamp range $(m.\lfrom,m.\lto]$, where $m.\lto$ can be thought
+% as the real timestamp when the message is sent, and the range
+% $(m.\lfrom,m.\lto)$ is the set of reserved timestamps, which can
+% ensure adjacency with some previous message.  
+Formally, we will say two messages $m$ and $m'$ are \emph{adjacent},
+denoted $\mathsf{Adj}(m,m')$, if $m.\lloc=m'.\lloc$ and
+$m.\lto = m'.\lfrom$.  In defining the semantics of updates, we will
+then insist that the message that the update inserts into memory must
+appear adjacently after the message that it reads from.
+This suffices
+to guarantee the correct outcome in the \ref{eq:par-inc} program
+above. 
+
+% The ability to reserve a range of timestamps is a mixed blessing. 
+% On the one hand, it is needed to implement the atomicity of updates.
+% In the \ref{eq:par-inc} program above, it is used to ensure the two updates happen one after another, and thus the final value of $x$ is $2$.
+Although the introduction of timestamp reservation enables us to
+easily model updates, it creates a complication for promises, namely
+that timestamp reservations may invalidate the promise certifications
+already performed by other threads.  Consider, for example, the
+following program:
+\begin{equation}\label{eq:upd-stuck}\tag{Upd-Stuck}
+\inarrIII{ a:=x; \comment{1} \\ b:=\fai{z,1}; \comment{0} \\ y:=b+1; }{ x:=y; }{ \fai{z,1};}
+\end{equation}
+This behavior ought to be allowed, since hardware could reorder the
+read of $x$ after the independent accesses to $z$ and $y$.  To produce
+this behavior, following our semantics from the previous section,
+$T_1$ could promise to write $y:=1$ because it can
+thread-locally certify that the promise can be fulfilled (the
+certification will involve updating $z$ from $0$ to $1$).  If,
+however, $T_3$ then updates $z$ from $0$ to $1$, that will mean that
+$T_1$ can no longer perform the update it needs to fulfill its
+promise, and its execution will eventually get stuck.
+%   The difference from the simplified model of \cref{sec:relaxed}
+% is that, with relaxed the ability to perform a specific update (\eg from $0$ to $1$)
+% is tonow threads may no longer ignore messages of other threads,
+% because updates must be atomic.
+
+To avoid such stuck executions, we strengthen the check performed by
+promise certification, \ie the consistency requirement on thread
+configurations.  We require that each thread's promises are locally
+fulfillable not only in the current memory, but also \emph{in any
+future memory}, \ie any extension of the memory with additional
+messages.  This quantification over future memories ensures that
+thread configurations remain consistent whenever another thread
+performs an execution step, and thus the machine cannot get stuck.
+
+Returning to the above example, $T_1$ will not be permitted to promise
+to write $y:=1$ in the initial state, precisely because that promise
+could not be fulfilled under an arbitrary future memory (\eg one
+containing the update of $T_3$, as we showed).  $T_1$ may, however,
+first promise $\updmsg{z}{1}{\ts{0}}{\ts{1}}$, reserving the time
+range from the initialization of $z$ up to its increment.  $T_1$
+can fulfill that promise, because no future extension of the memory
+will be able to add any messages in between.  After making that
+promise, $T_1$ may then promise, \eg $\updmsg{y}{1}{\ts{3}}{\ts{4}}$, which it can
+now fulfill under any extension of the memory.  With these promises in
+place, $T_3$ will be prevented from updating $z$ from $0$ to $1$; it
+will be forced to update $z$ from $1$ to $2$, which will not block the
+future execution of $T_1$.
+
+% With these two promises,
+% the second thread may read $y=1$, write $x:=1$, and thus the first
+% thread may read $x=1$ and fulfil its promises.
+
+\figupdates
+
+Our quantification here over \emph{all} future memories may seem
+rather restrictive in that it completely ignores what can or cannot
+happen in a particular program.  That said, we find it a simple and
+natural way of ensuring ``thread locality''.  The latter is a guiding
+principle in our semantics, according to which the set of actions a
+thread can take is determined only by the current memory and its own
+state.
+
+Formally, we say that $\omem$ is a \emph{future memory} of $\mem$ if
+${\omem = \mem \insertadd m_1 \insertadd \ldots \insertadd m_n}$
+for some $n\geq 0$ and messages $m_1,\ldots,m_n$. And
+we now say a thread configuration $\tup{\lts,\mem}$ is
+\emph{consistent} if, for every future memory $\omem$ of $\mem$, there
+exist $\lts'$ and $\mem'$ such that $\tup{\lts,\omem} \astep{}^* \tup{\lts',\mem'}$
+and $\lts'.\lprmem = \emptyset$.
+
+Finally, we extend the operational semantics for thread configurations
+with one additional rule for update fulfillment shown in
+\cref{fig:updates}.  This rule forces its write to be adjacent in
+modification order to its read.  As with ordinary writes, a normal
+(non-promised) update step can be simulated by a promise step
+immediately followed by fulfillment.  Note that the other rules remain
+exactly the same; they simply ignore the $m.\lfrom$ component of
+messages $m$.
+%\derek{This is confusing.  We should use consistent notation between both
+%figures if possible.}
+% it reads a message $m_\lr$ from memory and fulfils a promised message $m_\lw$ 
+% combining the conditions of the earlier \textsc{read} and \textsc{write} rules.
+% In addition, it requires the two messages to be adjacent, thereby ensuring the atomicity of the update.
+
+% \jeehoon{We did not discuss in the previous section that plain write equals promise plus fulfill.}
+% \ori{we did, when explaining the rules}
+
+% As we have seen, our model treats an update as a write that is
+% guaranteed to generate a write message adjacently after an existing
+% one.  But 
+% Another way in which a thread may get stuck is if another thread
+% depletes the range of free timestamps necessary.  Consider, for example, the
+% following program:
+% $$
+% \inarrIII{ a:=y; \comment{2}\\ \itne{a=2}{x:=1};\\x:=2; }{ y := x }{ x := 1 }
+% $$
+% Suppose $T_1$ promises $\rlxmsg{x}{2}{1}{2}$, after which $T_2$ reads
+% this message and writes $y:=2$.  At this point, $T_1$ is free to
+% read 
+
+
+% The first thread may promise to write $x:=2$ at a future timestamp range.
+% The second thread may then read $x$ and write $y:=2$, and so if the first thread at this point it may return $a=2$.
+% What could, however, happen instead is that the third thread could intervene and write $x:=1$ reserving the entire range from the initialization of $x$ to the promised write of $x:=2$.
+% Such a write would then leave no space for the first thread to put its $x:=1$ write, and it would thus be blocked from returning $a=2$.
+% What went wrong in this execution was that the third thread was able to deplete the range of free timestamps between the initialization of $x$ and the $x:=2$ write.
+% To forbid this case, we require that messages added to the memory cannot be adjacently before an already existing message in the memory.
+% Formally, the \emph{additive insertion} of a message $m$ into a memory $\mem$, 
+% denoted by $\mem \insertadd m$, is given by:
+% \[
+% \mem \insertadd m \defeq \begin{cases} 
+% \setofz{m} \cup \mem & \text{if } 
+% %\setofz{m}\disj \mem \land 
+% %{}\\&\phantom{\text{if }} 
+% \forall m' {\in}\mem.~ m\disj m' \land \lnot \mathsf{Adj}(m,m') \\
+% \mathit{undefined} & \text{otherwise} \end{cases}
+% \]
+
+
+% \TODO{Should we discuss the multistep machine step rule?}
+
+% \[
+% \inferrule*[Right=\textsc{(machine step)}]
+% {\tup{\gts(i),\mem} \astep{}^* \tup{\lts',\mem'} \\\\
+% \tup{\lts',\mem'} \text{ consistent}}
+% {\tup{\gts,\mem} \astep{} \tup{\gts[i\mapsto \lts'],\mem'}}
+% \] 
+
+
+
+
+
+
+
+% \subsection{OLD STUFF}
+
+% \begin{mathpar}
+
+% \inferrule*[Right=\textsc{(split-promise)}]
+% {
+% \lprom'= \lprom \insertsplit m  \\
+% \mem'= \mem \insertsplit m 
+% }
+% {\tup{\tup{\sigma, \cur, \lprom},\mem} \astep{} \tup{\tup{\sigma, \cur, \lprom'},\mem'}}
+
+% \end{mathpar}
+
+
+% \paragraph{Message.}
+
+% The \emph{splitting insertion} of a message $m$ into a memory $\mem$, 
+% denoted by $\mem \insertsplit m$, is given by:
+% \[
+% \mem \insertsplit m \defeq \!\!\begin{cases} 
+% \setofz{m, m'[\lfrom\mapsto m.\lto]} \cup (\mem{\setminus}\setofz{m'}) & \text{if }
+% m' \!\in\! \mem 
+% \\
+% \multicolumn{2}{@{}r@{}}{
+% {}\land{}
+% m.\lloc = m'.\lloc 
+% }\\
+% \multicolumn{2}{@{}r@{}}{
+% {}\land{} 
+% m.\lfrom = m'.\lfrom \land m.\lto < m'.\lto
+% }\\
+% \mathit{undefined} & \text{otherwise} \end{cases}
+% \]
+% where $m[\lfrom\mapsto t]$ denotes $\tup{m.\lloc,m.\lval,t,m.\lto}$.
+
+% We denote by ${M \astep{m} M'}$ that the following holds:
+% \[
+% (M' = M\insertadd m) \lor (M' = M \insertsplit m)~.
+% \]
+% We write ${M\astep{} M'}$ if $M\astep{m} M'$ holds for some message $m$.
+% %% We call $M'$ a \emph{future} of $M$ if $M \astep{}^* M'$ for 
+% %% $\astep{}^*$ the reflexive transitive closure of $\astep{}$.
+
+% We write $M \subseteq M'$ and $M \setminus M'$ for the usual set inclusion
+% and minus:
+% \[
+% \begin{array}{rcl}
+% M\subseteq M' &\iff& \forall m\in M.~ m \in M'~. \\
+% M\setminus M' &\defeq&
+% \setof{ m \suchthat m \in M \land m \notin M' } ~. \\
+% \end{array}
+% \]
+
+
+
+% \paragraph{Memory.}
+% A \emph{memory} is a function $\mem:\Loc \to \finpowerset{\Msg}$, such
+% that $\mem(x)$ is valid for every $x\in\Loc$.  All (partial)
+% operations and orders on sets of messages ($\insertadd$,
+% $\insertsplit$, $\astep{}$, $\subseteq$, $\setminus$) are extended pointwise to
+% memories (\eg the additive insertion $\mem \insertadd \tup{x,m}$ is
+% defined as ($\lambda y.\; \texttt{if } y = x \texttt{ then }
+% \mem(x)\insertadd m \texttt{ else }\mem(y)$) if $\mem(x)\insertadd m$ is
+% defined; otherwise it is undefined).
+
+% \paragraph{Closed Memory.}
+% Given a timemap $A$ and a memory $\mem$, we write $A\tmin\mem$ 
+% %% (resp. $A \tmle \mem$)
+% if the following condition holds for every $x\in\Loc$:
+% \[ A(x) = m.\lto %% \text{ (resp. $A(x) \leq m.\lto$)}
+% \text{ for some } m\in\mem(x)~. \]
+% For a capability $C$, we write $C \tmin \mem$ %% (resp. $C \tmle \mem$)
+% if $A \tmin \mem$ %% (resp. $A \tmle \mem$)
+% for each component timemap $A$ of $C$.
+
+
+% \paragraph{Future Memory.}
+% We say $\omem$ is a \emph{future memory} of $\mem$ w.r.t. $\lprom$
+% if $(i)$ $\mem \astep{}^* \omem$; 
+%    $(ii)$ $\lprom \subseteq \omem$.
+
+% \paragraph{Thread Consistency.}
+% A thread configuration $\tup{\lts,\mem}$ is called \emph{consistent} if
+% $\exists \lts',\mem'.$
+% \[
+% \tup{\lts,\omem} \astep{\tau}^* \tup{\lts',\mem'}
+% ~~\land~~ \lts'.\lprmem = \emptyset
+% \]
+% for every future memory $\omem$ of $\mem$ w.r.t. $\lts.\lprom$.
+
+% A machine takes a step whenever a thread can take a step to a consistent configuration.
+% \[
+% \inferrule*[Right=\textsc{(machine step)}]
+% {\tup{\gts(i),\mem} \astep{}^* \tup{\lts',\mem'} \\\\
+% \tup{\lts',\mem'} \text{ consistent}}
+% {\tup{\gts,\mem} \astep{} \tup{\gts[i\mapsto \lts'],\mem'}}
+% \] 
+
+
+% \begin{itemize}
+% \item read a message with timestamp immediately before, and write
+% \item  make sure thar no future msg gets in between: block an interval.
+% \end{itemize}
+
+% To explain the basic semantic:
+% $$\inarr{\inarrII{ a:= x++;}{b:=x++;} \\a=1 \lor b=1}$$
+
+% To explain that updates should be promised:
+
+% $$\inarrII{
+% a:=x; \comment{1} \\ 
+%  y++;
+% }{  
+%   x:=y;}$$
+
+
+% To explain quantification over future memories:
+ 
+% $$\inarrIII{
+% a:=x; \comment{1} \\ 
+%  z++; \\
+%  \itne{z=1}{y:=1};
+% }{ 
+% x:=y ;
+% }{
+%  z++;}
+% $$
+ 
+% To explain splitting and multiple thread steps in one machine step:
+
+% $$\inarrII{
+% a:=x; \comment{2} \\ 
+% \ite{a=1}{y:=1; y++}{y:=2}
+% }{  
+%   x:=y;
+% }$$
+ 
+% 
+%  
+%  x++
+%  x:=2
+%  
+%  
+
+
+
+
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "main"
+%%% TeX-command-extra-options: "-shell-escape"
+%%% End:
