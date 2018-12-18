@@ -1,7 +1,10 @@
 %!TEX root = main.tex
 \newcommand{\figfull}{
+
+\newgeometry{left=0.8cm,right=0.8cm}
+\begin{landscape}
 \begin{figure*}[t]
-\small
+\scriptsize
 \begin{mathpar}
 %\inferrule[\textsc{(memory: promise)}]{
 %\hookleftarrow{}\in \setofz{\insertadd, \insertsplit, \insertupdate} 
@@ -27,26 +30,29 @@
 \\\vspace*{-1mm}
 %
 \inferrule[\textsc{(read-helper)}]{
+\begin{array}{c}
  {\begin{array}{@{}c@{}c@{~}c@{~}c@{}}
 o =\pln  & \implies & \cur.\lur(x) &\leq t \\
 o \in \{\rlx,\ra\}  & \implies & \cur.\lrw(x) &\leq t  
-\end{array}}\\\\
+\end{array}}\\
  {\begin{array}{@{}c@{~}c@{~}l@{}l@{}}
 \cur' & = & \cur  \sqcup \view \sqcup  \iteb{o \sqsupseteq {\makebox[0pt][l]{$\ra$}\phantom{\rlx}}}{\mrel}  \\
 \acq' &=& \acq \sqcup  \view \sqcup \iteb{o \sqsupseteq \rlx}{\mrel}   
-\end{array}}\\\\
+\end{array}}\\
 \textit{where\ }\view=[\lur:\iteb{o \sqsupseteq \rlx}{\{\vtup{x}{t}\}}, \lrw: \{\vtup{x}{t}\}]
+\end{array}
 }
 %{\tup{\tup{\cur,\acq,\rel},\gsco}  \astep{\rlab:o,x,t,\mrel} \tup{\tup{\cur',\acq',\rel},\gsco}}
 {{\tup{\cur,\acq,\rel}}  \astep{\rlab:o,x,t,\mrel} {\tup{\cur',\acq',\rel}}}
 \and
 \inferrule[\textsc{(write-helper)}]{
-\cur.\lrw(x) < t \\\\
-\cur'  = \cur \sqcup \view \\
-\acq'   =  \acq \sqcup \cur' \\\\  
-\rel'  = \rel[x\mapsto \rel(x) \sqcup \view \sqcup \iteb{o\sqsupseteq\ra}{\cur'}]\\\\ 
-\mrel_\lw = \iteb{o \sqsupseteq \rlx}{(\rel'(x) \sqcup \mrel_\lr)} \\\\
+\begin{array}{c}
+\cur.\lrw(x) < t \\
+\cur'  = \cur \sqcup \view \quad\quad \acq'   =  \acq \sqcup \cur' \\
+\rel'  = \rel[x\mapsto \rel(x) \sqcup \view \sqcup \iteb{o\sqsupseteq\ra}{\cur'}]\\
+\mrel_\lw = \iteb{o \sqsupseteq \rlx}{(\rel'(x) \sqcup \mrel_\lr)} \\
 \textit{where\ }\view=[\lur:\{\vtup{x}{t}\}, \lrw: \{\vtup{x}{t}\}]
+\end{array}
 }
 %{\tup{\tup{\cur,\acq,\rel},\gsco}  \astep{\wlab:o,x,t,\mrel_\lr,\mrel_\lw} \tup{\tup{\cur',\acq',\rel'},\gsco}}
 {{\tup{\cur,\acq,\rel}}  \astep{\wlab:o,x,t,\mrel_\lr,\mrel_\lw} {\tup{\cur',\acq',\rel'}}}
@@ -61,33 +67,45 @@ o \in \{\rlx,\ra\}  & \implies & \cur.\lrw(x) &\leq t
 %~
 \raisebox{9pt}{
 \inferrule[\textsc{(sc-fence-helper)}]{
-\gsco'=\acq.\lrw \sqcup \gsco \\\\
-\cur'=\acq'=\tup{\gsco',\gsco'} \\\\
+\begin{array}{c}
+\gsco'=\acq.\lrw \sqcup \gsco \\
+\cur'=\acq'=\tup{\gsco',\gsco'} \\
 \rel'=\lambda \_.\tup{\gsco',\gsco'}
-}{\tup{\tup{\cur,\acq,\rel},\gsco}  \astep{\flab_\sco}\\\\\quad \tup{\tup{\cur',\acq',\rel'},\gsco'}}
+\end{array}
+}{
+\begin{array}{c}
+\tup{\tup{\cur,\acq,\rel},\gsco}  \astep{\flab_\sco} \\
+\tup{\tup{\cur',\acq',\rel'},\gsco'}
+\end{array}}
 }
 %
 \\\vspace*{-1mm}
 %
 \inferrule[\textsc{(read)}]{
-\sigma \astep{\rlab(o,x,v)} \sigma'  \\\\ \msg{x}{v}{\_}{t}{\mrel}\in\mem\\\\
-%\tup{\tcom,\gsco} {\astep{\rlab:o,x,t,\mrel}}  \tup{\tcom',\gsco} 
+\begin{array}{c}
+\sigma \astep{\rlab(o,x,v)} \sigma'  \\
+\msg{x}{v}{\_}{t}{\mrel}\in\mem \\
+%\tupp{\tcom,\gsco} {\astep{\rlab:o,x,t,\mrel}}  \tup{\tcom',\gsco} 
 {\tcom} {\astep{\rlab:o,x,t,\mrel}}  {\tcom'} 
+\end{array}
 }{\tup{\tup{\sigma, \tcom, \lprom},\gsco, \mem} \astep{} \tup{\tup{\sigma', \tcom', \lprom}, \gsco, \mem}}
 \and
 \inferrule[\textsc{(write)}]{
-\sigma \astep{\wlab(o,x,v)} \sigma' \\\\
-o = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\\\
-m=\msg{x}{v}{\_}{t}{\mrel}\\\\
+\begin{array}{c}
+\sigma \astep{\wlab(o,x,v)} \sigma' \\
+o = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\
+m=\msg{x}{v}{\_}{t}{\mrel}\\
 %\tup{\lprom, \mem}  \astep{\text{write}(o,m)} \tup{\lprom', \mem'} \\\\
-\tup{\lprom, \mem}  \astep{m} \tup{\lprom', \mem'} \\\\
+\tup{\lprom, \mem}  \astep{m} \tup{\lprom', \mem'} \\
 %\tup{\tcom,\gsco} {\astep{\wlab:o,x,t,\bot,\mrel}} \tup{\tcom',\gsco'} 
 {\tcom} {\astep{\wlab:o,x,t,\bot,\mrel}} {\tcom'} 
+\end{array}
 }{\tup{\tup{\sigma, \tcom, \lprom},\gsco, \mem} \astep{} \tup{\tup{\sigma', \tcom', \lprom'}, \gsco, \mem'}}
 \and
 \inferrule[\textsc{(update)}]{
-\sigma \astep{\ulab(o_\lr,o_\lw,x,v_\lr,v_\lw)} \sigma'  \\\\
-o_\lw = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\\\
+\begin{array}{c}
+\sigma \astep{\ulab(o_\lr,o_\lw,x,v_\lr,v_\lw)} \sigma'  \\
+o_\lw = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\
  {\begin{array}{@{}c@{}l@{}}
 & \msg{x}
 {\makebox[0pt][l]{$v_\lr$}\phantom{v_\lw}}
@@ -95,13 +113,14 @@ o_\lw = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\\\
 {\makebox[0pt][l]{$t_\lr$}\phantom{t_\lw}}
 {\makebox[0pt][l]{$\mrel_\lr$}\phantom{\mrel_\lw}} \in\mem\\
  m_\lw=&\msg{x}{v_\lw}{t_\lr}{t_\lw}{\mrel_\lw}
-\end{array}}\\\\
+\end{array}}\\
 %\tup{\lprom, \mem}  \astep{\text{write}(o_\lw,m_\lw)} \tup{\lprom', \mem'} \\\\
-\tup{\lprom, \mem}  \astep{m_\lw} \tup{\lprom', \mem'} \\\\
+\tup{\lprom, \mem}  \astep{m_\lw} \tup{\lprom', \mem'} \\
 %\tup{\tcom,\gsco} {\astep{\rlab: o_\lr,x,t_\lr,\mrel_\lr}} %\tup{\tcom_0,\gsco} {\astep{\wlab:o_\lw,x,t_\lw,\mrel_\lr,\mrel_\lw}} \tup{\tcom',\gsco'}
 %{\astep{\wlab:o_\lw,x,t_\lw,\mrel_\lr,\mrel_\lw}} \tup{\tcom',\gsco'}
 {\tcom} {\astep{\rlab: o_\lr,x,t_\lr,\mrel_\lr}} %\tup{\tcom_0,\gsco} {\astep{\wlab:o_\lw,x,t_\lw,\mrel_\lr,\mrel_\lw}} \tup{\tcom',\gsco'}
 {\astep{\wlab:o_\lw,x,t_\lw,\mrel_\lr,\mrel_\lw}} {\tcom'}
+\end{array}
 }{\tup{\tup{\sigma,\tcom,\lprom}, \gsco,\mem} \astep{} \tup{\tup{\sigma',\tcom',\lprom'}, \gsco,\mem'}}
 %\and
 %\inferrule[\textsc{(fence)}]{
@@ -114,25 +133,50 @@ o_\lw = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\\\
 \inferrule[\textsc{(acq-fence)}]{
 \sigma \astep{\flab_\acqo} \sigma' \\ 
 \cur'=\acq
-}{\tup{\tup{\sigma, \tup{\cur,\acq,\rel}, \lprom}, \gsco,\mem} \astep{} \\\\\quad \tup{\tup{\sigma', \tup{\tup{\cur',\acq,\rel}, \lprom}, \gsco,\mem}}}
+}{
+\begin{array}{c}
+\tup{\tup{\sigma, \tup{\cur,\acq,\rel}, \lprom}, \gsco,\mem} \astep{} \\
+\tup{\tup{\sigma', \tup{\tup{\cur',\acq,\rel}, \lprom}, \gsco,\mem}}
+\end{array}
+}
 \and
 \inferrule[\textsc{(rel-fence)}]{
-\sigma \astep{\flab_\relo} \sigma' \\ 
-\rel'= \lambda \_.\cur \\\\
+\begin{array}{c}
+\sigma \astep{\flab_\relo} \sigma' \quad \rel'= \lambda \_.\cur \\
 \forall m \in \lprom.~ m.\lmrel = \bot
-}{\tup{\tup{\sigma, \tup{\cur,\acq,\rel}, \lprom}, \gsco,\mem} \astep{} \\\\\quad \tup{\tup{\sigma', \tup{\tup{\cur,\acq,\rel'}, \lprom}, \gsco,\mem}}}
+\end{array}
+}{
+\begin{array}{c}
+\tup{\tup{\sigma, \tup{\cur,\acq,\rel}, \lprom}, \gsco,\mem} \astep{} \\
+\tup{\tup{\sigma', \tup{\tup{\cur,\acq,\rel'}, \lprom}, \gsco,\mem}}
+\end{array}
+}
 \and
 \inferrule[\textsc{(sc-fence)}]{
-\sigma \astep{\flab_\sco} \sigma' \\\\ 
-\tup{\tcom,\gsco}  \astep{\flab_\sco} \tup{\tcom',\gsco'} \\\\
+\begin{array}{c}
+\sigma \astep{\flab_\sco} \sigma' \\
+\tup{\tcom,\gsco}  \astep{\flab_\sco} \tup{\tcom',\gsco'} \\
 \forall m \in \lprom.~ m.\lmrel = \bot
-}{\tup{\tup{\sigma, \tcom, \lprom}, \gsco, \mem} \astep{} \\\\\quad\tup{\tup{\sigma', \tcom', \lprom}, \gsco', \mem}}
+\end{array}
+}{
+\begin{array}{c}
+\tup{\tup{\sigma, \tcom, \lprom}, \gsco, \mem} \astep{} \\
+\tup{\tup{\sigma', \tcom', \lprom}, \gsco', \mem}
+\end{array}
+}
 \and
 \inferrule[\textsc{(system call)}]{
-\sigma \astep{\syscallt} \sigma' \\\\
-\tup{\tcom,\gsco}  \astep{\flab_\sco} \tup{\tcom',\gsco'}\\\\
+\begin{array}{c}
+\sigma \astep{\syscallt} \sigma' \\
+\tup{\tcom,\gsco}  \astep{\flab_\sco} \tup{\tcom',\gsco'}\\
 \forall m \in \lprom.~ m.\lmrel = \bot
-}{\tup{\tup{\sigma, \tcom, \lprom}, \gsco, \mem} \astep{\syscallt} \\\\\quad\tup{\tup{\sigma', \tcom', \lprom}, \gsco', \mem}}
+\end{array}
+}{
+\begin{array}{c}
+\tup{\tup{\sigma, \tcom, \lprom}, \gsco, \mem} \astep{\syscallt} \\
+\tup{\tup{\sigma', \tcom', \lprom}, \gsco', \mem}
+\end{array}
+}
 %
 \\\vspace*{-1mm}
 %
@@ -145,20 +189,27 @@ o_\lw = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\\\
 %m.\lmrel \tmin \mem'
 %}{\tup{\tup{\sigma, \tcom, \lprom},\gsco,\mem} \astep{} \tup{\tup{\sigma, \tcom, \lprom'},\gsco,\mem'}}
 \inferrule[\textsc{(promise)}]{
-\hookleftarrow \in \setofz{\insertadd, \insertsplit, \insertupdate} \\ \lprom'= \lprom \hookleftarrow m\\\\
- \mem'= \mem \hookleftarrow m \\
- m.\lmrel \tmin \mem'
-}{\tup{\tup{\sigma, \tcom, \lprom},\gsco,\mem} \astep{} \tup{\tup{\sigma, \tcom, \lprom'},\gsco,\mem'}}
+\begin{array}{c}
+\hookleftarrow \in \setofz{\insertadd, \insertsplit, \insertupdate} \quad \lprom'= \lprom \hookleftarrow m \\
+\mem'= \mem \hookleftarrow m \quad m.\lmrel \tmin \mem'
+\end{array}
+}{
+\tup{\tup{\sigma, \tcom, \lprom},\gsco,\mem} \astep{} \tup{\tup{\sigma, \tcom, \lprom'},\gsco,\mem'}}
 \and
 \inferrule[\bf \textsc{(machine step)}]{
-\tup{\gts(i),\gsco,\mem} \astep{}^* \tup{\lts',\gsco',\mem'}  \\\\
-\tup{\lts',\gsco',\mem'} \astep{e} \tup{\lts'',\gsco'',\mem''}  \\\\
+\begin{array}{c}
+\tup{\gts(i),\gsco,\mem} \astep{}^* \tup{\lts',\gsco',\mem'}  \\
+\tup{\lts',\gsco',\mem'} \astep{e} \tup{\lts'',\gsco'',\mem''}  \\
 \tup{\lts'',\gsco'',\mem''} \text{ is consistent}
+\end{array}
 }{\tup{\gts,\gsco,\mem} \astep{e} \tup{\gts[i\mapsto \lts''],\gsco'',\mem''}}
 \end{mathpar}
 \caption{Full operational semantics.}
 \label{fig:full-opsem-a}
-\end{figure*}}
+\end{figure*}
+\end{landscape}
+\restoregeometry
+}
 
 
 \section{Full Model}
@@ -607,9 +658,6 @@ then every behavior of $\mconf'$ is also a behavior of $\mconf$.
 \subsection{Formal Model}
 \label{sec:full-formal}
 
-\jeehoon{figure should be adjusted.}
-\figfull
-
 Finally, we formally present our full model,
 combining and making precise all the ideas outlined above.
 The model employs three modes for memory accesses, naturally ordered as follows:
@@ -642,6 +690,8 @@ A \emph{message} $m$ is a tuple $\msg{x}{v}{f}{t}{\mrel}$,
 where $x\in\Loc$, $v\in\Val$, $f,t\in\Time$, and $\mrel\in \View$,
 such that $f<t$ or $f=t=\ts{0}$, and $\mrel.\lrw(x) = t$ or $\mrel = \bot$.
 We denote by $m.\lloc$, $m.\lval$, $m.\lfrom$, $m.\lto$, and $m.\lmrel$ the components of $m$.
+
+\figfull
 
 \paragraph{Memory}
 A \emph{memory} is a (nonempty) pairwise disjoint finite set of messages
@@ -705,7 +755,7 @@ and $\bot$ otherwise.
 %that inserts a message to the global memory as well as to the set of promises (that is always a subset of the global memory).
 %This insertion may be of any of the three insertion kinds mentioned earlier.
 
-The write and the update steps cover two cases: a fresh write to memory (\textsc{memory:new}) and a fulfillment of an outstanding promise (\textsc{memory:fulfill}).
+The write and the update steps cover two cases: a fresh write (\textsc{memory:new}) and a fulfillment of an outstanding promise (\textsc{memory:fulfill}).
 The latter allows to split the promise or lower its view before its fulfillment 
 (note that when $m\in \lprom \suq \mem$, we have  
 $\lprom=\lprom \insertupdate m$
@@ -716,7 +766,7 @@ $\mem=\mem \insertupdate m$ by def.\ of $\insertupdate$).
 \paragraph{Consistency}
 A {thread configuration} $\tup{\lts,\gsco,\mem}$ is called \emph{consistent} if
 for every future memory $\omem$ of $\mem$ w.r.t. $\lts.\lprmem$
-and every timemap $\ogsco$ with ${\gsco \leq \ogsco \tmin \omem}$,
+and every timemap $\ogsco$ with $\gsco \leq \ogsco \tmin \omem$,
 there exist $\lts'$, $\gsco'$, $\mem'$ such that:
 \[
 \tup{\lts,\ogsco,\omem} \astep{}^* \tup{\lts',\gsco',\mem'}

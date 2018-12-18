@@ -7,11 +7,11 @@
 %
 \inferrule[\textsc{(thread: fulfill update)}]
 {
-\sigma \astep{\ulab(x,v_\lr,v_\lw)} \sigma'  \\
-\updmsg{x}{v_\lr}{f_\lr}{t_\lr} \in \mem \\\\
-m_\lw=\updmsg{x}{v_\lw}{t_\lr}{t_\lw} \\ m_\lw \in \lprom \\ \lprom'=\lprom \setminus \setofz{m_\lw}\\\\
-\rlxcur(x) \leq t_\lr \\
-\rlxcur'  = \rlxcur[x\mapsto t_\lw]
+\begin{array}{c}
+\sigma \astep{\ulab(x,v_\lr,v_\lw)} \sigma' \quad \updmsg{x}{v_\lr}{f_\lr}{t_\lr} \in \mem \\
+m_\lw=\updmsg{x}{v_\lw}{t_\lr}{t_\lw} \quad m_\lw \in \lprom \quad \lprom'=\lprom \setminus \setofz{m_\lw} \\
+\rlxcur(x) \leq t_\lr \quad \rlxcur'  = \rlxcur[x\mapsto t_\lw]
+\end{array}
 }
 {\tup{\tup{\sigma, \rlxcur, \lprom}, \mem} \astep{} \tup{\tup{\sigma', \rlxcur', \lprom'}, \mem}}
 \end{mathpar}
@@ -86,7 +86,7 @@ same location must have disjoint ranges:
 %~ (m.\lto \neq m'.\lto ~ \land ~  (m.\lfrom,m.\lto] \cap (m'.\lfrom,m'.\lto] =\emptyset)
 %\end{multline*}
 \begin{multline*}
-\updmsg{x}{v}{f}{t}\disj \updmsg{x'}{v'}{f'}{t'} ~\triangleq ~  \\ x \neq x' ~~\lor~~
+\updmsg{x}{v}{f}{t}\disj \updmsg{x'}{v'}{f'}{t'} ~\triangleq ~  x \neq x' ~~\lor~~
 %% (t \neq t' ~ \land ~  
 t\leq f' < t' ~~\lor~~ t'\leq f < t
 %% (f,t] \cap (f',t'] =\emptyset

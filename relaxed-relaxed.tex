@@ -13,24 +13,22 @@
 \and
 \inferrule[\textsc{(thread: read)}]
 {
- \sigma \astep{\rlab(x,v)} \sigma' \\
-\rlxmsg{x}{v}{t} \in \mem \\\\
-\rlxcur(x) \leq t \\
-\rlxcur'=\rlxcur[x\mapsto t]
+\begin{array}{c}
+\sigma \astep{\rlab(x,v)} \sigma' \quad \rlxmsg{x}{v}{t} \in \mem \\
+\rlxcur(x) \leq t \quad \rlxcur'=\rlxcur[x\mapsto t]
+\end{array}
 }
 {\tup{\tup{\sigma, \rlxcur, \lprom}, \mem} \astep{} \tup{\tup{\sigma', \rlxcur', \lprom}, \mem}}
 \and
 \inferrule[\textsc{(thread: write)}]
 {
- \sigma \astep{\wlab(x,v)} \sigma' \\
-\mem'=\mem \insertadd \rlxmsg{x}{v}{t} \\\\
-\rlxcur(x) < t \\
-\rlxcur'= \rlxcur[x\mapsto t]
+\begin{array}{c}
+\sigma \astep{\wlab(x,v)} \sigma' \quad \mem'=\mem \insertadd \rlxmsg{x}{v}{t} \\
+\rlxcur(x) < t \quad \rlxcur'= \rlxcur[x\mapsto t]
+\end{array}
 }
 {\tup{\tup{\sigma, \rlxcur, \lprom},\mem} \astep{} \tup{\tup{\sigma', \rlxcur', \lprom}, \mem'}}
-%
-\\\vspace*{-1mm}
-%
+\and
 \inferrule[\textsc{(thread: promise)}]
 {
 \mem' = \mem \insertadd m \\
@@ -40,17 +38,19 @@
 \and
 \inferrule[\textsc{(thread: fulfill)}]
 {
- \sigma \astep{\wlab(x,v)} \sigma' \\
-\rlxmsg{x}{v}{t} \in \lprom \\
-\lprom'=\lprom\setminus \setofz{\rlxmsg{x}{v}{t}} \\\\
-\rlxcur(x) < t \\
-\rlxcur' = \rlxcur[x\mapsto t] 
+\begin{array}{c}
+\sigma \astep{\wlab(x,v)} \sigma' \quad \rlxmsg{x}{v}{t} \in \lprom \quad \lprom'=\lprom\setminus \setofz{\rlxmsg{x}{v}{t}} \\
+\rlxcur(x) < t \quad \rlxcur' = \rlxcur[x\mapsto t] 
+\end{array}
 }
 {\tup{\tup{\sigma, \rlxcur, \lprom},\mem} \astep{} \tup{\tup{\sigma', \rlxcur', \lprom'}, \mem}}
 \and
 \inferrule[\textsc{(machine step)}]
-{\tup{\gts(i),\mem} \astep{}^+ \tup{\lts',\mem'} \\\\
-\tup{\lts',\mem'} \text{ is consistent}}
+{
+\begin{array}{c}
+\tup{\gts(i),\mem} \astep{}^+ \tup{\lts',\mem'} \\
+\tup{\lts',\mem'} \text{ is consistent}
+\end{array}}
 {\tup{\gts,\mem} \astep{} \tup{\gts[i\mapsto \lts'],\mem'}}
 \end{mathpar}
 \caption{Operational semantics for the simplified model handling only relaxed read and write accesses.}

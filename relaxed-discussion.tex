@@ -133,14 +133,12 @@ semantics for other architectures is left for future work.
 
 \paragraph{Simulation and Model Checking}
 
-\cite{promising-arm}.
-
-The high degree of nondeterminism in our model makes it hard to exhaustively explore all possible
-behaviors of a given program.  Further work is required to develop efficient methods and tools for
-this purpose.
-
-\jeehoon{Cite Promising ARM}
-
+The high degree of nondeterminism in relaxed-memory concurrency makes it hard to exhaustively
+explore all possible behaviors of a given program.  In an ongoing work, we are developing efficient
+methods and tools for this purpose by leveraging the idea of views and promises to tame the
+nondeterminism.  In particular, Pulte~\etal{} developed an efficient model checker for ARMv8/RISC-V,
+and using this model checker, we verified realistic concurrent data structures such as Michael-Scott
+queue and Chase-Lev deque~\cite{promising-arm}.
 
 %% Based on our
 %% understanding of ARMv8 architecture~\cite{}, we believe that our model is
