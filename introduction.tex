@@ -131,11 +131,11 @@ address~\cite[\S6.5.6p8]{c18}.  In other words, compilers may safely assume that
 derived from \code{anchor} \emph{shall} point to \code{anchor}, and a failure to conform with such
 an assumption gives compilers the right to generate arbitrary binary code.
 
-It is worth noting that in the course of rescuing the soundness of constant propagation, the ISO C18
-standard is intentionally deviating from the hardware assembly language, where pointers have the
-same representation as integer values of the appropriate width, and they simply index into a single
-flat array representing memory.\footnote{This ``concrete'', flat memory model is supported via
-  virtual page mapping in the operating systems.}
+In the course of rescuing the soundness of constant propagation, the ISO C18 standard is
+intentionally deviating from the hardware assembly language, where pointers have the same
+representation as integer values of the appropriate width, and they simply index into a single flat
+array representing memory.\footnote{This ``concrete'', flat memory model is supported via virtual
+  page mapping in the operating systems.}
 
 % The constant propagation example above shows that the low-level control over memory layout via
 % pointer manipulation conflicts with a simple compiler optimization, and C resolves the conflict by
@@ -166,9 +166,10 @@ Haskell without resorting to undefined behavior thanks to its lack of raw pointe
 
 \jeehoon{reorganize it}
 
-The ISO C18 standard~\cite{c18} famously does not give semantics to a significant subset of
-syntactically valid C programs. Instead, many programs exhibit implementation-defined, unspecified,
-or undefined behavior, with the latter imposing no requirements on a conforming implementation.
+% The ISO C18 standard~\cite{c18} famously does not give semantics to a significant subset of
+% syntactically valid C programs. Instead, many programs exhibit implementation-defined, unspecified,
+% or undefined behavior, with the latter imposing no requirements on a conforming implementation.
+
 This has led to the somewhat controversial practice of sophisticated C compilers reasoning backwards
 from instances of undefined behavior to conclude that, for example, certain code paths must be
 dead. Such transformations can lead to surprising non-local changes in program behavior and
