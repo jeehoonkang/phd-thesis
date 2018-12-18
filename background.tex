@@ -383,7 +383,7 @@ will address this disadvantage in \Cref{chap:intptrcast}.
 \subsection{The RTL Language}
 \label{sec:background:rtl}
 
-So far we discussed CompCert's logical memory model and its advanrages.  To provide a more concrete
+So far we discussed CompCert's logical memory model and its advantages.  To provide a more concrete
 context for formal semantics and compiler verification, we explain the syntax and semantics of
 CompCert's register transfer language (RTL), the compiler's internal language where most of its
 optimizations take place.  For presentation purposes, we simplify the language a bit by removing
@@ -502,7 +502,7 @@ the appropriate instruction state of the called function.  If the function to be
 \ie we have a function signature $\vfs\in\rtlFSig$, rule (\textsc{call2-external}) goes directly to
 the return state, and generates an event $\vevt$ indicating that it called an external function.
 
-Conversely, rule (\textsc{return1}) returns from a function byevaluating the result to be returned,
+Conversely, rule (\textsc{return1}) returns from a function by evaluating the result to be returned,
 deallocating the stack space used by the function, and transitioning to the return state.  Then rule
 (\textsc{return2}) pops the top-most stack frame and transitions to a normal instruction state
 thereby restoring the registers, program counter, and stack pointers of the calling function.
@@ -525,7 +525,7 @@ and then, based on that information, simplifies the program.
 The analysis consists of two parts: 
 (a) the global part, which detects which global variables cannot be updated (\ie those declared with the \code{const} qualifier), and
 (b) the local part, which analyzes the code of a function and calculates an abstract value for each register and stack variable.
-The abstract value of a variable can be either $\bot$ if the variable holds $\tt undef$, 
+The abstract value of a variable can be either $\bot$ if the variable holds $\rtlundef$, 
 or a constant number, 
 or $\NSmac$ if the variable contains anything except for a pointer pointing into the current stack frame, 
 or $\top$ if no more precise information is known.
@@ -592,7 +592,7 @@ Two stack frames are related by $\vprg \vdash \vsf\simFrame \vsf'$ if
 the function code in $\vsf'$ is the transformation of the function code of $\vsf$,
 the stack pointer and program counters agree, and
 the registers of $\vsf'$ hold equal or more defined values than those of $\vsf$.
-Two stacks are related, $\vprg \vdash s\simStack s'$, if they have the same length and their stack frames are related elementwise.
+Two stacks are related, $\vprg \vdash s\simStack s'$, if they have the same length and their stack frames are related element-wise.
 
 \input{background-simrel}
 
@@ -707,7 +707,7 @@ behaviors refine the source's.
 
 So far we discussed the technical background that is needed to understand the main contributions of
 this dissertation, which we will present from now on.  We will start with a formal semantics of
-casts beween integers and pointers.
+casts between integers and pointers.
 
 
 %%% Local Variables:
