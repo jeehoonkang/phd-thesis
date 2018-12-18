@@ -1,17 +1,29 @@
-\section{Future Work}\label{sec:discussion}
+\section{Future and Follow-up Work}\label{sec:discussion}
 
-Besides extending our model with SC accesses
-(see \Cref{sec:promising}), 
-there are a number of interesting issues remaining for future work.
+% there are a number of interesting issues remaining for future work
+
+\paragraph{SC Accesses}
+
+Lahav~\etal{} proposed a fix to SC accesses in C/C++11~\cite{rc11}.  Extending our model with SC
+accesses is left for future work (see \Cref{sec:promising}).
+
+% we discovered that our semantics of SC accesses was flawed, and this led us to discover a flaw in
+% the C/C++11 standard as well!  (See \cite{rc11} for further details.)
+
 
 \paragraph{Compilation Correctness}
-Establishing the correctness of compilation of our model to ARM, as well as
-to Power using the more efficient compilation scheme for acquire reads and updates 
-(see \Cref{sec:compilation_POWER}), is an important future goal. 
-To the best of our knowledge, we know of no counterexamples
-for correctness of compilation to these architectures.
 
-\jeehoon{Cite Anton's work}
+Podkopaev~\etal{} established the correctness of compilation of our model to Power, ARMv7, and
+RISC-V, as well as to ARMv8 using a sub-optimal compilation scheme for read-modify-update
+instructions~\cite{imm}.  In fact, the optimal one used by mainstream compilers is unsound for our
+semantics due to the fact that ARMv8's read-modify-update instructions perform ``global''
+optimizations, which is beyond the reach of our semantics as we will explain shortly.
+
+% Establishing the correctness of the optimal compilation scheme to ARMv8 is left for future work.
+
+% as well as to Power using the more efficient compilation scheme for acquire reads and updates (see
+% \Cref{sec:compilation_POWER}), is an important future goal.  To the best of our knowledge, we know
+% of no counterexamples for correctness of compilation to these architectures.
 
 
 %\paragraph{SC accesses}
@@ -52,13 +64,38 @@ Here, $T_1$ can safely promise $y:=1$, and later read $x=1$ from $T_2$'s
 write.\footnote{Though sequentialization is a very intuitive property that one might expect a memory
 model to validate,
 we observe that TSO~\cite{x86-tso}, Power~\cite{herding-cats}, ARMv8~\cite{arm8-model}, Java~\cite{jmm}, 
-and C/C++11~\cite{Batty:2011} (without the corrections proposed in \cite{c11comp})
+and C18/C++17~\cite{Batty:2011} (without the corrections proposed in \cite{c11comp})
 all do not allow sequentialization.
 %\ori{add references to the papers showing that sequentialization is invalid in each of them}
 %\jeehoon{Maybe we can challenge the forklore knowledge that sequentialization is very intuitive, by arguing with the JMM-05 \& 10 examples (https://github.com/jeehoonkang/memory-model-explorer/issues/28)}
 }
-While sequentialization seems like a transformation that no compiler would perform, there might be other more useful global optimizations.
-Investigating what global optimizations are supported in our model is left for future work.
+
+Furthermore, thrad-local certification also renders unsound the optimal compilation scheme to ARMv8.
+Consider the following example~\cite[Example 3.10]{imm}:
+
+$$\inarrIId{
+a:=x; \comment{1} \\
+z:=a
+}{
+b:=z; \comment{1} \\
+c:=FAA(x,1,\relw); \comment{0} \\
+y:=c+1
+}
+$$
+
+\noindent This behavior is disallowed in our semantics, because a promise of $y = 1$---which is
+required for the behavior---cannot be certified in the presence of release fetch-and-add.  However,
+this behavior is allowed in ARMv8, essentially because it allows the global optimization which $(1)$
+analyzes that \code{x} is modified only by the fetch-and-add instruction and \code{c} be the initial
+value $0$, and $(2)$ transforms \code{y:=c+1} with \code{y:=1}.  After the optimization, $y=1$ can
+be promised and the behavior is allowed.
+
+Generalizing our semantics to support global optimizations and verifying the optimal compilation
+scheme to ARMv8 is left for future work.
+
+% While sequentialization seems like a transformation that no compiler would perform, there might be
+% other more useful global optimizations.  Investigating what global optimizations are supported in
+% our model is left for future work.
 
 % \jeehoon{I think it would be nice to mention register promotion, which we currently don't support.}
 
@@ -77,19 +114,30 @@ Liveness properties are currently mostly ignored in weak memory research.
 liveness guarantees, whatever these are. No?}
 
 
-\paragraph{Program Logic}
+\paragraph{Reasoning Principle}
 
-The program logic presented in \Cref{sec:invariant} only establishes the very basic sanity of our memory model.
-Developing a useful program logic for this model is a direction for future work.
+The program logic presented in \Cref{sec:invariant} only establishes the very basic sanity of our
+memory model.  Svendsen~\etal{promising-separation-logic} propopsed a separation logic for our
+semantics that is capable of proving the absence of out-of-thin-air behaviors for various litmus
+tests.  Developing reasoning principles for our semantics that is capable of verifying concurrent
+data structures and algorithms, is a direction for future work.
 
-\jeehoon{Cite Viktor's work}
+
+\paragraph{Promising Semantics for Hardware Concurrency}
+
+Using the main idea of our semantics---namely views and promises, Pulte~\etal{} proposed the
+promising semantics for ARMv8/RISC-V which is a simpler and faster operational concurrency semantics
+than the existing models for those architectures~\cite{promising-arm}.  Developing the promising
+semantics for other architectures is left for future work.
 
 
 \paragraph{Simulation and Model Checking}
 
-The high degree of nondeterminism in our model makes it hard to 
-exhaustively explore all possible behaviors of a given program.
-Further work is required to develop efficient methods and tools for this purpose.
+\cite{promising-arm}.
+
+The high degree of nondeterminism in our model makes it hard to exhaustively explore all possible
+behaviors of a given program.  Further work is required to develop efficient methods and tools for
+this purpose.
 
 \jeehoon{Cite Promising ARM}
 
@@ -99,14 +147,10 @@ Further work is required to develop efficient methods and tools for this purpose
 %% weaker than ARMv8.
 
 
-\paragraph{Promise analysis}
+% \paragraph{Promise analysis}
 
-\jeehoon{promise anaysis?}
+% \jeehoon{promise anaysis?}
 
-
-\subsection{Impact}
-
-\jeehoon{impact!}
 
 
 

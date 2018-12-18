@@ -465,14 +465,15 @@ without promises.  But since all variables are
 
 Our model supports all features of C/C++ concurrency except consume
 reads and SC accesses.  Consume reads are widely considered a
-premature aspect of the C/C++11 standard and are currently implemented
+premature aspect of the C18/C++17 standard and are currently implemented
 the same as acquire reads in mainstream compilers.  In contrast, SC
 accesses are a major feature of C/C++, and originally our model included
 an account of SC accesses as well.  However, in the course of trying
-to mechanize correctness of compilation to Power
-(\Cref{sec:compilation_POWER}), we discovered that our semantics of SC
+to prove the correctness of compilation to Power,
+% (\Cref{sec:compilation_POWER}),
+we discovered that our semantics of SC
 accesses was flawed, and this led us to discover a flaw in the C/C++11
-standard as well!  (See \cite{repairing-sc} for further details.)
+standard as well!  (See \cite{rc11} for further details.)
 Thus, a proper handling of SC accesses remains an open and important
 problem for future work.
 
@@ -567,7 +568,7 @@ base model further to support atomic updates (\ie read-modify-write
 operations, like CAS).  Then, in \Cref{sec:full}, we scale the model
 up to handle most features of the C/C++ memory model.  In
 \Cref{sec:results}, we present our formal results---validating many
-program transformations, compilation to x86-TSO and Power, DRF
+program transformations, compilation to x86-TSO, DRF
 theorems, and an invariant-based logic---most of which are fully
 mechanized in the Coq proof assistant (totalling about 37K lines of
 Coq).  In \Cref{sec:related}, we compare with related work, and in

@@ -63,7 +63,7 @@
 In this section, we introduce the key ideas of our memory model, first
 by example and then more formally.  At first we will only consider a
 semantics for fully ``relaxed'' atomic read and write accesses (in the
-sense of C++).  This is a natural starting point, since the OOTA
+sense of C/C++).  This is a natural starting point, since the OOTA
 problem is fundamentally about how to give a reasonable semantics for
 these relaxed accesses, and the key elements of our solution are
 easiest to understand in this simpler setting.  We will see in
@@ -104,13 +104,13 @@ On the other hand,
 % principles, 
 it is also important that our semantics not be
 unnecessarily weak.  In particular, all the existing 
-implementations of C++, even for weaker architectures like Power and
+implementations of C/C++, even for weaker architectures like Power and
 ARM, guarantee at a bare minimum a property we call \emph{per-location
   coherence} (aka \emph{SC-per-location}).  Per-location coherence
 says that, even though threads may observe writes to different
 locations in different orders, they must observe writes to the
 \emph{same} location in a single total order (called the
-``modification order'' in C++ lingo).
+``modification order'' in C/C++ lingo).
 %, and it must be consistent with the
 %``program order'' (the order in which writes are issued within any
 %single thread). \ori{last sentence seems too partial to me: I suggest to remove
@@ -132,7 +132,7 @@ does not provide full per-location coherence.)
 
 \paragraph{Operational Semantics with Timestamps}
 
-In contrast to the C++ memory model, which relies on declarative
+In contrast to the C/C++ memory model, which relies on declarative
 semantics over event graphs, ours employs a more standard SC-style
 operational semantics for concurrency, in which the executions of
 different threads are nondeterministically interleaved.  However, in

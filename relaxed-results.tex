@@ -8,7 +8,7 @@ proven to hold of our ``promising'' model.
 % The ``promise model''?}
 
 All the results of this section \textbf{are fully validated in Coq}
-except for \Cref{sec:compilation_POWER} and
+except for % \Cref{sec:compilation_POWER} and
 \Cref{thm:drfra,thm:drflock}, for which we provide proof outlines.
 The {Coq} development and all proof outlines are available at~\cite{kang-phd-thesis-web}.
 
@@ -86,7 +86,7 @@ In particular, a pair $\ulab^x_{o^x_\lr,o^x_\lw}; \ulab^y_{o^y_\lr,o^y_\lw}$
 is reorderable if $x\neq y$, $o_\lr^x \sqsubseteq \rlx$, $o_\lw^y \sqsubseteq \rlx$.
 %, and either $o_\lw^x \neq \sco$ or $o_\lr^y \neq \sco$.
 
-The set of reorderable pairs in our model contains all pairs that are intended to be reorderable in the C++ 
+The set of reorderable pairs in our model contains all pairs that are intended to be reorderable in the C/C++ 
 and Java memory models,
 including in particular all ``roach-motel reorderings''~\cite{c11comp,sevcik:jmm}.
 
@@ -133,7 +133,7 @@ due to a release sequence ending in this update.
 Finally, two fences of the same type can obviously be merged.
 
 %With the exception of ``SC-read after non-SC-write'' mentioned above, 
-The set of mergeable pairs in our model contains all pairs intended to be mergeable in the C++ and Java models~\cite{c11comp,sevcik:jmm}.
+The set of mergeable pairs in our model contains all pairs intended to be mergeable in the C/C++ and Java models~\cite{c11comp,sevcik:jmm}.
 In particular, we support $\rlab$-after-$\wlab$ merging, which is the effect of local satisfaction of reads
 in hardware like TSO, Power, and ARM.
 
@@ -159,7 +159,7 @@ and just provide simulations between simple ``code snippets''.
 \subsection{Compilation to TSO}
 \label{sec:compilation_TSO}
 
-Like C++11, our model can be efficiently compiled to x86-TSO.
+Like C18/C++17, our model can be efficiently compiled to x86-TSO.
 Since this architecture provides relatively strong guarantees,
 every memory access can be compiled to a primitive hardware instruction.
 Moreover, release/acquire fences are ignored during compilation,
@@ -177,173 +177,173 @@ we immediately derive the correctness of compilation to TSO.
 % \jeehoon{Meaning a write and a read is reorderable regardless of their access modes.  I think it would better to just remove the phrase.}
 % \ori{I changed to regardless of their access modes}
 
-\subsection{Compilation to Power}
-\label{sec:compilation_POWER}
+% \subsection{Compilation to Power}
+% \label{sec:compilation_POWER}
 
-\begin{figure}[t]
-\centering
-\small
-$\begin{array}{@{}l@{}c@{{}={}}l@{\quad}l@{}c@{{}={}}l@{}}
-\compile{\rlab_{\sqsubseteq\rlx}}&&\texttt{ld}&
-\compile{\rlab_\ra} && \texttt{ld; lwsync} \\
-\compile{\wlab_{\sqsubseteq\rlx}} && \texttt{st} &
-\compile{\wlab_\ra} && \texttt{lwsync; st} \\
-\compile{\flab_{\sqsubset \sco}}  && \texttt{lwsync} & 
-\compile{\flab_\sco} && \texttt{sync} \\
-\multicolumn{6}{@{}l@{}}{
-\compile{\ulab_{{\sqsubseteq\rlx},{\sqsubseteq\rlx}}} = \texttt{L: lwarx; cmp; bc  Lout; stwcx.; bc  L;  Lout:}}\\ 
-\compile{\ulab_{\ra,{\sqsubseteq\rlx}}} && \compile{\ulab_{\rlx,\rlx}} \texttt{; lwsync} &
-\compile{\ulab_{{\sqsubseteq\rlx},\ra}} &&  \texttt{lwsync; }\compile{\ulab_{\rlx,\rlx}} \\ 
-\compile{\ulab_{\ra,\ra}} &&  \multicolumn{4}{@{}l@{}}{\texttt{lwsync; } \compile{\ulab_{\rlx,\rlx}}\texttt{; lwsync}}
-\end{array}$
-%\begin{tabular}{@{}l@{~~~~~}l@{}}
-%$\rlab_{\sqsubseteq\rlx}$ & \texttt{ld} \\ 
-%$\wlab_{\sqsubseteq\rlx}$ & \texttt{st} \\ 
-%$\rlab_\ra$ & \texttt{ld; lwsync}\\ 
-%$\wlab_\ra$ & \texttt{lwsync; st} \\ 
-%$\ulab_{{\sqsubseteq\rlx},{\sqsubseteq\rlx}}$ & \texttt{\_loop: lwarx; cmp; bc  \_exit;}\\ 
-%& \texttt{stwcx.; bc  \_loop;  \_exit:} \\ 
-%$\ulab_{\ra,{\sqsubseteq\rlx}}$ & $\compile{\ulab_{\rlx,\rlx}}$\texttt{; lwsync} \\ 
-%$\ulab_{{\sqsubseteq\rlx},\ra}$ &  \texttt{lwsync; }$\compile{\ulab_{\rlx,\rlx}}$ \\ 
-%$\ulab_{\ra,\ra}$ &  \texttt{lwsync; }$\compile{\ulab_{\rlx,\rlx}}$\texttt{; lwsync} \\ 
-%%$\ulab^\rel$ & \texttt{lwsync;} $\compile{\ulab^\rlx}$ \\
-%%$\ulab^\acqrel$ & \texttt{lwsync;} $\compile{\ulab^\rlx}$\texttt{; isync} \\ 
-%$\flab_{\sqsubset \sco}$  & \texttt{lwsync} \\ 
-%$\flab_\sco$ & \texttt{sync} \\
-%\end{tabular} 
-%% \vskip -2mm
-\caption{Compilation to Power.}
-\label{fig:comp}
-\end{figure}
+% \begin{figure}[t]
+% \centering
+% \small
+% $\begin{array}{@{}l@{}c@{{}={}}l@{\quad}l@{}c@{{}={}}l@{}}
+% \compile{\rlab_{\sqsubseteq\rlx}}&&\texttt{ld}&
+% \compile{\rlab_\ra} && \texttt{ld; lwsync} \\
+% \compile{\wlab_{\sqsubseteq\rlx}} && \texttt{st} &
+% \compile{\wlab_\ra} && \texttt{lwsync; st} \\
+% \compile{\flab_{\sqsubset \sco}}  && \texttt{lwsync} & 
+% \compile{\flab_\sco} && \texttt{sync} \\
+% \multicolumn{6}{@{}l@{}}{
+% \compile{\ulab_{{\sqsubseteq\rlx},{\sqsubseteq\rlx}}} = \texttt{L: lwarx; cmp; bc  Lout; stwcx.; bc  L;  Lout:}}\\ 
+% \compile{\ulab_{\ra,{\sqsubseteq\rlx}}} && \compile{\ulab_{\rlx,\rlx}} \texttt{; lwsync} &
+% \compile{\ulab_{{\sqsubseteq\rlx},\ra}} &&  \texttt{lwsync; }\compile{\ulab_{\rlx,\rlx}} \\ 
+% \compile{\ulab_{\ra,\ra}} &&  \multicolumn{4}{@{}l@{}}{\texttt{lwsync; } \compile{\ulab_{\rlx,\rlx}}\texttt{; lwsync}}
+% \end{array}$
+% %\begin{tabular}{@{}l@{~~~~~}l@{}}
+% %$\rlab_{\sqsubseteq\rlx}$ & \texttt{ld} \\ 
+% %$\wlab_{\sqsubseteq\rlx}$ & \texttt{st} \\ 
+% %$\rlab_\ra$ & \texttt{ld; lwsync}\\ 
+% %$\wlab_\ra$ & \texttt{lwsync; st} \\ 
+% %$\ulab_{{\sqsubseteq\rlx},{\sqsubseteq\rlx}}$ & \texttt{\_loop: lwarx; cmp; bc  \_exit;}\\ 
+% %& \texttt{stwcx.; bc  \_loop;  \_exit:} \\ 
+% %$\ulab_{\ra,{\sqsubseteq\rlx}}$ & $\compile{\ulab_{\rlx,\rlx}}$\texttt{; lwsync} \\ 
+% %$\ulab_{{\sqsubseteq\rlx},\ra}$ &  \texttt{lwsync; }$\compile{\ulab_{\rlx,\rlx}}$ \\ 
+% %$\ulab_{\ra,\ra}$ &  \texttt{lwsync; }$\compile{\ulab_{\rlx,\rlx}}$\texttt{; lwsync} \\ 
+% %%$\ulab^\rel$ & \texttt{lwsync;} $\compile{\ulab^\rlx}$ \\
+% %%$\ulab^\acqrel$ & \texttt{lwsync;} $\compile{\ulab^\rlx}$\texttt{; isync} \\ 
+% %$\flab_{\sqsubset \sco}$  & \texttt{lwsync} \\ 
+% %$\flab_\sco$ & \texttt{sync} \\
+% %\end{tabular} 
+% %% \vskip -2mm
+% \caption{Compilation to Power.}
+% \label{fig:comp}
+% \end{figure}
 
-\Cref{fig:comp} provides the compilation scheme of our model to Power, following the C++11 one.
-We denote by $\compile{\prog}$ the Power program obtained by applying this mapping to a source program $\prog$.
-To prove compilation correctness, we again utilize a result of \cite{fm16},
-which shows that every allowed behavior of a Power program $\progb$  
-(assuming its recent declarative model of Alglave \etal~\cite{herding-cats})
-is a behavior of a Power program $\progb'$ under a stronger model, called ``StrongPower'',
-where $\progb'$ is obtained from $\progb$ by applying a sequence of local reorderings of independent memory accesses to distinct locations.
-Accordingly, it suffices to show that, given a source program $\prog$, our model allows all behaviors 
-that StrongPower allows for some reordering of $\compile{\prog}$.
-We split this into two steps, outlined below.
+% \Cref{fig:comp} provides the compilation scheme of our model to Power, following the C++11 one.
+% We denote by $\compile{\prog}$ the Power program obtained by applying this mapping to a source program $\prog$.
+% To prove compilation correctness, we again utilize a result of \cite{fm16},
+% which shows that every allowed behavior of a Power program $\progb$  
+% (assuming its recent declarative model of Alglave \etal~\cite{herding-cats})
+% is a behavior of a Power program $\progb'$ under a stronger model, called ``StrongPower'',
+% where $\progb'$ is obtained from $\progb$ by applying a sequence of local reorderings of independent memory accesses to distinct locations.
+% Accordingly, it suffices to show that, given a source program $\prog$, our model allows all behaviors 
+% that StrongPower allows for some reordering of $\compile{\prog}$.
+% We split this into two steps, outlined below.
 
-\paragraph{Compilation to StrongPower}
-First, we show that the compilation to StrongPower is correct, that is: every behavior of $\compile{\prog}$ under StrongPower is allowed for $\prog$ in our model.
-StrongPower strengthens the Power model by forbidding ``load buffering'' behaviors
-(formally, it disallows cycles in the entire program order together with the reads-from relation).
-Consequently, we do not actually need promises in order to explain
-StrongPower behaviors---instead, we can just show that behaviors of $\compile{\prog}$
-under StrongPower are allowed for $\prog$ under our \emph{promise-free} machine (see end of \Cref{sec:full-formal}).
-% This allows us to actually prove that behaviors of StrongPower are allowed
-% even without promises.
-(Note that this does not contradict the fact that
-promises are necessary to explain weak behaviors of the (non-strong) Power model, such as the \ref{eq:LB}.) 
-To ease the proof, we use an alternative, declarative presentation of our promise-free machine
-(\Cref{sec:axiomatic}),
-which can straightforwardly be shown to be weaker than
-the StrongPower model under the compilation scheme in \Cref{fig:comp}.
-See \cite{appendix} for details.
+% \paragraph{Compilation to StrongPower}
+% First, we show that the compilation to StrongPower is correct, that is: every behavior of $\compile{\prog}$ under StrongPower is allowed for $\prog$ in our model.
+% StrongPower strengthens the Power model by forbidding ``load buffering'' behaviors
+% (formally, it disallows cycles in the entire program order together with the reads-from relation).
+% Consequently, we do not actually need promises in order to explain
+% StrongPower behaviors---instead, we can just show that behaviors of $\compile{\prog}$
+% under StrongPower are allowed for $\prog$ under our \emph{promise-free} machine (see end of \Cref{sec:full-formal}).
+% % This allows us to actually prove that behaviors of StrongPower are allowed
+% % even without promises.
+% (Note that this does not contradict the fact that
+% promises are necessary to explain weak behaviors of the (non-strong) Power model, such as the \ref{eq:LB}.) 
+% To ease the proof, we use an alternative, declarative presentation of our promise-free machine
+% (\Cref{sec:axiomatic}),
+% which can straightforwardly be shown to be weaker than
+% the StrongPower model under the compilation scheme in \Cref{fig:comp}.
+% See \cite{appendix} for details.
 
-%(that places a lightweight fence after every acquire or SC read).
-%We believe that this axiomatic semantics is also sufficient for proving the correctness of the more efficient compilation scheme
-%(that uses a control dependency and an isync fence), but we leave this to future work.
+% %(that places a lightweight fence after every acquire or SC read).
+% %We believe that this axiomatic semantics is also sufficient for proving the correctness of the more efficient compilation scheme
+% %(that uses a control dependency and an isync fence), but we leave this to future work.
 
-\paragraph{Reorderings in the Compiled Program}
-Second, to account for sequences of reorderings of independent memory accesses to distinct locations in  $\compile{\prog}$,
-we would like to relate them to the reorderings in the source program $\prog$
-that we proved sound in \Cref{sec:transformations}.
-But there is a subtle complication here: some reorderings in $\compile{\prog}$ do not correspond 
-to reorderings in $\prog$! For example, if $\prog$ is $x:=_\ra 1;y:=_\rlx 2$, its compilation $\compile{\prog}$
-has the form $\texttt{lwsync;st}\ x\ 1\texttt{;st}\ y\ 2$, but reordering the stores in $\compile{\prog}$ would produce $\texttt{lwsync;st}\ y\ 2\texttt{;st}\ x\ 1$, which
-does not correspond to the reordering of $\prog$ to $y:=_\rlx 2;x:=_\ra 1$ (compiling the latter would yield $\texttt{st}\ y\ 2\texttt{;lwsync;st}\ x\ 1$).
+% \paragraph{Reorderings in the Compiled Program}
+% Second, to account for sequences of reorderings of independent memory accesses to distinct locations in  $\compile{\prog}$,
+% we would like to relate them to the reorderings in the source program $\prog$
+% that we proved sound in \Cref{sec:transformations}.
+% But there is a subtle complication here: some reorderings in $\compile{\prog}$ do not correspond 
+% to reorderings in $\prog$! For example, if $\prog$ is $x:=_\ra 1;y:=_\rlx 2$, its compilation $\compile{\prog}$
+% has the form $\texttt{lwsync;st}\ x\ 1\texttt{;st}\ y\ 2$, but reordering the stores in $\compile{\prog}$ would produce $\texttt{lwsync;st}\ y\ 2\texttt{;st}\ x\ 1$, which
+% does not correspond to the reordering of $\prog$ to $y:=_\rlx 2;x:=_\ra 1$ (compiling the latter would yield $\texttt{st}\ y\ 2\texttt{;lwsync;st}\ x\ 1$).
 
-To solve this issue, we slightly extend our model and consider compilation as if it happens in two stages.
-First, all release/acquire accesses in $\prog$ are split into weaker accesses and corresponding fences as follows:
-\squishlist
-\item $\rlab_\ra \leadsto \rlab_\rlx ; \flab_\lacq$  and $\wlab_\ra \leadsto \flab_\lrel ; \wlab_\srlx$ 
-\item $\ulab_{\ra,o} \leadsto \ulab_{\rlx,o} ; \flab_\lacq$ and $\ulab_{o,\ra} \leadsto \flab_\lrel ; \ulab_{o,\srlx}$ where $o \sqsubseteq\rlx$
-\squishend
-Here, we introduced a new $\srlx$ (``strong relaxed'') mode, which has the same semantics as $\rlx$
-but blocks promises like $\ra$ writes (\ie in write/update steps, we require
-that  ${\forall m' \in \lprom(x).~ m'.\lmrel = \bot}$ if $o \sqsupseteq \srlx$).
-The reason for this is technical: we would have liked to just use $\rlx$ rather
-than $\srlx$, but at least for $\ulab_{o,\ra}$, the mapping to $\flab_\lrel ; \ulab_{o,\rlx}$ is unsound.  Using $\srlx$, however, we have proved the soundness of the above source-to-source mappings (in Coq) using a straightforward 
-simulation argument (the target program's promises are subject to the same constraints as the source's), and $\srlx$ is sufficient for the rest of the proof.
-% \footnote{We believe that $\wlab_\ra$ can be mapped to $\flab_\lrel ; \wlab_\rlx$ (\ie using $\wlab_\rlx$ rather than $\wlab_\srlx$), but we have not formally established the soundness of this mapping.  However, for $\ulab_{o,\ra}$, the mapping to $\flab_\lrel ; \ulab_{o,\rlx}$ is actually unsound.}
-%\TODO{show the counter example?}
-
-
-After this first step, we obtain a program $\prog_1$, which has no
-$\ra$ accesses except possibly for $\ulab_{\ra,\ra}$'s (which are
-surrounded by fences after compilation), and which has $\srlx$
-accesses only immediately after release fences. (The relevance of this
-property will become clearer
-below.)  % \derek{Why is everything after ``except possibly'' in
-  % the above sentence important?}  \jeehoon{Because (1) the split
-  % transformation shown above does not cover the case for
-  % $\ulab_{\ra,\ra}$, and (2) we proved the reordering of strong
-  % relaxed writes past other events, \emph{not} the other way around.
-  % Hence it is important to guarantee that strong relaxed writes occur
-  % only after a release fence, whose mapping to Power is clearly not
-  % reorderable.} 
-For instance, in the example given above, $\prog_1$
-would be $\fencerel;x:=_\srlx 1;y:=_\rlx 2$.  We then apply the
-compilation scheme of \Cref{fig:comp}, where $\srlx$ is compiled like
-$\rlx$.  Clearly, by construction of $\prog_1$, the result
-$\compile{\prog_1}$ is identical to $\compile{\prog}$.  Moreover,
-sequences of reorderings of accesses applied to $\compile{\prog}$ now
-correspond directly to sequences of reorderings in $\prog_1$.
-
-Thus, suppose Power program $\progb$ is the result of applying some
-sequence of reorderings of accesses to the compilation result
-$\compile{\prog} = \compile{\prog_1}$.  Then, there exists a source
-program $\prog_2$ such that $\compile{\prog_2}=\progb$, and $\prog_2$
-is obtained from $\prog_1$ by applying a sequence of reorderings at
-the source level.  Crucially, the reorderings that take $\prog_1$ to
-$\prog_2$ are all sound in our model: in addition to those already
-covered in \Cref{sec:transformations}, the reorderings of
-$\wlab^x_\srlx/\ulab^x_{\rlx,\srlx}$ past a
-$\rlab_\rlx^y/\wlab_\rlx^y/\ulab_{\rlx,\rlx}^y$ (where $x\neq y$) have
-also been proven sound in Coq.  (Note that the reverse
-reorderings---moving accesses \emph{past} a $\srlx$---are not needed
-because of the aforementioned property that all $\srlx$'s in $\prog_1$
-come immediately after a release fence.)  Returning to the above
-example, when matching the reordering of
-$\texttt{lwsync;st}\ x\ 1\texttt{;st}\ y\ 2$ to
-$\texttt{lwsync;st}\ y\ 2\texttt{;st}\ x\ 1$ in the target, these new
-reorderings validate the transformation of
-$\fencerel;x:=_\srlx 1;y:=_\rlx 2$ to
-$\fencerel;y:=_\rlx 2;x:=_\srlx 1$ in the source.
-
-Putting it all together: by the compilation to StrongPower result, we
-know that any behavior of $\progb$ under StrongPower is also a
-behavior of $\prog_2$ in our model; by soundness of the reorderings,
-we know this is also a behavior of $\prog_1$; and by soundness of the
-source-to-source mappings, it is also a behavior of the original
-$\prog$.
-
-% \paragraph{Putting It Together} Suppose $\prog_1$ is the result of
-% translating release/acquire accesses in $\prog$ into fences and
-% relaxed accesses (the $\leadsto$ relation defined above), and suppose
+% To solve this issue, we slightly extend our model and consider compilation as if it happens in two stages.
+% First, all release/acquire accesses in $\prog$ are split into weaker accesses and corresponding fences as follows:
+% \squishlist
+% \item $\rlab_\ra \leadsto \rlab_\rlx ; \flab_\lacq$  and $\wlab_\ra \leadsto \flab_\lrel ; \wlab_\srlx$ 
+% \item $\ulab_{\ra,o} \leadsto \ulab_{\rlx,o} ; \flab_\lacq$ and $\ulab_{o,\ra} \leadsto \flab_\lrel ; \ulab_{o,\srlx}$ where $o \sqsubseteq\rlx$
+% \squishend
+% Here, we introduced a new $\srlx$ (``strong relaxed'') mode, which has the same semantics as $\rlx$
+% but blocks promises like $\ra$ writes (\ie in write/update steps, we require
+% that  ${\forall m' \in \lprom(x).~ m'.\lmrel = \bot}$ if $o \sqsupseteq \srlx$).
+% The reason for this is technical: we would have liked to just use $\rlx$ rather
+% than $\srlx$, but at least for $\ulab_{o,\ra}$, the mapping to $\flab_\lrel ; \ulab_{o,\rlx}$ is unsound.  Using $\srlx$, however, we have proved the soundness of the above source-to-source mappings (in Coq) using a straightforward 
+% simulation argument (the target program's promises are subject to the same constraints as the source's), and $\srlx$ is sufficient for the rest of the proof.
+% % \footnote{We believe that $\wlab_\ra$ can be mapped to $\flab_\lrel ; \wlab_\rlx$ (\ie using $\wlab_\rlx$ rather than $\wlab_\srlx$), but we have not formally established the soundness of this mapping.  However, for $\ulab_{o,\ra}$, the mapping to $\flab_\lrel ; \ulab_{o,\rlx}$ is actually unsound.}
+% %\TODO{show the counter example?}
 
 
-% transforming for any reordering $\progb$ of
-% $\compile{\prog}$, there is a reordering $\prog_2$ of
-% $\prog_1$ at the source level.  every behavior allowed by StrongPower
-% for a reordering of
-% $\compile{\prog}$ is allowed for a reordering of
-% $\prog_1$ by our model, which, by soundness of the reorderings and the
-% source-to-source mappings above, implies that it is allowed for
+% After this first step, we obtain a program $\prog_1$, which has no
+% $\ra$ accesses except possibly for $\ulab_{\ra,\ra}$'s (which are
+% surrounded by fences after compilation), and which has $\srlx$
+% accesses only immediately after release fences. (The relevance of this
+% property will become clearer
+% below.)  % \derek{Why is everything after ``except possibly'' in
+%   % the above sentence important?}  \jeehoon{Because (1) the split
+%   % transformation shown above does not cover the case for
+%   % $\ulab_{\ra,\ra}$, and (2) we proved the reordering of strong
+%   % relaxed writes past other events, \emph{not} the other way around.
+%   % Hence it is important to guarantee that strong relaxed writes occur
+%   % only after a release fence, whose mapping to Power is clearly not
+%   % reorderable.} 
+% For instance, in the example given above, $\prog_1$
+% would be $\fencerel;x:=_\srlx 1;y:=_\rlx 2$.  We then apply the
+% compilation scheme of \Cref{fig:comp}, where $\srlx$ is compiled like
+% $\rlx$.  Clearly, by construction of $\prog_1$, the result
+% $\compile{\prog_1}$ is identical to $\compile{\prog}$.  Moreover,
+% sequences of reorderings of accesses applied to $\compile{\prog}$ now
+% correspond directly to sequences of reorderings in $\prog_1$.
+
+% Thus, suppose Power program $\progb$ is the result of applying some
+% sequence of reorderings of accesses to the compilation result
+% $\compile{\prog} = \compile{\prog_1}$.  Then, there exists a source
+% program $\prog_2$ such that $\compile{\prog_2}=\progb$, and $\prog_2$
+% is obtained from $\prog_1$ by applying a sequence of reorderings at
+% the source level.  Crucially, the reorderings that take $\prog_1$ to
+% $\prog_2$ are all sound in our model: in addition to those already
+% covered in \Cref{sec:transformations}, the reorderings of
+% $\wlab^x_\srlx/\ulab^x_{\rlx,\srlx}$ past a
+% $\rlab_\rlx^y/\wlab_\rlx^y/\ulab_{\rlx,\rlx}^y$ (where $x\neq y$) have
+% also been proven sound in Coq.  (Note that the reverse
+% reorderings---moving accesses \emph{past} a $\srlx$---are not needed
+% because of the aforementioned property that all $\srlx$'s in $\prog_1$
+% come immediately after a release fence.)  Returning to the above
+% example, when matching the reordering of
+% $\texttt{lwsync;st}\ x\ 1\texttt{;st}\ y\ 2$ to
+% $\texttt{lwsync;st}\ y\ 2\texttt{;st}\ x\ 1$ in the target, these new
+% reorderings validate the transformation of
+% $\fencerel;x:=_\srlx 1;y:=_\rlx 2$ to
+% $\fencerel;y:=_\rlx 2;x:=_\srlx 1$ in the source.
+
+% Putting it all together: by the compilation to StrongPower result, we
+% know that any behavior of $\progb$ under StrongPower is also a
+% behavior of $\prog_2$ in our model; by soundness of the reorderings,
+% we know this is also a behavior of $\prog_1$; and by soundness of the
+% source-to-source mappings, it is also a behavior of the original
 % $\prog$.
 
-% Putting all pieces together, 
-% every behavior allowed by StrongPower for a reordering of $\compile{\prog}$ is allowed for a reordering of $\prog_1$ by our model,
-% which, by soundness of the reorderings and the  source-to-source mappings above, implies that it is allowed for $\prog$.
+% % \paragraph{Putting It Together} Suppose $\prog_1$ is the result of
+% % translating release/acquire accesses in $\prog$ into fences and
+% % relaxed accesses (the $\leadsto$ relation defined above), and suppose
 
-Finally, we note that for C++11, there is a more efficient compilation scheme of acquire reads and updates, which uses a control dependency and an \texttt{isync} fence instead of a lightweight fence (\texttt{lwsync}).
-We believe that our model is also correctly compiled using this scheme.
-Nevertheless, this will require a more direct proof (\texttt{isync} fences are beyond the reach of~\cite{fm16}),
-which we leave to future work.
+
+% % transforming for any reordering $\progb$ of
+% % $\compile{\prog}$, there is a reordering $\prog_2$ of
+% % $\prog_1$ at the source level.  every behavior allowed by StrongPower
+% % for a reordering of
+% % $\compile{\prog}$ is allowed for a reordering of
+% % $\prog_1$ by our model, which, by soundness of the reorderings and the
+% % source-to-source mappings above, implies that it is allowed for
+% % $\prog$.
+
+% % Putting all pieces together, 
+% % every behavior allowed by StrongPower for a reordering of $\compile{\prog}$ is allowed for a reordering of $\prog_1$ by our model,
+% % which, by soundness of the reorderings and the  source-to-source mappings above, implies that it is allowed for $\prog$.
+
+% Finally, we note that for C18/C++17, there is a more efficient compilation scheme of acquire reads and updates, which uses a control dependency and an \texttt{isync} fence instead of a lightweight fence (\texttt{lwsync}).
+% We believe that our model is a<lso correctly compiled using this scheme.
+% Nevertheless, this will require a more direct proof (\texttt{isync} fences are beyond the reach of~\cite{fm16}),
+% which we leave to future work.
 
 
 \subsection{DRF Theorems}
@@ -458,7 +458,7 @@ the disastrous consequences of OOTA,
 we prove soundness of a very simple program logic for concurrent programs with respect to our model.
 In particular, it can be trivially used to show that \ref{eq:LBdep} must return $a=0$,
 and more generally, that programs cannot read values they never wrote.
-Note that even this basic logic is unsound for C++'s relaxed accesses
+Note that even this basic logic is unsound for C/C++'s relaxed accesses
 (whereas it is sound in our model even if all accesses are plain).
 
 %As we proved strengthening to be a sound transformation (see~\Cref{sec:transformations}), 

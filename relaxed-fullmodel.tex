@@ -166,10 +166,10 @@ o_\lw = \ra \implies \forall m' \in \lprom(x).~ m'.\lmrel = \bot  \\\\
 
 In this section, we extend the basic model of
 \Cref{sec:relaxed}-\ref{sec:updates} to handle all the
-features of the C++ concurrency model except SC accesses and consume reads.
+features of the C/C++ concurrency model except SC accesses and consume reads.
 % \footnote{
 % Consume reads are widely considered a somewhat
-%   premature aspect of the C++ standard and are implemented as acquire reads in mainstream compilers.}
+%   premature aspect of the C/C++ standard and are implemented as acquire reads in mainstream compilers.}
 
 
 \subsection{Release/Acquire Synchronization}
@@ -177,14 +177,14 @@ features of the C++ concurrency model except SC accesses and consume reads.
 
 \paragraph{Release/Acquire Fences}
 
-A crucial feature of the C++ model is the ability for threads to synchronize using memory fences or stronger kinds of atomic accesses.
+A crucial feature of the C/C++ model is the ability for threads to synchronize using memory fences or stronger kinds of atomic accesses.
 Consider the message-passing test case:
 \begin{equation}\label{eq:MPfences}\tag{MP+fences}
 \inarrII{ x:=1 ;\\ \fencerel ;\\ y:=1; }{  a:=y; \comment{1} \\ \fenceacq;\\ b:=x; \nocomment{0} }
 \end{equation}
 The release fence between the writes, together with the acquire fence
 between the reads, prevents the weak behavior of the example (\ie that
-of returning $a=1$ and $b=0$).  Roughly speaking, the C++ model
+of returning $a=1$ and $b=0$).  Roughly speaking, the C/C++ model
 forbids this behavior by requiring that whenever a read before an
 acquire fence reads from a write after a release fence, the two fences
 synchronize, which in turn means that any write that happens-before the release
@@ -305,7 +305,7 @@ If there is a release fence in between the read and write, then the reordering i
 
 \paragraph{Release/Acquire Accesses}
 
-In addition to release and acquire fences, C++ offers a more fine-grained way
+In addition to release and acquire fences, C/C++ offers a more fine-grained way
 of achieving synchronization, via \emph{acquire reads} and \emph{release writes}.
 Intuitively speaking, an acquire read is a relaxed read followed by an acquire fence,
 whereas a release write is a release fence followed by a relaxed write,
@@ -343,12 +343,12 @@ which allows it to later read $x=0$.
 \paragraph{Release Sequences}
 
 Using the per-location release views, 
-we can straightforwardly handle C++-style \emph{release sequences}
+we can straightforwardly handle C/C++-style \emph{release sequences}
 (following the  definition of release sequences given in \cite{c11comp}).
 %.\footnote{%
 %We follow the corrected definition of release sequences in \cite{c11comp}.}
-%%because the definition in the C++ standard is flawed. See \citet{c11comp} for details.}
-In C++, an acquire read synchronizes with a release write $w$ to $x$ not only if it reads from $w$
+%%because the definition in the C/C++ standard is flawed. See \citet{c11comp} for details.}
+In C/C++, an acquire read synchronizes with a release write $w$ to $x$ not only if it reads from $w$
 but also if it reads from a write in $w$'s release sequence.
 The release sequence of $w$ is inductively defined to include all the same-thread writes/updates to $x$ after $w$, 
 as well as all updates reading from an event in the release sequence of $w$.
@@ -388,10 +388,10 @@ Consider the following variants of the \ref{eq:LB} example:
 In the first variant (\ref{eq:LBrel}), the promise of $y_{\relw}:=1$ should be forbidden
 for the same reason that a promise over a release fence is forbidden,
 and hence the specified behavior is disallowed.
-We note that this behavior is possible under the C++ model, 
+We note that this behavior is possible under the C/C++ model, 
 but is not possible under the usual compilation of release writes
 to Power and ARM (using a \texttt{lwsync}/\texttt{dmb\_sy} fence in the first thread).\footnote{%
-Moreover, we observe that even the C++ model forbids this outcome, 
+Moreover, we observe that even the C/C++ model forbids this outcome, 
 if we additionally make the read of $y$ in the second thread into a consume read 
 (which is supposed to be compiled exactly as a relaxed read, but preserving syntactic dependencies).}
 More generally, our model forbids promises over release writes to the same location.
@@ -437,9 +437,9 @@ to enforce strong ordering guarantees among memory accesses.
 In particular, full
 sequential consistency is restored if an SC fence is  
 placed between every two shared memory accesses of
-a program.\footnote{In this regard, our semantics is stronger than the C++ model~\cite{Batty:2011},
+a program.\footnote{In this regard, our semantics is stronger than the C/C++ model~\cite{Batty:2011},
 which fails to validate this basic property, and follows Lahav~\etal~\cite{sra,repairing-sc} instead.} 
-%and is stronger than the original C++
+%and is stronger than the original C/C++
 %model~\cite{Batty:2011} as well as that of Batty~\etal~\cite{Batty:2016}, both of which fail to validate
 %this basic property. \derek{Cite our PLDI TR?  We need something to back up
 %claim of others' failure.}}
@@ -464,7 +464,7 @@ onwards $T_2$ \emph{must} read $x=1$.
 
 %\paragraph{SC Accesses } %Ori: if i remove the space here, my latex goes crazy 
 %
-%Besides SC fences, C++ also provides the notion of SC accesses, which can be
+%Besides SC fences, C/C++ also provides the notion of SC accesses, which can be
 %thought of roughly as release/acquire accesses bundled with a ``location-specific SC fence''. 
 %In the case of the \ref{eq:SB} example, ruling out the weak behavior without
 %fences requires one to make \emph{all four} accesses be SC accesses.
@@ -495,7 +495,7 @@ onwards $T_2$ \emph{must} read $x=1$.
 \subsection{``Plain'' Non-Synchronizing Accesses}
 \label{sec:plain}
 
-Both C++ and Java provide some form of \emph{non-synchronizing} accesses, \ie accesses that are meant to be used only for non-racy data accesses
+Both C/C++ and Java provide some form of \emph{non-synchronizing} accesses, \ie accesses that are meant to be used only for non-racy data accesses
 (C++'s non-atomic accesses and Java's normal accesses).
 Such accesses can never achieve synchronization, even together with fences.
 Consequently, compilers are free to reorder non-synchronizing reads across acquire fences, and to reorder release fences across non-synchronizing writes.
@@ -511,7 +511,7 @@ Indeed, assuming two non-racy reads, a compiler may reorder them even if they ar
 In a broader context, it may pave the way to further optimizations 
 (\eg a compiler may prefer to unconditionally optimize $a:=x; b:=*p;$ $c:=x$ to $b:=*p; a:=x; c:=a$, 
 without the burden of analyzing whether the pointer $p$ points to $x$ or not).
-Since we followed C++'s assumption of full per-location coherence for our relaxed accesses, 
+Since we followed C/C++'s assumption of full per-location coherence for our relaxed accesses, 
 the reordering of two reads from the same location is unsound for them. 
 Concretely, consider the following example:
 $$
@@ -520,7 +520,7 @@ $$
 $$
 The target program obviously allows the specified behavior, while the source does not.
 Fortunately, it is not hard to adapt our plain accesses to provide only partial per-location coherence
-(in C++11 terms, dropping ``coherence-RR'' for plain accesses), consequently allowing this reordering.
+(in C18/C++17 terms, dropping ``coherence-RR'' for plain accesses), consequently allowing this reordering.
 The idea is to extend the notion of a view $\view$---both message views $\mrel$ and the
 three component views of a thread $(\lcur,\lacq,\lrel)$---from being a single timemap to a pair of timemaps:
 a ``normal'' one ($\view.\lrw$) as before, and one for plain accesses ($\view.\lur$).
@@ -531,7 +531,7 @@ checking that $\lcur.\lur(x) \leq t$, and only updates $\lcur.\lrw(x)$ to includ
  A plain write, on the other hand, cannot pick a timestamp smaller than $\lcur.\lrw(x)$ 
 (since we do maintain the other coherence properties besides ``coherence-RR'').
 
-Importantly, we do not exploit ``catch-fire'' semantics (\`a la C++) to accommodate our plain accesses,
+Importantly, we do not exploit ``catch-fire'' semantics (\`a la C/C++) to accommodate our plain accesses,
 but rather give a well-defined semantics to arbitrary racy programs.
 In addition, we note that it is easy to decouple the two weaknesses of plain accesses compared to relaxed ones,
 by introducing a middle access mode that allows synchronization

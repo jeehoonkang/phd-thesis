@@ -7,7 +7,7 @@ problem.  Several of them have come with proofs of DRF guarantees, but
 ours is the first to come with formal (and machine-checked) validation
 of a wide range of essential local transformations
 (\Cref{sec:transformations}) concerning a broad spectrum of features
-from the C++ model.
+from the C/C++ model.
 
 %\ori{also say that we are the first to do that with the full set of features}
 
@@ -95,7 +95,7 @@ These optimization rules include a rather complex rule for non-thread-local opti
 The paper does not present any formal results about the model.
 It is worth noting that the model does not support the weak behavior of the \ref{eq:ARMweak} program and thus may not be compiled to ARM without additional fences.  The model only handles relaxed and non-atomic accesses and locks.
 
-Podkopaev~\etal~\cite{sergey:2016} proposed an operational model covering a large subset of the features of the C++ model.  They provide many litmus tests to demonstrate the suitability
+Podkopaev~\etal~\cite{sergey:2016} proposed an operational model covering a large subset of the features of the C/C++ model.  They provide many litmus tests to demonstrate the suitability
 of their model, but do not prove any formal results about it.
 Their model ensures per-location coherence in a very similar way to our model: using timestamps.
 In order to handle read-write reorderings, they allow reads to return symbolic values, which are then evaluated at a later point in time when their value is actually needed.
@@ -125,21 +125,21 @@ For example, \sevcik~\etal~\cite{compcerttso} and Demange~\etal~\cite{bmm} propo
 These proposals may be reasonable compromises if the only target machines of interest also follow the TSO model,
 but are prohibitively expensive on weaker architectures, such as Power and ARM,
 because enforcing TSO on those machines requires essentially as many fences as enforcing SC.
-In a similar line of work, Lahav~\etal~\cite{sra} introduced a strengthening of the release/acquire fragment of the C++ memory model, which they called SRA, together with an operational semantics for SRA\@.
+In a similar line of work, Lahav~\etal~\cite{sra} introduced a strengthening of the release/acquire fragment of the C/C++ memory model, which they called SRA, together with an operational semantics for SRA\@.
 Compiling SRA to Power and ARM is cheaper than TSO, but still requires some fences before or after every shared variable access, and may thus not be suitable for performance-critical code.
 
 Another approach is to simply allow OOTA behaviors.
-This was the approach taken by Batty~\etal's formalization of C++~\cite{Batty:2011}, and by the OpenCL model~\cite{opencl-model},
+This was the approach taken by Batty~\etal's formalization of C/C++~\cite{Batty:2011}, and by the OpenCL model~\cite{opencl-model},
 as well as by Crary and Sullivan~\cite{Crary2015}, who introduced a more fine-grained specification of the orders that the model is supposed to preserve.
 All of these models allow the weak behavior of the \ref{eq:LBdep} example, thereby invalidating standard reasoning principles and DRF theorems.
 
 Finally, Norris and Demsky~\cite{CDSchecker} presented a tool
-that exhaustively enumerates the behaviors of concurrent C++ programs.
+that exhaustively enumerates the behaviors of concurrent C/C++ programs.
 To account for speculative reads, the tool may establish ``promised
 future values'', which a load can read from, and which must eventually
 be written by a future store.  Norris and Demsky's promises look
 superficially quite similar to ours, but their purpose is to support
-practical model checking of C++ programs, not to change the semantics
+practical model checking of C/C++ programs, not to change the semantics
 of the language, so the paper does not present any formal model or
 metatheory of promises.
 
