@@ -15,8 +15,7 @@ m_\lw=\updmsg{x}{v_\lw}{t_\lr}{t_\lw} \quad m_\lw \in \lprom \quad \lprom'=\lpro
 }
 {\tup{\tup{\sigma, \rlxcur, \lprom}, \mem} \astep{} \tup{\tup{\sigma', \rlxcur', \lprom'}, \mem}}
 \end{mathpar}
-\caption{Additional rule for updates (all other rules are as before except all
-messages $\rlxmsg{x}{v}{t}$ are replaced by $\updmsg{x}{v}{f}{t}$).}
+\caption{Additional rule for updates}
 \label{fig:updates}
 \end{figure}}
 
@@ -181,7 +180,9 @@ and $\lts'.\lprmem = \emptyset$.
 
 Finally, we extend the operational semantics for thread configurations
 with one additional rule for update fulfillment shown in
-\Cref{fig:updates}.  This rule forces its write to be adjacent in
+\Cref{fig:updates}.   (All other rules are as before except all
+messages $\rlxmsg{x}{v}{t}$ are replaced by $\updmsg{x}{v}{f}{t}$.)
+This rule forces its write to be adjacent in
 modification order to its read.  As with ordinary writes, a normal
 (non-promised) update step can be simulated by a promise step
 immediately followed by fulfillment.  Note that the other rules remain

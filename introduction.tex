@@ -6,13 +6,13 @@
 
 \paragraph{Hardware Abstraction}
 
-The C programming language is the \emph{lingua franca} for systems programming, mainly due to its
-two notable advantages: \emph{portability} and \emph{control} over hardware.  C is portable in the
-sense that C programs can be compiled and then executed in most of the existing hardware.  At the
-same time, C has a precise control over hardware in the sense that C allows programmers to access
-low-level hardware features such as memory layout and concurrency.  These advantages for decades
-have attracted system programmers, who have built a giant ecosystem around the C language itself and
-tools such as optimizing compilers, linkers, and program analyzers.
+The C programming language is used as the \emph{lingua franca} for systems programming, mainly due
+to its two notable advantages: \emph{portability} and \emph{control} over hardware.  C is portable
+in the sense that C programs can be compiled and then executed in most of the existing hardware.  At
+the same time, C has a precise control over hardware in the sense that C allows programmers to
+access low-level hardware features such as memory layout and concurrency.  These advantages for
+decades have attracted system programmers, who have built a giant ecosystem around the C language
+itself and tools such as optimizing compilers, linkers, and program analyzers.
 
 C enjoys portability and control---seemingly conflicting properties---at the same time thanks to the
 fact that it is a balanced abstraction over various assembly languages, which are the interface of
@@ -43,10 +43,10 @@ They have been so crucial for the performance of systems since the early days th
 programmer expect a compiler to perform, \eg{} register promotion~\cite{reg-prom} and register
 allocation~\cite{reg-alloc}, which are very effective and yet quite sophisticated compiler
 optimizations.  Optimizations are becoming more and more important these days because recent
-trends---such as SIMD, GPU, and accelerators---offer potential for them to further improve the
-performance of systems.  Since they are an essential ingredient of the real-world practice of C
-programming, the language should be an abstraction not only over just hardware assembly languages
-but also over compiler optimizations.
+hardware trends---such as SIMD, GPU, and accelerators---offer potential for compiler optimizations
+to further improve the performance of systems.  Since optimizations are an essential ingredient of
+the real-world practice of C programming, the language should be an abstraction not only over just
+hardware assembly languages but also over compiler optimizations.
 
 % system programmers are building bigger systems, which they cannot hand-optimize on their own; and
 % hardware vendors are introducing complex features, which need a special attention for maximal
@@ -55,9 +55,9 @@ but also over compiler optimizations.
 % These days the mainstream compilers are becoming so aggressive in these days that they are
 % performing even subtle optimizations that cannot be immediately justified.
 
-Designing an abstraction over both hardware assembly languages and compiler optimizations is a
-challenging task.  In order to understand the challenge, consider the following optimization example
-that is actually performed by the mainstream compilers such as GCC~\cite{gcc} and LLVM~\cite{llvm}:
+Designing an abstraction over both hardware assembly languages and compiler optimizations, however,
+is a challenging task.  For instance, consider the following transformation that is actually
+performed by the mainstream compilers such as GCC~\cite{gcc} and LLVM~\cite{llvm}:
 
 \[\begin{array}{rcl}
 \begin{minipage}{0.27\textwidth}
