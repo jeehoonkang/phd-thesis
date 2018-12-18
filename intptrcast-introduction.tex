@@ -98,10 +98,10 @@ programs containing those idioms as undefined (\ie erroneous).
 In this chapter, we propose a \emph{hybrid memory model} for C/C++ that combines the strengths of
 the aforementioned approaches.  It gives semantics to programs that manipulate the bit-level
 representation of pointers, yet permits the same optimizations as logical models for code not using
-these low-level features.  Crucially, with this model we propose a fix to the GCC bug presented in
-\Cref{fig:introduction:bug}, which is turning off some controversial, too aggressive alias analysis.
-Furthermore, we achieve this without substantially complicating the proof techniques required for a
-verified compiler while retaining a model that is simple for the programmer to reason about.
+these low-level features.  Crucially, with this model we propose a fix to the GCC bug, which is
+turning off some controversial, too aggressive alias analysis.  Furthermore, we achieve this without
+substantially complicating the proof techniques required for a verified compiler while retaining a
+model that is simple for the programmer to reason about.
 
 The key technical ingredient for making this work is having two
 distinct representations of pointer values, a concrete and a logical one,
@@ -135,8 +135,7 @@ To summarize, our contributions are:
 \item The first formal semantics that \emph{fully} supports integer-pointer casts and yet allows the
   standard compiler optimizations (\Cref{sec:intptrcast:formal-semantics}).
 
-\item A proposal to fix to GCC bug presented in \Cref{fig:introduction:bug}. \jeehoon{mention it in
-    the body.}
+\item A proposal to fix to GCC bug presented in \Cref{fig:introduction:bug}.
 
 \item A compiler verification technique for proving semantic preservation under our semantics, and its
   application to verify a number of standard optimizations that are difficult to verify in the

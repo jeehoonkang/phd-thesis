@@ -6,12 +6,78 @@ under our semantics, and apply the technique to verify a number of standard opti
 
 
 
+\subsection{Specification of Out of Memory}
+\label{sec:intptrcast:formal-semantics:oom}
+
+Before actually proving semantic preservation, we first generalize the notion of behaviors and
+observations to make compiler verification more faithful in the presence of out of memory.  Recall
+that out of memory may be raised by pointer-to-integer cast, as we discussed in
+\Cref{sec:intptrcast:formal-semantics:ownership}.  It is worth noting that out of memory does not
+occur in CompCert because it uses a purely logical memory model that has infinite memory.
+% while we should regard out of memory because it is unavoidable in the presence of integer-pointer
+% casts.
+
+First, we regard out of memory as \emph{the empty set of behaviors} (\ie no behaviors), following
+CompCertTSO~\cite{vsevvcik2013compcerttso}.  This is because we should allow the target program to
+run out of memory even if the source program does not, because register allocation---one of the most
+important compiler optimizations---may increase the program's memory requirements.  Furthermore,
+since running out of memory is not that serious a problem for programmers as is genuine undefined
+behavior (\eg accessing freed memory), the target behavior of a source program running out of memory
+should not be arbitrary.
+
+%% In C11 standard~\cite{iso2011iec}, \code{malloc} returns $0$ when out of memory (7.22.3
+%% paragraph 1).  However, this semantics does not justify
+%% memory optimizations, such as dead allocation eliminations, since
+%% the a \code{malloc} in the target may return $0$ while the
+%% corresponding \code{malloc} in the source may return a valid
+%% pointer.
+%This question arises naturally,
+%since integer-pointer casts inherently introduce out of memory.
+
+% but should match the source behavior and also run out of memory.
+
+% Thus we model \emph{out of memory as the empty set of behaviors}, or in other words, no behaviors.
+
+% Then what is the set of behaviors of out of memory?
+
+Second, we allow programmers to observe \emph{partial behaviors}, possibly before discarding
+behavior due to running out of memory, in addition to (whole) behaviors presented in
+\Cref{sec:background:correctness}:
+\begin{itemize}
+\item A partial execution of the program that has produced a finite sequence
+of I/O events, $e_1, \cdots, e_n, \mathtt{partial}$.
+\end{itemize}
+Partial behaviors allow programmers to observe I/O events prior to an out-of-memory error, which is
+more faithful to the real world because it is absurd to discard I/O events before running out of
+memory.  As before, refinement is defined as inclusion of the set of (possibly partial) behaviors of
+the target program into that of the source program.  As a consequence, compilers should guarantee
+that the target program always performs a prefix of the events the source program could have
+performed.
+% However, unlike CompCertTSO, where only the target language can run out of memory, our source
+% language can also run out of memory due to pointer-to-integer casts, as we explain below.
+
+% To handle this, we also observes \emph{partial behaviors}, possibly before discarding behavior due
+% to running out of memory:
+
+Though our treatment of out of memory---as well as that of all the other existing formal
+semantics---is not entirely satisfactory.  Firstly, our semantics may not justify those
+optimizations that reduce memory consumption instead of increasing it, such as register promotion
+and dead allocation elimination.  Furthermore, the ISO C18 standard says that \code{malloc} returns
+zero in case of out of memory~\cite[\S7.22.3p1]{c18}, instead of allowing no behaviors.  The ISO C18
+standard semantics, however, is also unsatisfactory in that it does not justify dead allocation
+eliminations, \eg{} if a dead malloc is eliminated, then the source may have more allocated blocks
+than the target has and thus a subsequent allocation may return zero in the source but return a
+valid pointer in the target.  For these reasons, we leave defining a more proper semantics of out of
+memory as a future work.
+
+
 \subsection{Running Example \& Informal Verification}
 \label{reasoning:running}
 
-Consider the following example transformation, which is indeed performed by \code{clang -O2}.  This
-transformation involves four different optimizations: constant propagation (CP), dead load
-elimination (DLE), dead store elimination (DSE), and dead allocation elimination (DAE).
+Now we actually prove semantic preservation for the following example transformation, which is
+indeed performed by \code{clang -O2}.  This transformation involves four different optimizations:
+constant propagation (CP), dead load elimination (DLE), dead store elimination (DSE), and dead
+allocation elimination (DAE).
 \begin{center}
 \begin{tabular}{@{}l@{}l@{}l@{}}
 %\small
