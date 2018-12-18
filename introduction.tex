@@ -164,6 +164,26 @@ Haskell without resorting to undefined behavior thanks to its lack of raw pointe
 \subsection{The Problem: Reckless Development of Semantics and Compilers}
 \label{sec:introduction:problem}
 
+\jeehoon{reorganize it}
+
+The ISO C18 standard~\cite{c18} famously does not give semantics to a significant subset of
+syntactically valid C programs. Instead, many programs exhibit implementation-defined, unspecified,
+or undefined behavior, with the latter imposing no requirements on a conforming implementation.
+This has led to the somewhat controversial practice of sophisticated C compilers reasoning backwards
+from instances of undefined behavior to conclude that, for example, certain code paths must be
+dead. Such transformations can lead to surprising non-local changes in program behavior and
+difficult-to-find bugs~\cite{wang2013towards,yang2011finding}.
+
+Accordingly, there have been numerous efforts to capture the subtleties of the C standard formally,
+either by giving an alternative language definition or a conforming
+implementation~\cite{norrish1998c,leroy:compcert,ellison2012executable}.
+
+The C memory model has been of particular interest: cross-platform low-level access to memory is a
+defining feature of C-like languages and is essential for applications such as operating system
+kernels and language runtimes.  However, subtle pointer aliasing rules~\cite{krebbers2013aliasing},
+reliance on implementation-specific behavior, and the treatment of pointers to uninitialized memory
+makes reasoning about even single-threaded programs non-trivial.
+
 The problem is that the C language and its compilers have evolved in such an unplanned way that even
 experienced system programmers disagree on the semantics of numerous language features and the
 soundness of various compiler optimizations.  In order to improve performance and energy consumption

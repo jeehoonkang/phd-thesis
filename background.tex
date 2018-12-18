@@ -219,8 +219,8 @@ function calls.  This is because the model does not provide a mechanism for ensu
 has exclusive control over some part of memory, thereby assuming that unknown code can read and
 update the contents of every allocated memory cell.
 
-\jeehoon{The concrete model also invalidates dead allocation elimination optimizations.  Connect it
-  to the logical memory model's advantages.}
+\jeehoon{The concrete model also invalidates dead allocation elimination optimizations.  It's said
+  in intptrcast intro.  Connect it to the logical memory model's advantages.}
 
 \jeehoon{In the above example, the first optimization is allowed since there is no way to forge the
   logical address of the variable \code{a} from those of other blocks. Also, the second one is
@@ -672,8 +672,6 @@ forward simulation between an IR and assembly to a backward simulation between t
 technical properties of the IR and assembly (namely, that the IR is ``receptive'' and assembly is
 ``determinate''). Finally, from this backward simulation, one can establish that the target's
 behaviors refine the source's.
-
-\jeehoon{Maybe we need to define simulation more precisely.}
 
 
 

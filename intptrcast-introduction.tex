@@ -13,43 +13,12 @@
 
 \paragraph{Context}
 
-The ISO C18 standard~\cite{c18} famously does not give semantics to a significant
-subset of syntactically valid C programs. Instead, many programs
-exhibit implementation-defined, unspecified, or undefined behavior,
-with the latter imposing no requirements on a conforming
-implementation. This has led to the somewhat controversial practice of
-sophisticated C compilers reasoning backwards from instances of
-undefined behavior to conclude that, for example, certain code paths
-must be dead. Such transformations can lead to surprising non-local
-changes in program behavior and difficult-to-find bugs~\cite{wang2013towards,yang2011finding}.
-
-Accordingly, there have been numerous efforts to capture the
-subtleties of the C standard formally, either by giving an alternative
-language definition or a conforming implementation~\cite{norrish1998c,leroy:compcert,ellison2012executable}.
-
- The C memory model has been of
-particular interest: cross-platform low-level access to memory is a
-defining feature of C-family languages and is essential for
-applications such as operating system kernels and language
-runtimes. However, subtle pointer aliasing
-rules~\cite{krebbers2013aliasing}, reliance on implementation-specific
-behavior, and the treatment of pointers to uninitialized memory makes
-reasoning about even single-threaded programs non-trivial.
-
-One popular extension of the standard C memory model that has not
-previously been formalized is the \emph{unrestricted} manipulation of
-pointers as integer values. While the language definition provides an integer
-type $\mathtt{uintptr\_t}$ that may be legally cast to and from pointer
-types, it does not require anything of the resulting values~\cite[\S7.20.1.4p1]{iso2011iec}. 
-Nevertheless, there are many important use cases for manipulating
-the representation of pointers in low-level code.
-
-For example, casting pointers to integers is
-widely used in the Linux kernel and JVM implementations to perform bitwise operations on pointers.
-Another common usage pattern occurs in the C++ standard library (\code{std::hash}),
-where the pointer's bit representation is used as a key for indexing into
-a hash table.
-This is useful since taking a pointer is a cheap way to get a unique key.
+There are many important use cases for manipulating the representation of pointers in low-level code
+in an \emph{unrestricted} way.  For example, casting pointers to integers is widely used in the
+Linux kernel and JVM implementations to perform bitwise operations on pointers.  Another common
+usage pattern occurs in the C++ standard library (\code{std::hash}), where the pointer's bit
+representation is used as a key for indexing into a hash table.  This is useful since taking a
+pointer is a cheap way to get a unique key.
 
 %As a consequence, most programmers probably rely on a fairly concrete
 %model of C semantics in which pointer values are memory addresses,
@@ -89,21 +58,29 @@ This is useful since taking a pointer is a cheap way to get a unique key.
 
 \paragraph{Problem}
 
+% One popular extension of the standard C memory model that 
+
+However, manipulation of pointers as integer values has not previously been formalized in existing
+proposals for C/C++ semantics.  In particular, while ISO C18 standard provides an integer type
+$\mathtt{uintptr\_t}$ that may be legally cast to and from pointer types, it does not require
+anything of the resulting values~\cite[\S7.20.1.4p1]{c18}.  In fact, it is challenging to design a
+satisfactory formal semantics for pointer manipulation because such a semantics should settle the
+dispute among existing optimizations in mainstream compilers, as evidenced by the GCC bug presented
+in \Cref{fig:introduction:bug}.
+
 The most straightforward way to support bit-level pointer manipulation is to adopt the concrete
 memory model, but as we have seen in \Cref{sec:introduction,sec:background:memory}, this model
 invalidates many basic compiler optimizations such as constant propagation and dead allocation
-elimination. \jeehoon{DAE?}
+elimination.
 
 % due to the combination of finite memory and casts of arbitrary integers to pointers.
 
 In order to enable such compiler optimizations, most work on verified compilation instead relies on
 logical memory models, but as we have seen in \Cref{sec:background:memory}, they cannot support many
-low-level C programming idioms using casts between pointers and integers, treating programs
-containing them as undefined (\ie erroneous).  At the essence of the problem is that logical models
+low-level C programming idioms using casts between pointers and integers because logical models
 represent pointers as pairs of an allocation block identifier and an offset within that block, which
-cannot be easily casted into and from an integer.
-
-\jeehoon{Say the example in the introduction.}
+cannot be easily casted into and from an integer.  As a consequence, logical memory models treat
+programs containing those idioms as undefined (\ie erroneous).
 
 %\todo{Show example with pointer to integer cast.}
 %Gil:
@@ -118,12 +95,13 @@ cannot be easily casted into and from an integer.
 
 \paragraph{Our Solution}
 
-In this chapter, we propose a \emph{hybrid memory model} for C/C++ that combines the strengths of the
-aforementioned approaches. It gives semantics to programs that manipulate the bit-level
+In this chapter, we propose a \emph{hybrid memory model} for C/C++ that combines the strengths of
+the aforementioned approaches.  It gives semantics to programs that manipulate the bit-level
 representation of pointers, yet permits the same optimizations as logical models for code not using
-these low-level features. Crucially, we achieve this without substantially complicating the proof
-techniques required for a verified compiler while retaining a model that is simple for the
-programmer to reason about.
+these low-level features.  Crucially, with this model we propose a fix to the GCC bug presented in
+\Cref{fig:introduction:bug}, which is turning off some controversial, too aggressive alias analysis.
+Furthermore, we achieve this without substantially complicating the proof techniques required for a
+verified compiler while retaining a model that is simple for the programmer to reason about.
 
 The key technical ingredient for making this work is having two
 distinct representations of pointer values, a concrete and a logical one,
@@ -156,6 +134,9 @@ To summarize, our contributions are:
 \begin{itemize}
 \item The first formal semantics that \emph{fully} supports integer-pointer casts and yet allows the
   standard compiler optimizations (\Cref{sec:intptrcast:formal-semantics}).
+
+\item A proposal to fix to GCC bug presented in \Cref{fig:introduction:bug}. \jeehoon{mention it in
+    the body.}
 
 \item A compiler verification technique for proving semantic preservation under our semantics, and its
   application to verify a number of standard optimizations that are difficult to verify in the
