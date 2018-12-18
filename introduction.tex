@@ -225,12 +225,12 @@ void main() {
 \end{figure}
 
 \noindent (At first, ignore the gray area.)  Note that \code{uintptr\_t} is an integer type that is
-able to hold a pointer value (see \jeehoon{refer C18} for more details).  In this program, the
-pointer to the local variable \code{x} is casted to an integer, \code{xi}, and then casted back to
-pointer, \code{p}.  Thus \code{p} points to \code{x}, and after \code{*p} is assigned one, the value
-of \code{x} should be one.  Now inserting the code in the gray area should not change the program's
-behavior, because the gray area is dead code: after the for loop, \code{i} equals to \code{xi}, and
-the conditional branch is not taken.
+able to hold a pointer value~\cite[\S7.20.1.4]{c18}.  In this program, the pointer to the local
+variable \code{x} is casted to an integer, \code{xi}, and then casted back to pointer, \code{p}.
+Thus \code{p} points to \code{x}, and after \code{*p} is assigned one, the value of \code{x} should
+be one.  Now inserting the code in the gray area should not change the program's behavior, because
+the gray area is dead code: after the for loop, \code{i} equals to \code{xi}, and the conditional
+branch is not taken.
 
 GCC miscompiles this program as follows:
 %
@@ -450,16 +450,16 @@ to replace the C dialects used in Linux and other systems.
 % analysis, union, inline assembly, GPUs and accelerators---and by verifying mainstream compilers.
 
 
-\jeehoon{Mention these papers.}
-
-\begin{itemize}
-\item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
-  \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
-\item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
-  Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
-  (*The first three authors contributed equally and are listed alphabetically.)  \emph{Crellvm:
-    Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.
-\end{itemize}
+% Other papers:
+%
+% \begin{itemize}
+% \item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
+%   \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
+% \item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
+%   Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
+%   (*The first three authors contributed equally and are listed alphabetically.)  \emph{Crellvm:
+%     Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.
+% \end{itemize}
 
 
 \paragraph{Organization}

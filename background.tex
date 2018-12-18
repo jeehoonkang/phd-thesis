@@ -202,8 +202,8 @@ since pointers are merely integers in the concrete model.  As a result, \emph{th
 
 Memory allocation inserts a block into the list of allocated blocks, whereas deallocation removes
 one.  Overall, the list of allocated blocks should be \emph{consistent}:\footnote{These are a subset
-  of \code{malloc}'s properties according to the C11 standard~\cite{iso2011iec}.  For more details,
-  see \S7.22.3 paragraph~1 and \S6.5.8 paragraph~5. \jeehoon{Update to C18}}
+  of \code{malloc}'s properties according to the ISO C18 standard.  For more details, see
+  \cite[\S7.22.3p1 and \S6.5.8p5]{c18}.}
 \begin{itemize}
 \item If $(p, n)$ is allocated, then $\emptyset \neq [p,p+n) \subseteq
   (0,2^{32}-1)$.
