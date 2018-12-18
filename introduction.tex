@@ -40,8 +40,8 @@ Objective C, Swift, and Rust---largely follow the design of C and are often call
 
 However, C is not just a thin wrapper around assembly languages because of compiler optimizations.
 They have been so crucial for the performance of systems since the early days that every system
-programmer expect a compiler to perform, \eg{} register promotion~\cite{reg-prom} and register
-allocation~\cite{reg-alloc}, which are very effective and yet quite sophisticated compiler
+programmer expect a compiler to perform, \eg{} register promotion~\cite{mem2reg} and register
+allocation~\cite{regalloc}, which are very effective and yet quite sophisticated compiler
 optimizations.  Optimizations are becoming more and more important these days because recent
 hardware trends---such as SIMD, GPU, and accelerators---offer potential for compiler optimizations
 to further improve the performance of systems.  Since optimizations are an essential ingredient of
@@ -63,9 +63,9 @@ performed by the mainstream compilers such as GCC~\cite{gcc} and LLVM~\cite{llvm
 \begin{minipage}{0.27\textwidth}
 \begin{minted}{c}
 void f() {
-  10: int a = 42;
-  20: g();
-  30: print(a);
+1: int a = 42;
+2: g();
+3: print(a);
 }
 \end{minted}
 \end{minipage}
@@ -75,9 +75,9 @@ void f() {
 \begin{minipage}{0.4\textwidth}
 \begin{minted}{c}
 void f() {
-  10: int a = 42;
-  20: g();
-  30: print(42); // const. prop.
+1: int a = 42;
+2: g();
+3: print(42); // const. prop.
 }
 \end{minted}
 \end{minipage}
@@ -85,14 +85,13 @@ void f() {
 
 \noindent Suppose \code{g()} is an external function whose body is unknown to the compiler, and
 \code{print(a)} prints the value of \code{a} to the screen.  The function \code{f()} first assigns
-\code{42} to the local variable \code{a} (line \code{10}), calls some unknown external function
-\code{g()} (line \code{20}), and then prints \code{a} (line \code{30}).  As an optimization,
-mainstream compilers deduce that the value of \code{a} is unaffected by the call to \code{g} and
-replace \code{a} with \code{42} at line \code{30}, effectively propagating the constant \code{42} at
-line \code{10} to line \code{30}.  Such a \emph{constant propagation} optimization is valid, at
-least in the viewpoint of compilers, because the variable \code{a} is accessible only within the
-function \code{f()}---since its address is not leaked to elsewhere---and thus \code{g()} cannot
-modify the content of \code{a}.
+\code{42} to the local variable \code{a} (line \code{1}), calls some unknown external function
+\code{g()} (line \code{2}), and then prints \code{a} (line \code{3}).  As an optimization,
+mainstream compilers replace \code{a} with \code{42} at line \code{3}, effectively propagating the
+constant \code{42} at line \code{1} to line \code{3}.  Such a \emph{constant propagation}
+optimization is valid even in the presence of a function call to the unknown function \code{g()}, at
+least in the viewpoint of compilers, because the address of the variable \code{a} is not leaked to
+\code{g()} and thus \code{g()} cannot modify the content of \code{a}.
 
 But what if \code{g()} is adversarially trying to \emph{guess} the address of \code{a} as follows?
 %
@@ -100,9 +99,9 @@ But what if \code{g()} is adversarially trying to \emph{guess} the address of \c
 \begin{minipage}{0.8\textwidth}
 \begin{minted}{c}
 void g() {
-  10: int anchor;
-  20: int *guess = &anchor + 10; // guessing &x
-  30: *guess = 666;
+1: int anchor;
+2: int *guess = &anchor + 10; // guessing &x
+3: *guess = 666;
 }
 \end{minted}
 \end{minipage}
@@ -110,11 +109,11 @@ void g() {
 %
 \noindent The function \code{g()} tries to guess the address of \code{a} by exploiting the fact that
 stack usually grows downwards with a fixed offset: it first declares a variable \code{anchor} and
-guesses that \code{a} is located 10 words later than than \code{anchor} is.  Sometimes the guess
-happens to be correct: when the adversarial \code{g()} is separately compiled with GCC 8.2.1 and
-then linked with the original \code{f()}, \code{f()} will surprisingly print the evil value 666; on
-the other hand, when \code{g()} is linked with the optimized \code{f()}, \code{f()} will print the
-propagated value 42.\footnote{We got this result with GCC 8.2.1 and compile option
+guesses that \code{a} is located 10 words later than than \code{anchor} is.  Alas, the guess happens
+to be correct when the adversarial \code{g()} is separately compiled with GCC 8.2.1 and then linked
+with the original \code{f()}, and in this case, \code{f()} will surprisingly print the evil value
+666.  On the other hand, when \code{g()} is linked with the optimized \code{f()}, \code{f()} will
+print the expected value 42.\footnote{We got these results with GCC 8.2.1 and compile option
   \code{-fno-stack-protector} in Linux 4.18.} This example invalidates the compiler's analysis that
 \code{a} is accessible only within the function \code{f()}, putting the soundness of the
 optimization in danger.
@@ -123,14 +122,14 @@ optimization in danger.
 \paragraph{Undefined Behavior}
 
 In order to rescue the soundness of constant propagation, C blames the adversarial \code{g()} by
-marking it as invoking \emph{undefined behavior}~\cite{undefined-behavior}: \code{g()} is not
-following the rule of C so that compilers can do anything it chooses, \eg{} even ``to make demons
-fly out of your nose''~\cite{nasal-demons}.  Specifically, \code{g()} invokes undefined behavior in
-the ISO C18 standard~\cite{c18} because the pointer \code{guess} is derived from the memory
-allocation of \code{anchor} and yet is outside of the valid range of \code{anchor}, rendering itself
-invalid as an address~\cite{c11-6.5.6p8}.  In other words, compilers may safely assume that all the
-pointers derived from \code{anchor} \emph{shall} point to \code{anchor}, and a failure to conform
-with such an assumption invokes undefined behavior.
+marking it as invoking \emph{undefined behavior}~\cite[\S3.4.3p1]{c18}: \code{g()} is not following
+the rule of C so that compilers can do anything it chooses, \eg{} even ``to make demons fly out of
+your nose''~\cite{nasal-demons}.  Specifically, \code{g()} invokes undefined behavior in the ISO C18
+standard~\cite{c18} because the pointer \code{guess} is derived from the memory allocation of
+\code{anchor} and yet is outside of the valid range of \code{anchor}, rendering itself invalid as an
+address~\cite[\S6.5.6p8]{c18}.  In other words, compilers may safely assume that all the pointers
+derived from \code{anchor} \emph{shall} point to \code{anchor}, and a failure to conform with such
+an assumption gives compilers the right to generate arbitrary binary code.
 
 It is worth noting that in the course of rescuing the soundness of constant propagation, the ISO C18
 standard is intentionally deviating from the hardware assembly language, where pointers have the
@@ -176,7 +175,7 @@ In order to mitigate the problem caused by reckless development of C semantics a
 have revised the C semantics in a series of standards---C89, C99, C11, and C18---but they are still
 complex and are not widely accepted in the systems programming community, \eg{} the Linux community
 defines its own dialect of C that supports much less compiler optimizations and is closer to
-assembly languages than ISO C18.
+assembly languages than C18.
 
 
 \paragraph{Too Many Undefined Behaviors}
@@ -258,8 +257,8 @@ are conflicting with each other and they collectively result in a miscompilation
 In order to systematically address the problems caused by the unplanned evolution of C semantics and
 compilers, researchers have proposed to \emph{define the formal semantics} of C and \emph{prove the
   soundness of compiler optimizations} w.r.t. the formal semantics.  In this research agenda, we
-describe the C semantics no longer in an informal English prose (as ISO C18 does) but in a
-mathematically clear formalization, thereby completely removing the ambiguity in the semantics;
+describe the C semantics no longer in an informal English prose (as the ISO C18 standard does) but
+in a mathematically clear formalization, thereby completely removing the ambiguity in the semantics;
 furthermore, based on the formalized semantics, we prove that compiler optimizations preserve the
 semantics of source program, conclusively vindicating them from miscompilation bugs.
 
@@ -354,7 +353,7 @@ In the course of doing this research, we discovered the GCC bug presented in
 \Cref{fig:introduction:bug}, with which we persuaded compiler writers that it is safe to turn off
 some too aggressive aliase analyses.  Furthermore, our idea has subsequently been refined by
 follow-up papers by other researchers~\cite{intptrcast-oopsla,intptrcast-popl}, which are
-accompanied with promising revision proposals to the LLVM compiler and ISO C Standard.
+accompanied with promising revision proposals to the LLVM compiler and ISO C standard.
 
 
 % The ISO C standard does not specify the semantics of many valid programs that use non-portable
