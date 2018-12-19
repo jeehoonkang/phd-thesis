@@ -131,11 +131,11 @@ address~\cite[\S6.5.6p8]{c18}.  In other words, compilers may safely assume that
 derived from \code{anchor} \emph{shall} point to \code{anchor}, and a failure to conform with such
 an assumption gives compilers the right to generate arbitrary binary code.
 
-In the course of rescuing the soundness of constant propagation, the ISO C18 standard is
-intentionally deviating from the hardware assembly language, where pointers have the same
-representation as integer values of the appropriate width, and they simply index into a single flat
-array representing memory.\footnote{This ``concrete'', flat memory model is supported via virtual
-  page mapping in the operating systems.}
+It is worth noting that, in the course of establishing the soundness of constant propagation, the
+ISO C18 standard is intentionally deviating from the hardware assembly language, where pointers have
+the same representation as integer values of the appropriate width, and they simply index into a
+single flat array representing memory.\footnote{This ``concrete'', flat memory model is supported
+  via virtual page mapping in the operating systems.}
 
 % The constant propagation example above shows that the low-level control over memory layout via
 % pointer manipulation conflicts with a simple compiler optimization, and C resolves the conflict by
@@ -151,69 +151,56 @@ various low-level details of hardware and various compiler optimizations impleme
 compilers, and these conflicts are usually resolved by marking some unintended usage of language
 features as invoking undefined behavior.
 
-It is worth comparing C with higher-level languages---such as Java, C\#, OCaml, Haskell---that do
-not need undefined behaviors to justify compiler optimizations thanks to their lack of precise
-control over low-level details of hardware, \eg{} constant propagation is immediately justified in
-Haskell without resorting to undefined behavior thanks to its lack of raw pointer.
+C is distinct in that undefined behaviors are not necessary for higher-level languages---such as
+Java, C\#, OCaml, Haskell---to justify compiler optimizations thanks to their lack of precise
+control over low-level details of hardware.  For example, constant propagation is immediately
+justified in Haskell without resorting to undefined behavior thanks to its lack of raw pointer.
 
 % Indeed, C has a lot of undefined behavior instances in the language semantics.  The C language is
 % particularly interesting in that..  the widespread use of undefined behavior for resolving
 
 
 
-\subsection{The Problem: Reckless Development of Semantics and Compilers}
+\subsection{The Problem: Optimization as a Threat to Compiler Reliability}
 \label{sec:introduction:problem}
 
-\jeehoon{reorganize it}
+Unfortunately, undefined behavior is used to justify \emph{controversial} optimizations, which are
+being more and more adopted in sophisticated mainstream compilers.  In order to improve performance
+and energy consumption of systems, compiler writers have introduced dozens of subtle optimizations
+even though their soundness is justified solely by intuition.  Those optimizations are subtle in
+that they often introduce surprising non-local changes in program behavior and difficult-to-find
+bugs~\cite{wang2013towards,yang2011finding}.  To justify those subtle optimizations only afterwards,
+the ISO C standard marks certain programs as invoking undefined behavior with a variety of ad-hoc
+exceptions, making the already informal semantics written in English more ambiguous and confusing.
+The ambiguity and confusion render the soundness of various compiler optimizations controversial.
+
+% As a consequence, the standard is not widely accepted in the systems programming community, \eg{}
+% the Linux community defines its own dialect of C that supports much less compiler optimizations and
+% is closer to assembly languages than the standard.  
+
+% ---C89, C99, C11, and C18---
+
+% for example, certain code paths must be dead and to remove those paths.  to conclude that,
+
+% In order to mitigate the problem caused by reckless development of C semantics and compilers, ISO
+% have revised the C semantics in a series of standards---C89, C99, C11, and C18---but they are still
+% complex and 
 
 % The ISO C18 standard~\cite{c18} famously does not give semantics to a significant subset of
 % syntactically valid C programs. Instead, many programs exhibit implementation-defined, unspecified,
 % or undefined behavior, with the latter imposing no requirements on a conforming implementation.
 
-This has led to the somewhat controversial practice of sophisticated C compilers reasoning backwards
-from instances of undefined behavior to conclude that, for example, certain code paths must be
-dead. Such transformations can lead to surprising non-local changes in program behavior and
-difficult-to-find bugs~\cite{wang2013towards,yang2011finding}.
+The problem is that those controversial optimizations are severely threatening the reliability of
+compilers.  Firstly, compilers are performing unpredictable optimizations so that the compiled
+program may not behave as expected by programmers.  Even worse, some optimizations make different,
+conflicting assumptions on the underlying semantics and collectively result in miscompilation bugs,
+which are difficult to fix because it is unclear which optimizations are to blame.
 
-Accordingly, there have been numerous efforts to capture the subtleties of the C standard formally,
-either by giving an alternative language definition or a conforming
-implementation~\cite{norrish1998c,leroy:compcert,ellison2012executable}.
-
-The C memory model has been of particular interest: cross-platform low-level access to memory is a
-defining feature of C-like languages and is essential for applications such as operating system
-kernels and language runtimes.  However, subtle pointer aliasing rules~\cite{krebbers2013aliasing},
-reliance on implementation-specific behavior, and the treatment of pointers to uninitialized memory
-makes reasoning about even single-threaded programs non-trivial.
-
-The problem is that the C language and its compilers have evolved in such an unplanned way that even
-experienced system programmers disagree on the semantics of numerous language features and the
-soundness of various compiler optimizations.  In order to improve performance and energy consumption
-of systems, compiler writers have introduced dozens of subtle optimizations even though their
-soundness is justified solely by intuition; in turn, to justify those optimizations afterwards, the
-recent ISO C standards mark certain programs as invoking undefined behavior with a variety of ad-hoc
-exceptions, making the already informal semantics written in English more ambiguous and confusing.
-In order to mitigate the problem caused by reckless development of C semantics and compilers, ISO
-have revised the C semantics in a series of standards---C89, C99, C11, and C18---but they are still
-complex and are not widely accepted in the systems programming community, \eg{} the Linux community
-defines its own dialect of C that supports much less compiler optimizations and is closer to
-assembly languages than C18.
+% even experienced system programmers disagree on the semantics of numerous language features 
 
 
-\paragraph{Too Many Undefined Behaviors}
+\paragraph{A GCC Bug}
 
-\jeehoon{explain the problem with examples: too many undefined behaviors}
-
-
-\paragraph{Conflicts among Optimizations}
-
-Even worse, some optimizations in mainstream compilers are conflicting with each other and result in
-miscompilation bugs.  It is difficult to fix these bugs because it is unclear which optimizations
-are to blame.
-
-For example, we discovered that GCC miscompiles the following program\footnote{This miscompilation
-  bug is reported in \url{https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65752}, which is still open
-  as of this writing.}:
-%
 \begin{figure}
 \begin{center}
 \small
@@ -245,15 +232,16 @@ void main() {
 \label{fig:introduction:bug}
 \end{figure}
 
-\noindent (At first, ignore the gray area.)  Note that \code{uintptr\_t} is an integer type that is
-able to hold a pointer value~\cite[\S7.20.1.4]{c18}.  In this program, the pointer to the local
-variable \code{x} is cast to an integer, \code{xi}, and then cast back to pointer, \code{p}.
-Thus \code{p} points to \code{x}, and after \code{*p} is assigned one, the value of \code{x} should
-be one.  Now inserting the code in the gray area should not change the program's behavior, because
-the gray area is dead code: after the for loop, \code{i} equals to \code{xi}, and the conditional
-branch is not taken.
-
-GCC miscompiles this program as follows:
+For example, \Cref{fig:introduction:bug} presents a GCC miscompilation bug due to conflicts among
+multiple optimizations.\footnote{We reported this miscompilation bug as a comment in
+  \url{https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65752}, which is still open as of this writing.}
+(At first, ignore the gray area.)  Note that \code{uintptr\_t} is an integer type that is able to
+hold a pointer value~\cite[\S7.20.1.4]{c18}.  In the program, the pointer to the local variable
+\code{x} is cast to an integer, \code{xi}, and then cast back to pointer, \code{p}.  Thus \code{p}
+points to \code{x}, and after \code{*p} is assigned one, the value of \code{x} should be one.  Now
+inserting the code in the gray area should not change the program's behavior, because the gray area
+is dead code: after the for loop, \code{i} equals to \code{xi}, and the conditional branch is not
+taken.  But GCC miscompiles the program as follows:
 %
 \begin{enumerate}
 \item Code motion optimization moves \mintinline{c}{xi = i} out of the conditional branch, because
@@ -268,12 +256,23 @@ GCC miscompiles this program as follows:
 \end{enumerate}
 
 \noindent It is unclear which optimizations or analyses involved with this bug are to blame, because
-all of them look fine: the code motion and constant propagation optimizations are definitely legit,
-and the alias analysis has a reasonable cause to believe that \code{p} is invalid.  But still, they
-are conflicting with each other and they collectively result in a miscompilation bug.
+all of them look fine: the code motion and constant propagation optimizations seem legit, and the
+alias analysis has a reasonable cause to believe that \code{p} is invalid.  But still, they are
+conflicting with each other and they collectively result in a miscompilation bug.
+
+
+\paragraph{Safety-Critical Systems}
+
+TODO
 
 
 \subsection{The Prior Art: Formal Semantics and Compiler Verification}
+
+\jeehoon{redo it}
+
+Accordingly, there have been numerous efforts to capture the subtleties of the C standard formally,
+either by giving an alternative language definition or a conforming
+implementation~\cite{norrish1998c,leroy:compcert,ellison2012executable}.
 
 In order to systematically address the problems caused by the unplanned evolution of C semantics and
 compilers, researchers have proposed to \emph{define the formal semantics} of C and \emph{prove the
@@ -347,12 +346,19 @@ practice of C semantics and compilers by accounting for more features and use ca
 in the real-world practice and yet were beyond the reach of the prior work.  Specifically, we make
 the following contributions:
 
+\jeehoon{redo it}
+
+The C memory model has been of particular interest: cross-platform low-level access to memory is a
+defining feature of C-like languages and is essential for applications such as operating system
+kernels and language runtimes.  However, subtle pointer aliasing rules~\cite{krebbers2013aliasing},
+reliance on implementation-specific behavior, and the treatment of pointers to uninitialized memory
+makes reasoning about even single-threaded programs non-trivial.
 
 % Specifically, we propose the formal semantics of several low-level features that are the defining
 % characteristics of C and yet are omitted from the prior work.  Furthermore, we propose
 % verification techniques for real-world compiler use cases.
 
-%
+
 \paragraph{Cast between Integers and Pointers}
 
 While cast between integers and pointers is one of the defining characteristics of the C programming
