@@ -1,7 +1,7 @@
 \section{Introduction}
 \label{sec:introduction}
 
-\subsection{The Context: The C Programming Language}
+\subsection{The C Programming Language: the Compiler/Software Interface}
 \label{sec:introduction:context}
 
 \paragraph{Hardware Abstraction}
@@ -161,7 +161,7 @@ justified in Haskell without resorting to undefined behavior thanks to its lack 
 
 
 
-\subsection{The Problem: Optimization as a Threat to Compiler Reliability}
+\subsection{Compiler Optimization as a Threat to Compiler Reliability}
 \label{sec:introduction:problem}
 
 Unfortunately, undefined behavior is used to justify \emph{controversial} optimizations, which are
@@ -194,14 +194,23 @@ The problem is that those controversial optimizations are severely threatening t
 compilers.  Firstly, compilers are performing unpredictable optimizations so that the compiled
 program may not behave as expected by programmers.  Even worse, some optimizations make different,
 conflicting assumptions on the underlying semantics and collectively result in miscompilation bugs,
-which are difficult to fix because it is unclear which optimizations are to blame.
+which are difficult to fix because it is unclear which optimizations are to blame.  Note that
+testing is not effective in finding and fixing bugs in these cases because $(1)$ miscompilation bugs
+are typically manifesting themselves very rarely, and $(2)$ specification is unclear.
+
+One of the consequences is that mainstream compilers are typically unused for safety-critical
+systems, and even in the case that they are used, all compiler optimizations are turned off.  This
+practice significantly increases verification cost and degrades performance of safety-critical
+systems.
+
+
 
 % even experienced system programmers disagree on the semantics of numerous language features 
 
 
-\paragraph{A GCC Bug}
+\paragraph{A GCC Miscompilation Bug}
 
-\begin{figure}
+\begin{figure}[t]
 \begin{center}
 \small
 \begin{minipage}{0.5\textwidth}
@@ -232,8 +241,9 @@ void main() {
 \label{fig:introduction:bug}
 \end{figure}
 
-For example, \Cref{fig:introduction:bug} presents a GCC miscompilation bug due to conflicts among
-multiple optimizations.\footnote{We reported this miscompilation bug as a comment in
+In the course of doing the research presented in \Cref{chap:intptrcast}, we found a GCC
+miscompilation bug due to conflicting optimizations, which is presented in
+\Cref{fig:introduction:bug}.\footnote{We reported this miscompilation bug as a comment in
   \url{https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65752}, which is still open as of this writing.}
 (At first, ignore the gray area.)  Note that \code{uintptr\_t} is an integer type that is able to
 hold a pointer value~\cite[\S7.20.1.4]{c18}.  In the program, the pointer to the local variable
@@ -261,26 +271,24 @@ alias analysis has a reasonable cause to believe that \code{p} is invalid.  But 
 conflicting with each other and they collectively result in a miscompilation bug.
 
 
-\paragraph{Safety-Critical Systems}
 
-TODO
+\subsection{Formal Semantics and Compiler Verification}
 
+In order to systematically address the problems caused by controversial optimizations, researchers
+have proposed to \emph{define the formal semantics} of
+C~\cite{norrish1998c,leroy:compcert,ellison2012executable} and \emph{prove the soundness of compiler
+  optimizations} w.r.t. the formal semantics~\cite{compcert}.  In this research agenda, we describe
+the C semantics no longer in an informal English prose (as the ISO C18 standard does) but in a
+mathematically clear formalization, thereby completely removing the ambiguity and confusion in the
+semantics; furthermore, based on the formalized semantics, we prove that compiler optimizations
+preserve the semantics of source program, conclusively vindicating them from miscompilation bugs.
 
-\subsection{The Prior Art: Formal Semantics and Compiler Verification}
+\jeehoon{Explain why FS and CV solves the problems.}
 
-\jeehoon{redo it}
+% Accordingly, there have been numerous efforts to capture the subtleties of the C standard
+% formally, either by giving an alternative language definition or a conforming implementation.
 
-Accordingly, there have been numerous efforts to capture the subtleties of the C standard formally,
-either by giving an alternative language definition or a conforming
-implementation~\cite{norrish1998c,leroy:compcert,ellison2012executable}.
-
-In order to systematically address the problems caused by the unplanned evolution of C semantics and
-compilers, researchers have proposed to \emph{define the formal semantics} of C and \emph{prove the
-  soundness of compiler optimizations} w.r.t. the formal semantics.  In this research agenda, we
-describe the C semantics no longer in an informal English prose (as the ISO C18 standard does) but
-in a mathematically clear formalization, thereby completely removing the ambiguity in the semantics;
-furthermore, based on the formalized semantics, we prove that compiler optimizations preserve the
-semantics of source program, conclusively vindicating them from miscompilation bugs.
+\paragraph{Prior Art}
 
 A landmark in this agenda is the CompCert C compiler~\cite{compcert}, which was initiated by Xavier
 Leroy over ten years ago and grows as the first realistic verified compiler.  The CompCert compiler
@@ -292,7 +300,8 @@ generated machine code behaves as prescribed by the semantics of the source prog
 CompCert guarantees that program analyses and verifications performed on its input carry over
 soundly to its machine-level output.  It has served as a fundamental building block in academic work
 on end-to-end verified software~\cite{TODO}, as well as receiving significant interest from the
-avionics industry~\cite{TODO}. \jeehoon{say nuclear power plant}
+avionics industry~\cite{TODO}.  Recently, it is certified for being used for nuclear power
+plant~\cite{compcert-nuclear}.
 
 % Over ten years ago, Xavier Leroy initiated the CompCert
 % project~\cite{compcert:CACM,leroy:compcert}, a landmark effort that
@@ -321,7 +330,7 @@ Vellvm formalizes the static single assignment form (SSA), including a dominance
 type checker, and an SSA-aware register promotion algorithm that is simplified from the
 \code{mem2reg} pass in LLVM.
 
-\jeehoon{Explain the benefit of formalization in more details.}
+\paragraph{Problem}
 
 However, these projects make big simplifying assumptions on C semantics and compilers, skating over
 the complexity of the real-world practice of systems programming.  While CompCert and Vellvm support
@@ -333,9 +342,9 @@ mainstream compilers, and support only limited use cases of compilers, \eg{} the
 linking.  Because of these simplifications, they are currently suitable only for a niche market such
 as safety-critical embedded systems.
 
-\jeehoon{More acutely articulate the problem of the previous projects.}
+\jeehoon{Explain the benefit of formalization in more details.}
 
-\jeehoon{There's a more broad problem and contribution, I think.}
+\jeehoon{More acutely articulate the problem of the previous projects.}
 
 
 
