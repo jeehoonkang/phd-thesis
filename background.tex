@@ -229,8 +229,6 @@ update the contents of every allocated memory cell.
 \jeehoon{where typically the set of valid allocation block identifiers is infinite.  While logical
   models allow most compiler optimizations, the problem is that}
 
-\jeehoon{Connect logical model and C18.  What's C18, actually?}
-
 Consider, for example, a function \code{f} that initializes a local variable \code{a} and then calls
 some unknown external function~\code{g}. We might expect the compiler to deduce that the value of
 \code{a} is unaffected by the call to \code{g} and perform constant propagation:
@@ -378,6 +376,10 @@ will address this disadvantage in \Cref{chap:intptrcast}.
 % % special cases: \eg
 % the addition of an integer to an address, the subtraction between addresses when they are in the
 % same logical block, and the equality test between an address and \code{NULL} are well-defined.
+
+It is worth noting that the logical model is not intended to replace the memory model in the ISO C18
+standard.  It is a formal refinement of the (informal) standard that can be used for formally
+reasoning about programs and program transformations (as in compiler verification).
 
 
 \subsection{The RTL Language}

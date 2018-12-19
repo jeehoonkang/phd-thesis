@@ -1,8 +1,30 @@
 \keyword{C, semantics, compiler, formal verification}
 \begin{abstract}
-  \noindent \jeehoon{write abstract}
+  C compiler optimizations are so aggressive to the degree that they compromises the reliability of
+  compilers and, in turn, the overall systems.  Specifically, compilers are performing unpredictable
+  optimizations so that the compiled program may not behave as expected by programmers, and even
+  worse, some optimizations make conflicting assumptions on the underlying semantics and
+  collectively result in miscompilation bugs.  As a consequence, compilers are typically unused for
+  safety-critical systems, increasing verification cost and degrading performance of those systems.
 
-  \jeehoon{Before submitting the thesis, check landscape pages.}
+  To address these problems, programming language researchers have proposed to design formal
+  semantics and verify compilers for C.  Formal semantics is a mathematical definition of program
+  behaviors so that it can clearly decide whether an optimization is right or wrong.  Verified
+  compilers are accompanied with machine-checked correctness proof so that they can be used for
+  safety-critical systems with confidence.  However, prior work on formal semantics and compiler
+  verification makes unrealistic simplifying assumptions on C semantics and compilers, skating over
+  the complexity of the real-world practice of systems programming.
+
+  In this dissertation, we advance the formal semantics and compiler verification techniques for C
+  to account for language features and compiler use cases that were beyond the reach of the prior
+  work and yet are crucial in the real world.  By doing so, we enhance the understanding of the
+  practice of C programming language and its compilers.  Specifically, we make the following
+  contributions.  First, we propose a formal semantics of integer-pointer casts and relaxed-memory
+  concurrency.  These features are crucial in that they allow cross-platform low-level access to
+  memory and are essential for applications such as operating system kernels and language runtimes.
+  Second, we generalize CompCert to support for separate compilation with low verification cost.
+  Separate compilation is crucial in that it significantly reduces compilation time.  To establish
+  confidence in our contributions, we have formalized most of the key results in Coq.
 \end{abstract}
 
 %%% Local Variables:

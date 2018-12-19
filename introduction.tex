@@ -1,7 +1,7 @@
 \section{Introduction}
 \label{sec:introduction}
 
-\subsection{The C Programming Language: the Compiler/Software Interface}
+\subsection{The C Programming Language}
 \label{sec:introduction:context}
 
 \paragraph{Hardware Abstraction}
@@ -195,7 +195,7 @@ confusion render the soundness of various compiler optimizations controversial.
 Those controversial optimizations cause the following problems:
 %
 \begin{itemize}
-\item Those optimizations are bluring what is right and wrong for C compilers, thereby severely
+\item Those optimizations are blurring what is right and wrong for C compilers, thereby severely
   threatening the reliability of compilers.  Firstly, compilers are performing unpredictable
   optimizations so that the compiled program may not behave as expected by programmers.  Even worse,
   some optimizations make different, conflicting assumptions on the underlying semantics and
@@ -279,18 +279,18 @@ conflicting with each other and they collectively result in a miscompilation bug
 
 \subsection{Formal Semantics and Compiler Verification}
 
-Recall that controversial optimizations cause two problems: $(1)$ C compilers have unclear
+Recall that controversial compiler optimizations cause two problems: $(1)$ C compilers have unclear
 specification, and $(2)$ they are typically not used for safety-critical systems.  To address these
-problems, researchers have proposed to use the following methods:
+problems, programming language researchers have proposed to use the following formal methods:
 
 \begin{itemize}
-\item \textbf{Desinging formal semantics}~\cite{norrish1998c,leroy:compcert,ellison2012executable}:
+\item \textbf{Designing formal semantics}~\cite{norrish1998c,leroy:compcert,ellison2012executable}:
   formal semantics is a mathematically clear definition of program behaviors, as opposed to informal
   English prose as in the ISO C18 standard.  Thanks to mathematically clear definition, it
   completely removes the ambiguity and confusion in the semantics.
 
 \item \textbf{Verifying compilers}~\cite{compcert,vellvm}: verified compilers are accompanied with
-  \emph{machine-checked} correctness proof, which formally guarantees that copmilers preserve the
+  \emph{machine-checked} correctness proof, which formally guarantees that compilers preserve the
   semantics of source programs and do not introduce any bugs.  Thanks to the absence of such
   miscompilation bugs, they can be used for safety-critical systems with confidence.
 \end{itemize}
@@ -353,19 +353,23 @@ optimizations that are way less sophisticated than those in mainstream compilers
 limited use cases of compilers, \eg{} they did not verify linking.
 
 
-\subsection{Embracing the Real-World Practice of C Programming}
+\subsection{Our Contribution: Generalizing to the Real-World Practice of C}
 
 In this dissertation, we carry forward the research direction for formal semantics and compiler
 verification for C by accounting for more features and use cases that are crucial in the real world
-and yet were beyond the reach of the prior work.  First, we propose a formal semantics of
+and yet were beyond the reach of the prior work.  By doing so, we enhance the understanding of the
+practice of C programming language and its compilers.
+
+Specifically, we make the following contributions.  First, we propose a formal semantics of
 integer-pointer casts (\Cref{chap:intptrcast}) and relaxed-memory concurrency (\Cref{chap:relaxed}).
 These features are crucial in that they allow cross-platform low-level access to memory and are
 essential for applications such as operating system kernels and language runtimes.  Second, we
 generalize CompCert to support for separate compilation with low verification cost
 (\Cref{chap:sepcomp}).  Separate compilation is crucial in that it significantly reduces compilation
-time.  To establish confidence in our contributions, we have formalized most of the key results in
-Coq.  The formalization is available online~\cite{kang-phd-thesis-web}.
+time.
 
+To establish confidence in our contributions, we have formalized most of the key results in Coq.
+The formalization is available online~\cite{kang-phd-thesis-web}.
 
 Now we will explain the contribution of each chapter in more details.
 
@@ -436,10 +440,10 @@ Crucially, to prevent out-of-thin-air behaviors, a promise step requires a threa
 certification that it will be possible to execute the promised write even in the absence of the
 promise.
 
-\jeehoon{redo it.}  Our semantics is a promising proposal for relaxed-memory concurrency semantics
-for C/C++ and compiler IRs, and draws interest from both industry and academia.  In particular, our
-semantics serves as a guide to C/C++ relaxed-memory concurrency, and reasoning principles for our
-semantics are being developed.
+\hiddenjeehoon{redo it.}  Our semantics is a promising proposal for relaxed-memory concurrency
+semantics for C/C++ and compiler IRs, and draws interest from both industry and academia.  In
+particular, our semantics serves as a guide to C/C++ relaxed-memory concurrency, and reasoning
+principles for our semantics are being developed.
 
 This chapter draws heavily on the work and writing in the following paper:
 
