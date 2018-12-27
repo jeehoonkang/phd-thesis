@@ -1,9 +1,6 @@
 \section{Introduction}
 \label{sec:introduction}
 
-
-\paragraph{Control and Performance}
-
 The C programming language is used as the \emph{lingua franca} for systems programming, mainly due
 to its three notable advantages: \emph{control}, \emph{portability}, and \emph{performance}.  C
 provides precise control over hardware via low-level features such as memory layout, concurrency,
@@ -12,8 +9,7 @@ in most of the existing hardware.  Furthermore, C provides decent performance: a
 C are usually outperforming equivalent programs written in other languages---even including
 carefully hand-written assembly programs---when they are performing exactly the same task.  These
 advantages for decades have attracted system programmers, and as a result, a giant ecosystem was
-built around the C language itself and tools such as optimizing compilers, linkers, and program
-analyzers.
+built around the C language.
 
 C enjoys control and portability---seemingly conflicting properties---at the same time because it is
 a balanced abstraction over various hardware assembly languages.  If C were exposing too much detail
@@ -43,14 +39,13 @@ C and are often called ``C-like''.
 
 Being a simple syntax translator from C to assembly languages, however, is insufficient for C
 compilers to provide the desired level of performance.  Instead, compilers perform
-\emph{optimizations} that transform given program to be executed more efficiently in hardware while
-preserving the given program's semantics.  Optimizations are so effective that they have been an
-essential ingredient of compilers since the early days.  For example, every system programmer
-expects a compiler to perform quite sophisticated optimizations such as register
-promotion~\cite{mem2reg} and register allocation~\cite{regalloc}.  Optimizations are becoming more
-and more important these days because recent hardware trends---such as SIMD, GPU, and
-accelerators---offer potential for compiler optimizations to further improve the performance of
-systems.
+\emph{optimizations} that transform the given program to be executed more efficiently in hardware
+while preserving its semantics.  Optimizations are so effective that they have been an essential
+ingredient of compilers since the early days.  For example, every system programmer expects a
+compiler to perform quite sophisticated optimizations such as register promotion~\cite{mem2reg} and
+register allocation~\cite{regalloc}.  Optimizations are becoming more important these days because
+recent hardware trends---such as SIMD, GPU, and accelerators---offer potential for compiler
+optimizations to further improve the performance of systems.
 
 The following is an instance of the \emph{constant propagation} optimization, which significantly
 improves the performance of compilation results and thus is performed by mainstream compilers such
@@ -89,7 +84,7 @@ mainstream compilers replace \code{a} with \code{42} at line \code{3}, effective
 constant \code{42} at line \code{1} to line \code{3}.  Compilers perform such an optimization even
 in the presence of a function call to the unknown function \code{g()}, because---at least in the
 viewpoint of compilers---the address of the variable \code{a} is not leaked to \code{g()} and thus
-\code{g()} cannot modify the content of \code{a}.
+its content cannot be modified by \code{g()}.
 
 The optimization, however, may change the program's behavior, putting the soundness of the
 optimization in danger.  For example, what if \code{f()} is linked with the following \code{g()}?
@@ -109,49 +104,53 @@ void g() {
 \noindent Here, the function \code{g()} tries to \emph{guess} the address of \code{a} by exploiting
 the fact that stack usually grows downwards with a fixed offset: it first declares a variable
 \code{anchor} and guesses that \code{a} is located 10 words later than than \code{anchor} is.  While
-this is clearly a bad practice of programming, sometimes the guess happens to be correct,
-invalidating the compiler's reasoning that \code{a} is accessible only within the function
-\code{f()}.  If it is the case, when linked with \code{g()}, the original \code{f()} will print the
-evil value 666; on the other hand, the optimized \code{f()} will print the expected value
-42.\footnote{We got these results from assembly programs separately compiled from \code{f()} and
-  \code{g()} with GCC 8.2.1 and compile option \code{-fno-stack-protector} in an x86-64 machine
-  running Linux 4.18.}
+this is clearly a bad practice, sometimes the guess happens to be correct, invalidating the
+compiler's reasoning that \code{a} is accessible only within the function \code{f()}.  If it is the
+case, when linked with \code{g()}, the original \code{f()} will print the evil value 666; on the
+other hand, the optimized \code{f()} will print the expected value 42.\footnote{We got these results
+  from assembly programs separately compiled from \code{f()} and \code{g()} with GCC 8.2.1 and
+  compile option \code{-fno-stack-protector} in an x86-64 machine running Linux 4.18.}
 
-
-\jeehoon{Explain trade-off between control and performance.}
-
-To summarize, compilers give up to compile the function \code{g()} in a portable way in order to
-perform constant propagation.  To justify this practice, the ISO C18 standard~\cite{c18} blames
-\code{g()} by marking it as invoking \emph{undefined behavior}~\cite[\S3.4.3p1]{c18}: roughly
-speaking, all the pointers derived from \code{anchor} \emph{shall} point to
-\code{anchor}~\cite[\S6.5.6p8]{c18}; since it is not the case, the behavior is undefined.  Now an
+To rescue the soundness of constant propagation, the ISO C18 standard~\cite{c18} blames \code{g()}
+for violating the rule of the C language by marking it as invoking \emph{undefined
+  behavior}~\cite[\S3.4.3p1]{c18}.  Specifically, line \code{2} invokes undefined behavior because
+\code{guess} is derived from \code{anchor} and yet it does not point to the valid location within
+\code{anchor}'s allocation~\cite[\S6.5.6p8]{c18}.  (Roughly speaking, all the pointers derived from
+\code{anchor} \emph{shall} point to \code{anchor}; otherwise, the behavior is undefined.)  Now an
 instance of undefined behavior allows compilers to do anything it chooses, from arbitrarily changing
-the code to even making ``demons fly out of your nose''~\cite{nasal-demons}.\footnote{Notice that
-  undefined behavior is not necessary for higher-level languages---such as Java, C\#, OCaml,
-  Haskell---to justify compiler optimizations thanks to their lack of precise control over low-level
-  details of hardware.  For example, constant propagation is immediately justified in Haskell
-  without resorting to undefined behavior thanks to its lack of raw pointer.}
-
-
-\paragraph{Trading Portability for Performance}
-
-This practice of trading portability for performance is actually common in justifying C compiler
-optimizations.
-
+the code to even making ``demons fly out of your nose''~\cite{nasal-demons}, justifying the constant
+propagation optimization.\footnote{Notice that undefined behavior is not necessary for higher-level
+  languages---such as Java, C\#, OCaml, Haskell---to justify compiler optimizations thanks to their
+  lack of precise control over low-level details of hardware.  For example, constant propagation is
+  immediately justified in Haskell without resorting to undefined behavior thanks to its lack of raw
+  pointer.}
 
 % The compiler's reasoning, however, seems wrong in certain circumstances, 
 
 
+\paragraph{Trading Control for Performance}
 
-significantly deviates from assembly languages to the degree that C is no longer just a thin wrapper
-around assembly languages.
+In the course of doing so, C is effectively trading control for performance.  The C language
+intentionally loses precise control over memory layout by forbiding arbitrary pointer
+manipulation---\eg{} deriving the address of \code{a} from that of \code{anchor}---in order to
+justify the constant propagation optimization, which significantly improves the performance of
+compilation results.  As a result, pointers in C have a richer structure than those in assembly
+languages, which have the same representation as integer values of the appropriate width and simply
+index into a single flat array representing memory.
 
-For instance, the above transformation shows that pointers in C have richer structure than those in
-assembly languages, which have the same representation as integer values of the appropriate width
-and simply index into a single flat array representing memory.  Likewise, many other features---such
-as temporary variables and concurrency---in C have richer structures than those in assembly
-languages due to compiler optimizations.  As a result, C should be an abstraction over both assembly
-languages \emph{and} compiler optimizations.
+This practice of trading control for performance is actually quite common in the design of C, and as
+a consequence, C significantly deviates from assembly languages.  Mainstream compilers are
+performing aggressive optimizations that change the behaviors of programs that use low-level
+features such as memory and concurrency, often defeating the intention of programmers to precisely
+control over the low-level details of hardware.  As a result, C programs often have vastly different
+meaning than the exactly same programs written in assembly languages (modulo syntactic differences).
+
+For this reason, C is not just a thin wrapper around assembly languages but rather an abstraction
+over both assembly languages \emph{and} compiler optimizations.
+
+% Therefore C have richer structures than those in assembly languages due to compiler optimizations.
+
+
 
 
 % The above transformation clearly shows that C is a very different language from assembly languages:
@@ -206,9 +205,8 @@ in that ISO C18 has 203 kinds of undefined behavior~\cite[J.2]{c18}.  As a resul
 
 \paragraph{Variety of Optimizations}
 
-that often introduce surprising non-local changes in program behavior and difficult-to-find
-bugs~\cite{wang2013towards,yang2011finding}.
-
+often introduce surprising non-local changes and difficult-to-find bugs in program
+behavior~\cite{wang2013towards,yang2011finding}.
 
 As a result, programmers need to know which... compiler writers...
 

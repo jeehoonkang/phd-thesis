@@ -1,8 +1,7 @@
 \keyword{C, semantics, compiler, formal verification}
 \begin{abstract}
   \jeehoon{redo it}
-
-  C compiler optimizations are so aggressive to the degree that they compromises the reliability of
+  C compiler optimizations are so aggressive to the degree that they compromise the reliability of
   compilers and, in turn, the overall systems.  Specifically, compilers are performing unpredictable
   optimizations so that the compiled program may not behave as expected by programmers, and even
   worse, some optimizations make conflicting assumptions on the underlying semantics and
@@ -11,7 +10,7 @@
 
   To address these problems, programming language researchers have proposed to design formal
   semantics and verify compilers for C.  Formal semantics is a mathematical definition of program
-  behaviors so that it can clearly decide whether an optimization is right or wrong.  Verified
+  behaviors so that it can clearly decide whether optimization is right or wrong.  Verified
   compilers are accompanied with machine-checked correctness proof so that they can be used for
   safety-critical systems with confidence.  However, prior work on formal semantics and compiler
   verification makes unrealistic simplifying assumptions on C semantics and compilers, skating over
