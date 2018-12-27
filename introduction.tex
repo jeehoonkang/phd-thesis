@@ -174,7 +174,7 @@ optimizations.
 % behavior.
 
 
-\subsection{Problem: Unclear Specification}
+\subsection{Problem: Unclear Specification of Compiler Optimizations}
 \label{sec:introduction:problem}
 
 Abstracting over assembly languages and compiler optimizations, however, is a challenging task
@@ -196,39 +196,21 @@ features and less compiler optimizations than the standard.  The dialect is ofte
 informally as the set of turned-on compiler optimizations, whose meaning is unstable and changing.
 
 The unclear specification of the language causes difficulties to both programmers and compiler
-writers.
+writers.  For programmers, it is difficult to expect how compiled programs will behave because
+optimizations and their combinations often introduce surprising non-local changes and
+difficult-to-find bugs in program behavior~\cite{wang2013towards,yang2011finding}.  One of the
+consequences is that mainstream compilers are typically unused for safety-critical systems, and even
+when it is used, programmers turn off most compiler optimizations, significantly increasing
+verification cost and degrading performance of safety-critical systems.  One the other hand, for
+compiler writers, it is difficult to figure out whether an optimization is sound or not.  Even
+worse, sometimes a combination of optimizations---each of which seems legit---results in
+miscompilation bugs, for which it is unclear which optimizations are to blame.
 
-\paragraph{Difficulties for Programmers}
-
-\paragraph{Difficulties for Compiler Writers}
-
-\paragraph{TODO}
-
-Those optimizations are blurring what is right and wrong for C compilers, thereby severely
-threatening the reliability of compilers.  Firstly, compilers are performing unpredictable
-optimizations so that the compiled program may not behave as expected by programmers.
-
-Even worse, some optimizations make different, conflicting assumptions on the underlying semantics
-and collectively result in miscompilation bugs.  Those bugs are difficult to fix because it is
-unclear which optimizations are to blame: in particular, those bugs are not effectively found and
-fix by testing due to unclear specification.
-
-As a consequence, mainstream C compilers are typically unused for safety-critical systems, and even
-when it is used, programmers turn off most compiler optimizations.  This practice significantly
-increases verification cost and degrades performance of safety-critical systems.
-
-
-
-
-Combination of ``Variety'' of Optimizations
-
-often introduce surprising non-local changes and difficult-to-find bugs in program
-behavior~\cite{wang2013towards,yang2011finding}.
-
-As a result, programmers need to know which... compiler writers...
+% in particular, those bugs are not effectively found and fix by testing due to unclear specification.
 
 % For instance, compilers reason backwards from instances of undefined behavior to conclude that,
-% \eg{} certain code paths must be dead and to remove the code.
+% \eg{} certain code paths must be dead and to remove the code.  for example, certain code paths
+% must be dead and to remove those paths.  to conclude that,
 
 % To improve performance and energy consumption of systems, compiler writers have introduced dozens
 % of subtle optimizations even though their soundness is justified solely by intuition.
@@ -242,27 +224,12 @@ As a result, programmers need to know which... compiler writers...
 % in mainstream C compilers, and these conflicts are usually resolved by marking some unintended
 % usage of language features as invoking undefined behavior.
 
-
-
-% ---C89, C99, C11, and C18---
-
-% for example, certain code paths must be dead and to remove those paths.  to conclude that,
-
-% In order to mitigate the problem caused by reckless development of C semantics and compilers, ISO
-% have revised the C semantics in a series of standards---C89, C99, C11, and C18---but they are still
-% complex and 
-
 % The ISO C18 standard~\cite{c18} famously does not give semantics to a significant subset of
 % syntactically valid C programs. Instead, many programs exhibit implementation-defined, unspecified,
 % or undefined behavior, with the latter imposing no requirements on a conforming implementation.
 
-% because $(1)$ miscompilation bugs are hard to find because they typically manifest themselves very
-% rarely, and $(2)$ they are hard to fix due to unclear specification.
 
-% even experienced system programmers disagree on the semantics of numerous language features 
-
-
-\paragraph{A Digression: a Miscompilation Bug}
+\paragraph{A Miscompilation Bug}
 
 \begin{figure}[t]
 \begin{center}
@@ -325,22 +292,25 @@ conflicting with each other and they collectively result in a miscompilation bug
 
 
 
-\subsection{Formal Semantics and Compiler Verification}
+\subsection{Research Direction: Understanding and Verifying Optimizations}
 
-Recall that controversial compiler optimizations cause two problems: $(1)$ C compilers have unclear
-specification, and $(2)$ they are typically not used for safety-critical systems.  To address these
-problems, programming language researchers have proposed to use the following formal methods:
+In order to address the difficulties caused by the unclear specification of compiler optimizations,
+researchers have proposed to \emph{understand} and \emph{verify} optimizations as follows:
 
 \begin{itemize}
-\item \textbf{Designing formal semantics}~\cite{norrish1998c,leroy:compcert,ellison2012executable}:
-  formal semantics is a mathematically clear definition of program behaviors, as opposed to informal
-  English prose as in the ISO C18 standard.  Thanks to mathematically clear definition, it
-  completely removes the ambiguity and confusion in the semantics.
+\item \textbf{Understanding optimizations with formal
+    semantics}~\cite{norrish1998c,leroy:compcert,ellison2012executable}: formal semantics is a
+  mathematically clear definition of program behaviors---as opposed to informal English prose as in
+  the ISO C18 standard---that completely removes the ambiguity and confusion in the semantics.
+  Formal semantics is the result of thorough understanding of compiler optimizations, as it should
+  adequantely strike the balance between control and performance.
 
-\item \textbf{Verifying compilers}~\cite{compcert,vellvm}: verified compilers are accompanied with
-  \emph{machine-checked} correctness proof, which formally guarantees that compilers preserve the
-  semantics of source programs and do not introduce any bugs.  Thanks to the absence of such
-  miscompilation bugs, they can be used for safety-critical systems with confidence.
+\item \textbf{Verifying optimizations with soundness proof}~\cite{compcert,vellvm}: verified
+  optimizations are accompanied with \emph{machine-checked} soundness proof, which formally
+  guarantees that the optimizations preserve the semantics of source programs and do not introduce
+  any bugs.  The challenge here is developing powerful proof techniques that are capable of
+  verifying sophisticated optimizations performed by mainstream compilers.  The absence of
+  miscompilation bugs enables them to be used for safety-critical systems with confidence.
 \end{itemize}
 
 % Accordingly, there have been numerous efforts to capture the subtleties of the C standard
@@ -349,17 +319,17 @@ problems, programming language researchers have proposed to use the following fo
 \paragraph{Prior Art}
 
 A landmark in this research direction is the CompCert C compiler~\cite{compcert}, which was
-initiated by Xavier Leroy over ten years ago and grows as the first realistic verified compiler.
-The CompCert compiler is realistic in the sense that it ``could realistically be used in the context
-of production of critical software''.  In particular, it compiles a significant subset of ISO C99
-down to assembly, and it performs a number of common and useful optimizations.  It is verified in
-the sense that it ``is accompanied by a machine-checked proof [in Coq] of a semantic preservation
-property: the generated machine code behaves as prescribed by the semantics of the source program.''
-As such, CompCert guarantees that program analyses and verifications performed on its input carry
-over soundly to its machine-level output.  It has served as a fundamental building block in academic
-work on end-to-end verified software~\cite{TODO}, as well as receiving significant interest from the
-avionics industry~\cite{TODO}.  Recently, it is certified for being used for nuclear power
-plant~\cite{compcert-nuclear}.
+initiated by Xavier Leroy over ten years ago and then grows as the first realistic verified
+compiler.  CompCert is verified in the sense that it ``is accompanied by a machine-checked proof of
+a semantic preservation property: the generated machine code behaves as prescribed by the semantics
+of the source program.''  As such, CompCert guarantees that program analyses and verifications
+performed on its input carry over soundly to its machine-level output.  CompCert is realistic in the
+sense that it ``could realistically be used in the context of production of critical software''.  It
+compiles a significant subset of ISO C99 down to several architectures, and it performs a number of
+common and useful optimizations.  It received significant interest from the avionics
+industry~\cite{TODO}, and recently, it is certified for being used for nuclear power
+plant~\cite{compcert-nuclear}.  It has also served as a fundamental building block in academic work
+on end-to-end verified software~\cite{TODO}.
 
 % Over ten years ago, Xavier Leroy initiated the CompCert
 % project~\cite{compcert:CACM,leroy:compcert}, a landmark effort that
@@ -382,7 +352,7 @@ plant~\cite{compcert-nuclear}.
 % % XXX: Verified Software Toolchain or Airbus?
 
 In the same spirit as CompCert, Vellvm~\cite{vellvm} by Steve Zdancewic and his collaborators
-formalizes a significant subset of the LLVM IR (intermediate representation) and verifies
+formalizes a significant subset of the LLVM intermediate representation (IR) and verifies
 interesting compiler transformations and optimizations performed at the IR level.  Most notably,
 Vellvm formalizes the static single assignment form (SSA), including a dominance analysis, an SSA
 type checker, and an SSA-aware register promotion algorithm that is simplified from the
@@ -391,22 +361,27 @@ type checker, and an SSA-aware register promotion algorithm that is simplified f
 % Because of these simplifications, they are currently suitable only for a niche market such as
 % safety-critical embedded systems.
 
-However, these projects on formal semantics and compiler verification makes unrealistic simplifying
-assumptions on C semantics and compilers, skating over the complexity of the real-world practice of
-systems programming.  While CompCert and Vellvm support a significant subset of C99 and LLVM IR,
-respectively, they lack support for various low-level features that are crucially used in many
-system programs, such as memory layout, concurrency, and processor register manipulation.
-Furthermore, CompCert and Vellvm only perform quite straightforward transformations and
-optimizations that are way less sophisticated than those in mainstream compilers, and support only
-limited use cases of compilers, \eg{} they did not verify linking.
+However, these projects make unrealistic simplifying assumptions on C semantics and compilers,
+skating over the complexity of the real-world practice of systems programming.  First, CompCert and
+Vellvm provide less control over hardware than mainstream compilers in that they lack support for
+various low-level features that are crucially used in systems programming---such as memory layout,
+concurrency, and linking---while they support a significant subset of C99 and LLVM IR, respectively.
+Second, CompCert and Vellvm generate less performant assembly programs than mainstream compilers in
+that they only perform quite straightforward optimizations that are way less sophisticated than
+those in mainstream compilers.
+
+% and support only limited use cases of compilers, \eg{} they did not verify linking.
 
 
-\subsection{Our Contribution: Generalizing to the Real-World Practice of C}
+\subsection{Our Contribution: Pushing Forward to the Real-World Practice}
 
-In this dissertation, we carry forward the research direction for formal semantics and compiler
-verification for C by accounting for more features and use cases that are crucial in the real world
-and yet were beyond the reach of the prior work.  By doing so, we enhance the understanding of the
-practice of C programming language and its compilers.
+In this dissertation, we push forward the research direction to account for low-level features that
+are crucially used in systems programming and yet were beyond the reach of the prior work.
+Specifically, we design formal semantics for low-level features and verify various
+
+TODO: important
+
+of formal semantics and soundness proof to account 
 
 Specifically, we make the following contributions.  First, we propose a formal semantics of
 integer-pointer casts (\Cref{chap:intptrcast}) and relaxed-memory concurrency (\Cref{chap:relaxed}).
@@ -531,8 +506,8 @@ This chapter draws heavily on the work and writing in the following paper:
 
 \paragraph{Organization}
 
-The rest of dissertation is organized as follows.  \Cref{sec:background} provides the technical
-background on CompCert that informs the rest of this dissertation.
+The rest of dissertation is organized as follows.  The rest of this chapter provides the technical
+background on CompCert that informs the rest of this dissertation (\Cref{sec:background}).
 \Cref{chap:intptrcast,chap:relaxed,chap:sepcomp} present the main contributions of this
 dissertation.  This dissertation concludes with \Cref{chap:epilogue}, which summarizes the main
 contributions, the impacts, and future research directions (\Cref{sec:conclusion}).
