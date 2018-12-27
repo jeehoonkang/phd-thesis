@@ -3,13 +3,13 @@
 
 The C programming language is used as the \emph{lingua franca} for systems programming, mainly due
 to its three notable advantages: \emph{control}, \emph{portability}, and \emph{performance}.  C
-provides precise control over hardware via low-level features such as memory layout, concurrency,
-and interrupt.  At the same time, C is portable in that C programs can be compiled and then executed
-in most of the existing hardware.  Furthermore, C provides decent performance: a program written in
-C are usually outperforming equivalent programs written in other languages---even including
-carefully hand-written assembly programs---when they are performing exactly the same task.  These
-advantages for decades have attracted system programmers, and as a result, a giant ecosystem was
-built around the C language.
+provides precise control over hardware via low-level features such as pointer manipulation,
+concurrency, and asynchronous interrupt.  At the same time, C is portable in that C programs can be
+compiled and then executed in most of the existing hardware.  Furthermore, C provides decent
+performance: a program written in C are usually outperforming equivalent programs written in other
+languages---even including carefully hand-written assembly programs---when they are performing
+exactly the same task.  These advantages for decades have attracted system programmers, and as a
+result, a giant ecosystem was built around the C language.
 
 C enjoys control and portability---seemingly conflicting properties---at the same time because it is
 a balanced abstraction over various hardware assembly languages.  If C were exposing too much detail
@@ -131,7 +131,7 @@ propagation optimization.\footnote{Notice that undefined behavior is not necessa
 \paragraph{Trading Control for Performance}
 
 In the course of doing so, C is effectively trading control for performance.  The C language
-intentionally loses precise control over memory layout by forbiding arbitrary pointer
+intentionally loses precise control over memory layout by forbidding arbitrary pointer
 manipulation---\eg{} deriving the address of \code{a} from that of \code{anchor}---in order to
 justify the constant propagation optimization, which significantly improves the performance of
 compilation results.  As a result, pointers in C have a richer structure than those in assembly
@@ -141,17 +141,13 @@ index into a single flat array representing memory.
 This practice of trading control for performance is actually quite common in the design of C, and as
 a consequence, C significantly deviates from assembly languages.  Mainstream compilers are
 performing aggressive optimizations that change the behaviors of programs that use low-level
-features such as memory and concurrency, often defeating the intention of programmers to precisely
-control over the low-level details of hardware.  As a result, C programs often have vastly different
-meaning than the exactly same programs written in assembly languages (modulo syntactic differences).
-
-For this reason, C is not just a thin wrapper around assembly languages but rather an abstraction
-over both assembly languages \emph{and} compiler optimizations.
+features, defeating the intention of programmers to precisely control over hardware.  As a result, C
+programs often have vastly different meaning than the exactly same programs written in assembly
+languages (modulo syntactic differences), and thus C is not just a thin wrapper around assembly
+languages but rather should be an abstraction over both assembly languages \emph{and} compiler
+optimizations.
 
 % Therefore C have richer structures than those in assembly languages due to compiler optimizations.
-
-
-
 
 % The above transformation clearly shows that C is a very different language from assembly languages:
 % the constant propagation optimization should sound for C programs---as it is performed by mainstream
@@ -164,7 +160,6 @@ over both assembly languages \emph{and} compiler optimizations.
 % circumstances.
 
 % suppose that \code{g()} is adversarially trying to \emph{guess} the address of \code{a} as follows:
-
 
 % Since optimizations are an essential ingredient of the real-world practice of C programming, the
 % language should be
@@ -179,38 +174,58 @@ over both assembly languages \emph{and} compiler optimizations.
 % behavior.
 
 
-
-\subsection{Problem: Unclear Specification of Compiler Optimizations}
+\subsection{Problem: Unclear Specification}
 \label{sec:introduction:problem}
 
-Abstracting over assembly languages and compiler optimizations, however, is a challenging task due
-to unclear specification of optimizations performed by sophisticated mainstream compilers.  They
-have unclear specification
+Abstracting over assembly languages and compiler optimizations, however, is a challenging task
+because of the conflicting goals, namely control and performance.  On the one hand, the C language
+should support low-level features that are capable of precisely controlling the hardware, such as
+pointer manipulation, concurrency, and asynchronous interrupt; on the other hand, C should support
+sophisticated and yet effective optimizations performed by mainstream compilers, such as register
+promotion and register allocation.  Adequately striking the balance between control and performance
+has proven very difficult in deciding to perform which compiler optimizations for C programs,
+despite many years of research and ISO standardization efforts~\cite{c18}.
+
+As a consequence, the C programming language have quite unclear specification.  The state-of-the-art
+ISO C standard, even after a series of revisions including C89, C99, C11, and C18, informally
+describes the language in English with many ad-hoc exceptions including 203 cases of undefined
+behavior~\cite[J.2]{c18}.  The informal description is often ambiguous and confusing, especially for
+corner cases.  Thus many systems programming communities, \eg{} the Linux kernel developers, use
+their own \emph{dialect} of C that is closer to assembly languages, supporting more low-level
+features and less compiler optimizations than the standard.  The dialect is often described
+informally as the set of turned-on compiler optimizations, whose meaning is unstable and changing.
+
+The unclear specification of the language causes difficulties to both programmers and compiler
+writers.
+
+\paragraph{Difficulties for Programmers}
+
+\paragraph{Difficulties for Compiler Writers}
+
+\paragraph{TODO}
+
+Those optimizations are blurring what is right and wrong for C compilers, thereby severely
+threatening the reliability of compilers.  Firstly, compilers are performing unpredictable
+optimizations so that the compiled program may not behave as expected by programmers.
+
+Even worse, some optimizations make different, conflicting assumptions on the underlying semantics
+and collectively result in miscompilation bugs.  Those bugs are difficult to fix because it is
+unclear which optimizations are to blame: in particular, those bugs are not effectively found and
+fix by testing due to unclear specification.
+
+As a consequence, mainstream C compilers are typically unused for safety-critical systems, and even
+when it is used, programmers turn off most compiler optimizations.  This practice significantly
+increases verification cost and degrades performance of safety-critical systems.
 
 
- two notable reasons
 
 
-Compiler
-optimizations have unclear specification 
-
-\paragraph{Subtle Optimizations}
-
-First, mainstream compilers perform subtle optimizations.  To justify those subtle optimizations
-only afterwards, the ISO C standard often marks certain programs as invoking undefined behavior---as
-it did for the example above---often with ad-hoc exceptions to the already informal semantics
-written in English.  The practice of justifying optimizations with undefined behavior is widespread
-in that ISO C18 has 203 kinds of undefined behavior~\cite[J.2]{c18}.  As a result,
-
-
-\paragraph{Variety of Optimizations}
+Combination of ``Variety'' of Optimizations
 
 often introduce surprising non-local changes and difficult-to-find bugs in program
 behavior~\cite{wang2013towards,yang2011finding}.
 
 As a result, programmers need to know which... compiler writers...
-
-Second, 
 
 % For instance, compilers reason backwards from instances of undefined behavior to conclude that,
 % \eg{} certain code paths must be dead and to remove the code.
@@ -218,23 +233,16 @@ Second,
 % To improve performance and energy consumption of systems, compiler writers have introduced dozens
 % of subtle optimizations even though their soundness is justified solely by intuition.
 
-% This kind of conflicts and resolutions (using undefined behavior) are common in the design of the C
-% programming language semantics.  For example, the example above shows that low-level control over
-% memory layout via pointer manipulation in C conflicts with a simple compiler optimization, and the
-% conflict is resolved by marking the accesses to the outside of a memory allocation's valid range as
-% invoking undefined behavior.  More generally, the C language has many conflicts between control over
-% various low-level details of hardware and various compiler optimizations implemented in mainstream C
-% compilers, and these conflicts are usually resolved by marking some unintended usage of language
-% features as invoking undefined behavior.
+% This kind of conflicts and resolutions (using undefined behavior) are common in the design of the
+% C programming language semantics.  For example, the example above shows that low-level control
+% over memory layout via pointer manipulation in C conflicts with a simple compiler optimization,
+% and the conflict is resolved by marking the accesses to the outside of a memory allocation's valid
+% range as invoking undefined behavior.  More generally, the C language has many conflicts between
+% control over various low-level details of hardware and various compiler optimizations implemented
+% in mainstream C compilers, and these conflicts are usually resolved by marking some unintended
+% usage of language features as invoking undefined behavior.
 
 
-
-\paragraph{Combination of ``Variety'' of Optimizations}
-
-
-% As a consequence, the standard is not widely accepted in the systems programming community, \eg{}
-% the Linux community defines its own dialect of C that supports much less compiler optimizations and
-% is closer to assembly languages than the standard.  
 
 % ---C89, C99, C11, and C18---
 
@@ -247,22 +255,6 @@ Second,
 % The ISO C18 standard~\cite{c18} famously does not give semantics to a significant subset of
 % syntactically valid C programs. Instead, many programs exhibit implementation-defined, unspecified,
 % or undefined behavior, with the latter imposing no requirements on a conforming implementation.
-
-Those controversial optimizations cause the following problems:
-%
-\begin{itemize}
-\item Those optimizations are blurring what is right and wrong for C compilers, thereby severely
-  threatening the reliability of compilers.  Firstly, compilers are performing unpredictable
-  optimizations so that the compiled program may not behave as expected by programmers.  Even worse,
-  some optimizations make different, conflicting assumptions on the underlying semantics and
-  collectively result in miscompilation bugs.  Those bugs are difficult to fix because it is unclear
-  which optimizations are to blame: in particular, those bugs are not effectively found and fix by
-  testing due to unclear specification.
-
-\item As a consequence, mainstream C compilers are typically unused for safety-critical systems, and
-  even when it is used, programmers turn off most compiler optimizations.  This practice
-  significantly increases verification cost and degrades performance of safety-critical systems.
-\end{itemize}
 
 % because $(1)$ miscompilation bugs are hard to find because they typically manifest themselves very
 % rarely, and $(2)$ they are hard to fix due to unclear specification.
