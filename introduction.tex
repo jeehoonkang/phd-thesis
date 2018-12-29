@@ -109,7 +109,7 @@ compiler's reasoning that \code{a} is accessible only within the function \code{
 case, when linked with \code{g()}, the original \code{f()} will print the evil value 666; on the
 other hand, the optimized \code{f()} will print the expected value 42.\footnote{We got these results
   from assembly programs separately compiled from \code{f()} and \code{g()} with GCC 8.2.1 and
-  compile option \code{-fno-stack-protector} in an x86-64 machine running Linux 4.18.}
+  compile option \code{-fno-stack-protector} in an x86-64 machine running Linux 4.20.}
 
 To rescue the soundness of constant propagation, the ISO C18 standard~\cite{c18} blames \code{g()}
 for violating the rule of the C language by marking it as invoking \emph{undefined
@@ -135,7 +135,7 @@ intentionally loses precise control over memory layout by forbidding arbitrary p
 manipulation---\eg{} deriving the address of \code{a} from that of \code{anchor}---in order to
 justify the constant propagation optimization, which significantly improves the performance of
 compilation results.  As a result, pointers in C have a richer structure than those in assembly
-languages, which have the same representation as integer values of the appropriate width and simply
+languages that have the same representation as integer values of the appropriate width and simply
 index into a single flat array representing memory.
 
 This practice of trading control for performance is actually quite common in the design of C, and as
@@ -179,31 +179,30 @@ optimizations.
 
 Abstracting over assembly languages and compiler optimizations, however, is a challenging task due
 to the conflict between control and performance.  On the one hand, the C language should support
-low-level features that are capable of precisely controlling the hardware, such as pointer
-manipulation, concurrency, and asynchronous interrupt; on the other hand, C should support
-sophisticated and yet effective optimizations performed by mainstream compilers, such as register
-promotion and register allocation.  Supporting both low-level features and sophisticated
-optimizations has proven very difficult, at least for some cases, despite many years of research and
-ISO standardization efforts~\cite{c18}.
+low-level features that are capable of precisely controlling the hardware; on the other hand, C
+should support sophisticated and yet effective optimizations performed by mainstream compilers.
+Supporting both low-level features and sophisticated optimizations has proven very difficult, at
+least for some cases, despite many years of research and ISO standardization efforts~\cite{c18}.
 
-As a consequence, the C programming language have quite unclear specification.  The state-of-the-art
-ISO C standard, even after a series of revisions including C89, C99, C11, and C18, informally
-describes the language in English with many ad-hoc exceptions including 203 cases of undefined
-behavior~\cite[J.2]{c18}.  The informal description is often ambiguous and confusing, especially for
-corner cases.  Thus many systems programming communities, \eg{} the Linux kernel developers, use
-their own \emph{dialect} of C that is closer to assembly languages, supporting more low-level
-features and less compiler optimizations than the standard.  The dialect is often described
-informally as the set of turned-on compiler optimizations, whose meaning is unstable and changing.
+One of the consequences is that the C programming language have quite unclear specification.  The
+state-of-the-art ISO C standard, even after a series of revisions including C89, C99, C11, and C18,
+informally describes the language in English with many ad-hoc exceptions including 203 cases of
+undefined behavior~\cite[J.2]{c18}.  The informal description is often ambiguous and confusing,
+especially for corner cases.  Thus many systems programming communities, \eg{} the Linux kernel
+developers, use their own \emph{dialect} of C that is closer to assembly languages, supporting more
+low-level features and less compiler optimizations than the standard.  The dialect is often
+described informally as the set of turned-on compiler optimizations, whose meaning is unstable and
+changing.
 
 The unclear specification of the language causes difficulties to both programmers and compiler
 writers.  For programmers, it is difficult to expect how compiled programs will behave---especially
 when they use low-level features---because optimizations and their combinations often introduce
 surprising non-local changes and difficult-to-find bugs in program
-behavior~\cite{wang2013towards,yang2011finding}.  One of the consequences is that mainstream
-compilers are typically unused for safety-critical systems, and even when it is used, programmers
-turn off most compiler optimizations, significantly increasing verification cost and degrading
-performance of safety-critical systems.  One the other hand, for compiler writers, it is difficult
-to figure out whether an optimization is sound or not.  Even worse, sometimes a combination of
+behavior~\cite{wang2013towards,yang2011finding}.  As a result, mainstream compilers are typically
+unused for safety-critical systems, and even when they are used, programmers turn off most compiler
+optimizations, significantly increasing verification cost and degrading performance of
+safety-critical systems.  One the other hand, for compiler writers, it is difficult to figure out
+whether an optimization is sound or not.  Even worse, sometimes a combination of
 optimizations---each of which seems legit---results in miscompilation bugs, for which it is unclear
 which optimizations are to blame.
 
@@ -231,6 +230,8 @@ which optimizations are to blame.
 
 
 \paragraph{A Miscompilation Bug}
+
+\jeehoon{Use Juneyoung's example.}
 
 \begin{figure}[t]
 \begin{center}
@@ -293,21 +294,21 @@ conflicting with each other and they collectively result in a miscompilation bug
 
 
 
-\subsection{Research Direction: Understanding and Verifying Optimizations}
+\subsection{Formally Understanding and Verifying Optimizations}
 
 In order to address the difficulties caused by the unclear specification of compiler optimizations,
-researchers have proposed to \emph{understand} and \emph{verify} optimizations as follows:
+researchers have proposed to formally \emph{understand} and \emph{verify} optimizations as follows:
 
 \begin{itemize}
 \item \textbf{Understanding optimizations with formal
     semantics}~\cite{norrish1998c,leroy:compcert,ellison2012executable}: formal semantics is a
   mathematically clear definition of program behaviors---as opposed to informal English prose as in
-  the ISO C18 standard---that completely removes the ambiguity and confusion in the semantics.
-  Formal semantics is the result of thorough understanding of compiler optimizations, as it should
-  adequately strike the balance between control and performance.  Formal semantics informs
-  programmers exactly how programs will behave and how they can precisely control over the hardware;
-  at the same time, it informs compiler writers which optimizations are sound.  For instance, formal
-  semantics should point out which optimizations are to blame in the miscompilation bug above.
+  the ISO C18 standard---that completely removes the ambiguity and confusion.  Formal semantics is
+  the result of thorough understanding of compiler optimizations, as it should adequately strike the
+  balance between control and performance.  Formal semantics informs programmers exactly how
+  programs will behave and how they can precisely control over the hardware; at the same time, it
+  informs compiler writers which optimizations are sound.  For instance, formal semantics should
+  point out which optimizations are to blame in the miscompilation bug above.
 
 \item \textbf{Verifying optimizations with soundness proof}~\cite{compcert,vellvm}: verified
   optimizations are accompanied with \emph{machine-checked} soundness proof, which formally
@@ -371,15 +372,18 @@ However, these projects make unrealistic simplifying assumptions on C semantics 
 skating over the complexity of the real-world practice of systems programming.  First, CompCert and
 Vellvm---while supporting a significant subset of C99 and LLVM IR, respectively---provide less
 control over hardware than mainstream compilers in that they lack support for various low-level
-features that are crucially used in systems programming, such as memory layout, concurrency, and
-linking.  Second, CompCert and Vellvm generate less efficient assembly programs than mainstream
-compilers in that they only perform quite straightforward optimizations that are way less
-sophisticated than those in mainstream compilers.
+features that are crucially used in systems programming.  Second, CompCert and Vellvm generate less
+efficient assembly programs than mainstream compilers in that they only perform quite
+straightforward optimizations that are way less sophisticated than those in mainstream compilers.
 
 % and support only limited use cases of compilers, \eg{} they did not verify linking.
 
 
-\subsection{Our Contribution: Pushing Forward to the Real-World Practice}
+\subsection{Our Contribution: Supporting Crucial Low-Level Features}
+
+\jeehoon{Redo it.}
+
+\jeehoon{Give structures: feature's importance, prior work, solution, impact.}
 
 In this dissertation, we push forward the research direction to also account for three low-level
 features that are crucially used in systems programming and yet were beyond the reach of the prior
@@ -504,6 +508,20 @@ This chapter draws heavily on the work and writing in the following paper:
   Steve Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer
     Casts}.  \textbf{PLDI 2015}.}
 
+\paragraph{Other Papers}
+
+\jeehoon{discuss Crellvm: supporting sophisticated optimizations in mainstream compilers.}
+
+\begin{itemize}
+% \item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
+%   \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
+\item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
+  Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
+  \emph{Crellvm: Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.  (*The first three
+  authors contributed equally and are listed alphabetically.)
+\end{itemize}
+
+
 \paragraph{Organization}
 
 The rest of dissertation is organized as follows.  The rest of this chapter provides the technical
@@ -511,6 +529,8 @@ background on CompCert that informs the rest of this dissertation (\Cref{sec:bac
 \Cref{chap:relaxed,chap:sepcomp,chap:intptrcast} present the main contributions of this
 dissertation.  This dissertation concludes with \Cref{chap:epilogue}, which summarizes the main
 contributions, the impacts, and future research directions (\Cref{sec:conclusion}).
+
+
 
 % Specifically, we propose the formal semantics of several low-level features that are the defining
 % characteristics of C and yet are omitted from the prior work.  Furthermore, we propose
@@ -521,16 +541,6 @@ contributions, the impacts, and future research directions (\Cref{sec:conclusion
 % analysis, union, inline assembly, GPUs and accelerators---and by verifying mainstream compilers.
 
 
-% Other papers:
-%
-% \begin{itemize}
-% \item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
-%   \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
-% \item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
-%   Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
-%   (*The first three authors contributed equally and are listed alphabetically.)  \emph{Crellvm:
-%     Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.
-% \end{itemize}
 
 
 %%% Local Variables:
