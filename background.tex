@@ -1,14 +1,14 @@
 \section{Background: A Brief Tour of CompCert}
 \label{sec:background}
 
-We begin by briefly reviewing the technical background that informs the rest of this dissertation,
-using CompCert as the learning material.  The technical ideas and results presented in this section
-apply not only to CompCert but also to other compilers as well.  We first explain CompCert's
-correctness statement, as well as its simulation verification technique
-(\Cref{sec:background:correctness}).  To flesh out the details on formal semantics and compiler
-verification, we use RTL---one of CompCert's internal representations---and constant
+We begin by briefly reviewing the technical background on formal semantics and compiler verification
+that informs the rest of this dissertation, using CompCert as the learning material.  The technical
+ideas and results presented in this section apply not only to CompCert but also to other compilers
+as well.  We first explain CompCert's correctness statement, as well as its simulation verification
+technique (\Cref{sec:background:correctness}).  To flesh out the details on formal semantics and
+compiler verification, we use RTL---one of CompCert's internal representations---and constant
 propagation---one of CompCert's optimizations---as a running example.  Specifically, We first review
-CompCert's memory model that is specifically designed so as to verify compiler optimizations
+CompCert's memory model that is specifically designed to verify compiler optimizations
 (\Cref{sec:background:memory}).  Then we explain the RTL language on which constant propagation and
 most of the other optimizations are performed in the CompCert's compilation pipeline
 (\Cref{sec:background:rtl}), and how constant propagation works and how CompCert verifies it
@@ -41,8 +41,8 @@ $\mathtt{s.c}$ into memory, $\mathrm{Behav}(s)$ to denote the observable behavio
 of $s$, and analogously for $t$ and $\mathtt{t.asm}$.)  Hence, we say that \code{t.asm}, the
 target-level output of $\mathcal{C}$, \emph{refines} its source-level input, \code{s.c}.
 
-The compiler correctness statement presented here will be generalized to support separate
-compilation in \Cref{chap:sepcomp}.
+Notice that the compiler correctness statement presented here will be generalized to support
+separate compilation in \Cref{chap:sepcomp}.
 
 
 \paragraph{Set of Behaviors}
@@ -64,6 +64,9 @@ behavior is undefined, then compiler can choose any program as its result; on th
 target program's behavior is undefined, then the source program's behavior should also be undefined.
 % We regard \emph{the undefined behavior as described in the ISO C standards as the set of all
 % behaviors}.  This captures the intuitive properties of compilers on undefined behavior.
+
+Notice that the notion of behaviors presented here will be generalized to support out-of-memory in
+\Cref{chap:intptrcast}.
 
 
 \paragraph{Per-Pass Correctness}

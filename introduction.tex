@@ -231,7 +231,7 @@ which optimizations are to blame.
 
 \paragraph{A Miscompilation Bug}
 
-\jeehoon{Use Juneyoung's example.}
+\jeehoon{Use Juneyoung's example.  Referenced later; update it.}
 
 \begin{figure}[t]
 \begin{center}
@@ -381,21 +381,17 @@ straightforward optimizations that are way less sophisticated than those in main
 
 \subsection{Our Contribution: Supporting Crucial Low-Level Features}
 
-\jeehoon{Redo it.}
-
-\jeehoon{Give structures: feature's importance, prior work, solution, impact.}
-
-In this dissertation, we push forward the research direction to also account for three low-level
-features that are crucially used in systems programming and yet were beyond the reach of the prior
-work.  Specifically, we design formal semantics for \emph{casts between integers and pointers}
-(\Cref{chap:intptrcast}), \emph{relaxed-memory concurrency} (\Cref{chap:relaxed}), and
-\emph{linking} (\Cref{chap:sepcomp}), and develop proof techniques for verifying compiler
+In this dissertation, we push forward this research direction---namely, understanding and verifying
+compiler optimizations via formal semantics and soundness proof---to also account for three
+low-level features that are crucially used in systems programming and yet were beyond the reach of
+the prior work.  Specifically, we design formal semantics for \emph{relaxed-memory concurrency}
+(\Cref{chap:relaxed}), \emph{separate compilation and linking} (\Cref{chap:sepcomp}), and \emph{cast
+  between integers and pointers} (\Cref{chap:intptrcast}), and prove the soundness of major compiler
 optimizations in the presence of those features.  To establish confidence in our contributions, we
 have formalized most of the key results in the Coq theorem prover~\cite{coq}.  The formalization is
 available online~\cite{kang-phd-thesis-web}.
 
-In the rest of this section, we will explain the three features and our contributions in more
-details.
+In the rest of this section, we will explain our main contributions in more details.
 
 % However, it is difficult to design a formal semantics for these features that justifies
 % optimizations for compilers and supports reasoning principles for programmers because of their
@@ -409,9 +405,15 @@ details.
 
 \paragraph{\Cref{chap:relaxed}: Relaxed-Memory Concurrency}
 
-\jeehoon{redo it.  Discuss importance and prior work.} It has proven very difficult to develop a
-formal semantics for concurrent programming languages that adequately balances the conflicting
-desiderata of programmers and compilers.
+Relaxed-memory concurrency is the study of \emph{relaxed behaviors}, which are observable behaviors
+of concurrent programs beyond those allowed in \emph{sequential consistency} (think: interleaving of
+the executions of threads).  Relaxed behaviors are made possible due to hardware and compiler
+optimizations such as out-of-order execution or instruction reordering/merging.  While relaxed
+behaviors complicate reasoning of concurrent programs, they are unavoidable in effectively
+exploiting the parallelism provided by shared-memory architecture.  Despite many years of research,
+however, it has proven very difficult to develop a formal semantics for programming languages with
+relaxed-memory concurrency that adequately balances the conflicting desiderata of programmers and
+compilers.
 
 In this chapter, we propose the first formal semantics of relaxed-memory concurrency that $(1)$
 justifies simple invariant-based reasoning, thus demonstrating the absence of bad
@@ -422,22 +424,24 @@ and reorderings, as well as standard compilation schemes to x86-TSO, $(4)$ accou
 spectrum of low-level concurrency features in C, and $(5)$ defines the semantics of racy programs
 without relying on undefined behaviors, which is a prerequisite for applicability to type-safe
 languages like Java.  The key novel idea behind our semantics is the notion of promises: a thread
-may promise to execute a write in the future, thus enabling other threads to read from that write
-out of order.  Crucially, to prevent out-of-thin-air behaviors, a promise step requires a
-thread-local certification that it will be possible to execute the promised write even in the
-absence of the promise.
+may make the effect of a write before actually executing it, thus enabling other threads to read
+from that write out of order.  Crucially, to prevent out-of-thin-air behaviors, a promise step
+requires a thread-local certification that it will be possible to execute the promised write even in
+the absence of the promise.
 
-\jeehoon{redo it.}  Our semantics is a promising proposal for relaxed-memory concurrency
-semantics for C/C++ and compiler IRs, and draws interest from both industry and academia.  In
-particular, our semantics serves as a guide to C/C++ relaxed-memory concurrency, and reasoning
-principles for our semantics are being developed.
+Our semantics draws interest from both industry and academia.  Our semantics not only serves as a
+guide to C/C++ relaxed-memory concurrency~\cite{blog,niko} but also influences the discussion on the
+standard semantics for C/C++ and compiler IRs (private communication in mailing lists).
+\cite{viktor-logic} developed reasoning principles for our semantics, and \cite{viktor-compilation}
+validated compilation schemes for our semantics to various architectures such as ARMv7, ARMv8,
+RISC-V, and Power.  Furthermore, the idea of promises and certification is also used to model the
+relaxed-memory concurrency in ARMv8 and RISC-V~\cite{promising-armv8-riscv}.
 
 This chapter draws heavily on the work and writing in the following paper:
 
 \noindent {\small \cite{promising} \textbf{Jeehoon Kang}, Chung-Kil Hur, Ori Lahav, Viktor
   Vafeiadis, Derek Dreyer.  \emph{A Promising Semantics for Relaxed-Memory Concurrency}.
   \textbf{POPL 2017}.}
-
 
 
 \paragraph{\Cref{chap:sepcomp}: Separate Compilation and Linking}
@@ -449,21 +453,23 @@ whole-program compilation, leaving open the question of how to verify the correc
 compilation.  Recently, a number of sophisticated techniques have been proposed for proving more
 flexible, compositional notions of compiler correctness, but these approaches tend to be quite
 heavyweight compared to the simple ``closed simulations'' used in verifying whole-program
-compilation.  Applying such techniques to a compiler like CompCert, as Stewart \etal{} have done,
-involves major changes and extensions to its original verification.
+compilation.  Applying such techniques to a compiler like CompCert, as Stewart \etal{} have
+done~\cite{compositional-compcert}, involves major changes and extensions to its original
+verification.
 
 In this chapter, we show that if we aim somewhat lower---to prove correctness of separate
 compilation, but only for a single compiler---we can drastically simplify the proof effort.  Toward
 this end, we develop several lightweight techniques that recast the compositional verification
-problem in terms of whole-program compilation, thereby enabling us to largely reuse the
-closed-simulation proofs from existing compiler verifications.
+problem in terms of whole-program compilation, as far as the compiler's transformations and
+optimizations satisfy what we call \emph{monotonicity}.  The proof techniques enable us to largely
+reuse the closed-simulation proofs from existing compiler verifications.
 
 We demonstrate the effectiveness of these techniques by applying them to CompCert 2.4, converting
 its verification of whole-program compilation into a verification of separate compilation in less
 than two person-months.  This conversion only required a small number of changes to the original
-proofs.  We uncovered two compiler bugs along the way---one of which is on separate compilation and
-the other is orthogonal to separate compilation---and our verification techniques are subsequently
-adopted in CompCert 2.7.
+proofs.  Along the way, we uncovered two compiler bugs---one of which is on separate compilation and
+the other is orthogonal to separate compilation---and our proof techniques are subsequently adopted
+in CompCert 2.7.
 
 This chapter draws heavily on the work and writing in the following paper:
 
@@ -473,8 +479,8 @@ This chapter draws heavily on the work and writing in the following paper:
 \paragraph{\Cref{chap:intptrcast}: Cast between Integers and Pointers}
 
 Cast between integers and pointers is one of the defining characteristic of the C programming
-language in that it allow cross-platform low-level access to memory, which is essential for
-applications such as operating system kernels and language runtimes.  However, the feature
+language in that it allow cross-platform low-level manipulation of memory layout, which is essential
+for applications such as operating system kernels and language runtimes.  However, the feature
 drastically conflicts with major compiler optimizations, as demonstrated by the example shown in
 \Cref{fig:introduction:bug}.  The ISO C standards try to reconcile the feature and the optimizations
 using the notion of \emph{provenance}, but it fails to support certain common optimizations and
@@ -488,11 +494,11 @@ idea behind our semantics is the notion of \emph{concretization}: when allocated
 not assigned a concrete address yet; only when it is required by a pointer-to-integer cast, the
 block is lazily assigned a concrete address, \ie{} the block is concretized.
 
-In the course of doing this research, we discovered the GCC bug presented in
-\Cref{fig:introduction:bug}, with which we persuaded compiler writers that it is safe to turn off
-too aggressive alias analyses.  Furthermore, our idea has subsequently been refined by follow-up
-papers by other researchers~\cite{intptrcast-oopsla,intptrcast-popl}, which are accompanied with
-promising revision proposals to the LLVM compiler and ISO C standard.
+Along the way, we discovered the GCC bug presented in \Cref{fig:introduction:bug}, with which we
+persuaded compiler writers that it is safe to turn off too aggressive alias analyses.  Furthermore,
+our idea has subsequently been refined by follow-up papers by other
+researchers~\cite{intptrcast-oopsla,intptrcast-popl}, which are accompanied with promising revision
+proposals to the LLVM IR and the ISO C standard.
 
 
 % The ISO C standard does not specify the semantics of many valid programs that use non-portable
@@ -508,24 +514,22 @@ This chapter draws heavily on the work and writing in the following paper:
   Steve Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer
     Casts}.  \textbf{PLDI 2015}.}
 
-\paragraph{Other Papers}
+% \paragraph{Other Papers}
 
-\jeehoon{discuss Crellvm: supporting sophisticated optimizations in mainstream compilers.}
-
-\begin{itemize}
-% \item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
-%   \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
-\item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
-  Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
-  \emph{Crellvm: Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.  (*The first three
-  authors contributed equally and are listed alphabetically.)
-\end{itemize}
+% \begin{itemize}
+% % \item[\cite{scfix}] Ori Lahav, Viktor Vafeiadis, \textbf{Jeehoon Kang}, Chung-Kil Hur, Derek Dreyer.
+% %   \emph{Repairing Sequential Consistency in C/C++11}.  \textbf{PLDI 2017}.
+% \item[\cite{crellvm}] \textbf{Jeehoon Kang}*, Yoonseung Kim*, Youngju Song*, Juneyoung Lee, Sanghoon
+%   Park, Mark Dongyeon Shin, Yonghyun Kim, Sungkeun Cho, Joonwon Choi, Chung-Kil Hur, Kwangkeun Yi.
+%   \emph{Crellvm: Verified Credible Compilation for LLVM}.  \textbf{PLDI 2018}.  (*The first three
+%   authors contributed equally and are listed alphabetically.)
+% \end{itemize}
 
 
 \paragraph{Organization}
 
-The rest of dissertation is organized as follows.  The rest of this chapter provides the technical
-background on CompCert that informs the rest of this dissertation (\Cref{sec:background}).
+The rest of this chapter provides the technical background on formal semantics and compiler
+verification that informs the rest of this dissertation (\Cref{sec:background}).
 \Cref{chap:relaxed,chap:sepcomp,chap:intptrcast} present the main contributions of this
 dissertation.  This dissertation concludes with \Cref{chap:epilogue}, which summarizes the main
 contributions, the impacts, and future research directions (\Cref{sec:conclusion}).
