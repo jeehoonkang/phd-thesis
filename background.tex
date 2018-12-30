@@ -1,20 +1,20 @@
 \section{Background: A Brief Tour of CompCert}
 \label{sec:background}
 
-We begin by briefly reviewing the technical background on formal semantics and compiler verification
-that informs the rest of this dissertation, using CompCert as the learning material.  The technical
-ideas and results presented in this section apply not only to CompCert but also to other compilers
-as well.  We first explain CompCert's correctness statement, as well as its simulation verification
-technique (\Cref{sec:background:correctness}).  To flesh out the details on formal semantics and
-compiler verification, we use RTL---one of CompCert's internal representations---and constant
-propagation---one of CompCert's optimizations---as a running example.  Specifically, We first review
-CompCert's memory model that is specifically designed to verify compiler optimizations
-(\Cref{sec:background:memory}).  Then we explain the RTL language on which constant propagation and
-most of the other optimizations are performed in the CompCert's compilation pipeline
-(\Cref{sec:background:rtl}), and how constant propagation works and how CompCert verifies it
-(\Cref{sec:background:constprop}).  Throughout this section, we keep the presentation semi-formal,
-abstracting away unnecessary detail to get across the main ideas.  For more details, we refer the
-reader to \cite{compcert, compcert-memory-model}.
+Before delving into the main contributions, we briefly review the technical background on formal
+semantics and compiler verification that informs the rest of this dissertation, using CompCert as
+the learning material.  The technical ideas and results presented in this section apply not only to
+CompCert but also to other compilers as well.  We first explain CompCert's correctness statement, as
+well as its simulation verification technique (\Cref{sec:background:correctness}).  To flesh out the
+details on formal semantics and compiler verification, we use RTL---one of CompCert's internal
+representations---and constant propagation---one of CompCert's optimizations---as a running example.
+Specifically, We first review CompCert's memory model that is specifically designed to verify
+compiler optimizations (\Cref{sec:background:memory}).  Then we explain the RTL language on which
+constant propagation and most of the other optimizations are performed in the CompCert's compilation
+pipeline (\Cref{sec:background:rtl}), and how constant propagation works and how CompCert verifies
+it (\Cref{sec:background:constprop}).  Throughout this section, we keep the presentation
+semi-formal, abstracting away unnecessary detail to get across the main ideas.  For more details, we
+refer the reader to \cite{compcert, compcert-memory-model}.
 
 
 \subsection{Compiler Correctness}
@@ -187,14 +187,13 @@ each address stores a 32-bit value.
 
 \paragraph{Concrete Model}
 
-The most straightforward way to define a memory model is closely following the hardware assembly
-language: pointers have the same representation as integer values of the appropriate width, and they
-simply index into a single flat array representing memory.  In such a \emph{concrete memory model},
-memory consists of a $2^{32}$-sized array of values, and a list of allocated blocks, represented as
-pairs $(p,n)$ of the block's starting address and its size.  Loading from or storing to an
-unallocated address raises an error (\ie undefined behavior).  Values are just 32-bit integers,
-since pointers are merely integers in the concrete model.  As a result, \emph{the concrete model
-  natively supports integer-pointer casts}.
+The most straightforward way to define a memory model is closely following the assembly language:
+pointers have the same representation as integer values of the appropriate width, and they simply
+index into a single flat array representing memory.  In such a \emph{concrete memory model}, memory
+consists of a $2^{32}$-sized array of values, and a list of allocated blocks, represented as pairs
+$(p,n)$ of the block's starting address and its size.  Loading from or storing to an unallocated
+address raises an error (\ie undefined behavior).  Values are just 32-bit integers, since pointers
+are merely integers in the concrete model.
 \[
 \begin{array}{@{}l@{~}c@{~}l@{}}
 \mathrm{Mem} &\defeq& (\usize \to \rtlVal) \times \mathtt{list}\ \mathrm{Alloc} \\
@@ -216,25 +215,53 @@ one.  Overall, the list of allocated blocks should be \emph{consistent}:\footnot
   are disjoint.
 \end{itemize}
 
-As we have seen in \Cref{sec:introduction:context}, however, the concrete model \emph{does not
-  support standard compiler optimizations} such as constant propagation in the presence of external
-function calls.  This is because the model does not provide a mechanism for ensuring that a module
-has exclusive control over some part of memory, thereby assuming that unknown code can read and
-update the contents of every allocated memory cell.
+The concrete model, however, \emph{does not support standard compiler optimizations}.  As we have
+seen in \Cref{sec:introduction}, constant propagation is unsound on the concrete model in the
+presence of external function calls, because the model does not provide a mechanism for ensuring
+that a module has exclusive control over some part of memory, and as a result, programmers should
+pessimistically assume that unknown code can read and update the contents of every allocated memory
+cell.  Furthermore, dead allocation elimination is also unsound in the concrete model.  For example,
+the following transformation---removing the unused local variable \code{a}---might change the
+behavior of the program: by virtue of there being one fewer memory cells allocated, the call to
+\code{g()} might succeed where initially it exhausted memory:
+\[\begin{array}{rcl}
+\begin{minipage}{0.23\textwidth}
+\begin{minted}{c}
+void f() {
+1: int a = 42;
+2: g();
+3: print(42);
+}
+\end{minted}
+\end{minipage}
+&
+\optarrow
+&
+\begin{minipage}{0.5\textwidth}
+\begin{minted}{c}
+void f() {
+1: // dead allocation elimination
+2: g();
+3: print(42);
+}
+\end{minted}
+\end{minipage}
+\end{array}\]
 
-\jeehoon{The concrete model also invalidates dead allocation elimination optimizations.  It's said
-  in intptrcast intro.  Connect it to the logical memory model's advantages.}
+% The compiler may further optimize the program by completely removing the now unused local variable
+% \code{a}. This latter transformation is again disallowed by concrete models because 
 
-\jeehoon{In the above example, the first optimization is allowed since there is no way to forge the
-  logical address of the variable \code{a} from those of other blocks. Also, the second one is
-  allowed since the memory is infinitely large.}
+% \jeehoon{In the above example, the first optimization is allowed since there is no way to forge
+% the logical address of the variable \code{a} from those of other blocks. Also, the second one is
+% allowed since the memory is infinitely large.}
 
-\jeehoon{where typically the set of valid allocation block identifiers is infinite.  While logical
-  models allow most compiler optimizations, the problem is that}
+% \jeehoon{where typically the set of valid allocation block identifiers is infinite.  While logical
+% models allow most compiler optimizations, the problem is that}
 
-Consider, for example, a function \code{f} that initializes a local variable \code{a} and then calls
-some unknown external function~\code{g}. We might expect the compiler to deduce that the value of
-\code{a} is unaffected by the call to \code{g} and perform constant propagation:
+% Consider, for example, a function \code{f} that initializes a local variable \code{a} and then calls
+% some unknown external function~\code{g}. We might expect the compiler to deduce that the value of
+% \code{a} is unaffected by the call to \code{g} and perform constant propagation:
+
 %% On the formal side, there are two types of memory models for C\@.
 % On the one hand, we have \emph{concrete} models.
 % These represent pointers as 32-bit (or 64-bit) integers,
@@ -245,74 +272,68 @@ some unknown external function~\code{g}. We might expect the compiler to deduce 
 % function \code{g}.
 % The compiler might perform constant propagation and optimize this program
 % as follows by assuming that the value of \code{a} is unaffected by the call to \code{g}.
-\begin{center}
-\begin{tabular}{@{}l@{}l@{}l@{}l@{}l@{}}
-%% \small
-\begin{minipage}{0.2\textwidth}
-\small
-\begin{minted}{c}
-extern void g();
 
-int f(void) {
-  int a = 0;
-  g();
-  return a;
-}
-\end{minted}
-\end{minipage}
-&
-$\quad\rightarrow\quad$
-&
-%% \small
-\begin{minipage}{0.2\textwidth}
-\small
-\begin{minted}{c}
-extern void g();
+% \begin{center}
+% \begin{tabular}{@{}l@{}l@{}l@{}l@{}l@{}}
+% %% \small
+% \begin{minipage}{0.2\textwidth}
+% \small
+% \begin{minted}{c}
+% extern void g();
 
-int f(void) {
-  int a = 0;
-  g();
-  return 0;
-}
-\end{minted}
-\end{minipage}
-&
-$\quad\rightarrow\quad$
-&
-%% \small
-\begin{minipage}{0.2\textwidth}
-\small
-\begin{minted}{c}
-extern void g();
+% int f(void) {
+%   int a = 0;
+%   g();
+%   return a;
+% }
+% \end{minted}
+% \end{minipage}
+% &
+% $\quad\rightarrow\quad$
+% &
+% %% \small
+% \begin{minipage}{0.2\textwidth}
+% \small
+% \begin{minted}{c}
+% extern void g();
 
-int f(void) {
+% int f(void) {
+%   int a = 0;
+%   g();
+%   return 0;
+% }
+% \end{minted}
+% \end{minipage}
+% &
+% $\quad\rightarrow\quad$
+% &
+% %% \small
+% \begin{minipage}{0.2\textwidth}
+% \small
+% \begin{minted}{c}
+% extern void g();
 
-  g();
-  return 0;
-}
-\end{minted}
-\end{minipage}
-\\
-\end{tabular}
-\end{center}
+% int f(void) {
 
-\vskip 0.3cm Using a simple concrete memory model, however, we have to consider the possibility that
-\code{g} is able to ``guess'' the location of \code{a} in memory and changes its value. This can
-happen if, for instance, our semantics allocates memory deterministically and the caller
-of~\code{f} sets up the state of memory appropriately for \code{g}.
+%   g();
+%   return 0;
+% }
+% \end{minted}
+% \end{minipage}
+% \\
+% \end{tabular}
+% \end{center}
+
+% \vskip 0.3cm Using a simple concrete memory model, however, we have to consider the possibility that
+% \code{g} is able to ``guess'' the location of \code{a} in memory and changes its value. This can
+% happen if, for instance, our semantics allocates memory deterministically and the caller
+% of~\code{f} sets up the state of memory appropriately for \code{g}.
 
 % We note, however, that this reasoning is not valid in the concrete model.
 % The variable \code{a} is allocated somewhere in memory, and the external
 % function might `guess' the address at which it is allocated and overwrite
 % its value.
 %
-
-The compiler may further optimize the program by completely removing
-the now unused local variable \code{a}. This latter transformation is again
-disallowed by concrete models because it might change the behavior of
-the program:
-by virtue of there being one fewer memory cells allocated, the call to \code{g}
-might succeed where initially it exhausted memory.
 
 
 
@@ -350,7 +371,6 @@ is not possible to manufacture the logical address of an already allocated block
 This property guarantees the correctness of many useful optimizations, 
 such as constant propagation across function calls and dead allocation
 elimination.
-
 A secondary advantage is that programs have \emph{infinite memory}, rendering
 their allocation behavior unobservable, which in turn makes it easy for
 compilers to remove dead allocations.

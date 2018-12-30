@@ -1,7 +1,7 @@
-\section{Formal Semantics}
+\section{Formal Semantics of Hybrid Model}
 \label{sec:intptrcast:formal-semantics}
 
-Our hybrid model is simply a hybrid of the fully concrete
+Our model is simply a hybrid of the fully concrete
 model and the fully logical model. However, there are several issues
 with how to combine the two models to minimize their disadvantages.
 In this section, we introduce the hybrid model and discuss how
@@ -49,7 +49,7 @@ ranges should be disjoint. Logical blocks have no such requirement, since they a
 by construction.
 %\label{model:issues}
 
-In the subsequent sections, we discuss several issues that arose during the design of our hybrid
+In the subsequent subsections, we discuss several issues that arose during the design of our hybrid
 model and justify our solutions to the issues.
 
 \subsection{Why Hybrid?}
@@ -60,23 +60,22 @@ model and justify our solutions to the issues.
 %pointer-integer casting (e.g. hash table does not work).
 %}
 
-First of all, the reader may naturally ask a question: why we do not develop a new notion of block
-that has the advantages of both concrete and logical blocks?  Our hybrid model---which allows both
-concrete and logical blocks to coexist---suffers from the disadvantages of both kinds of blocks:
-concrete ones do not provide exclusive ownership and logical ones do not allow casting to integers.
+Our hybrid model allows both concrete and logical blocks to coexist, suffering from the
+disadvantages of both kinds of blocks: concrete ones do not provide exclusive ownership and logical
+ones do not allow casting to integers.  Then why do we not develop a new notion of block that has
+the advantages of both concrete and logical blocks instead?
 
-Our answer is that such a new notion of block would not justify other important optimizations such
-as simplification of integer operations, while our hybrid model justifies them.  For instance,
-consider a model in which some blocks have both concrete addresses and some extra permission
-information, so that we can tell when a block is exclusively owned. In such a model, we would like
-to know that we do not lose permission information when a pointer is cast to an integer, even if
-integer operations are performed on it (\eg \code{base64\_enc}oding a pointer and then
-\code{base64\_dec}oding it).  However, this prevents the optimization presented in
-\Cref{fig:intptrcast:formal-semantics:arith1}.  Suppose the variable \code{b} contains an integer
-with permission to access some valid block $l$, and \code{a} contains an integer without any
-permission that is equal to the concrete address of the block $l$. Then the source program
-successfully stores 123 into the block $l$ because \code{q} has the relevant permission, whereas the
-target program fails because \code{q} does not have the permission.
+Because such a new notion of block would not justify other important optimizations such as
+simplification of integer operations.  For instance, consider a model in which some blocks have both
+concrete addresses and some extra permission information, so that we can tell when a block is
+exclusively owned. In such a model, we would like to know that we do not lose permission information
+when a pointer is cast to an integer, even if integer operations are performed on it (\eg
+\code{base64\_enc}oding a pointer and then \code{base64\_dec}oding it).  However, this prevents the
+optimization presented in \Cref{fig:intptrcast:formal-semantics:arith1}.  Suppose the variable
+\code{b} contains an integer with permission to access some valid block $l$, and \code{a} contains
+an integer without any permission that is equal to the concrete address of the block $l$. Then the
+source program successfully stores 123 into the block $l$ because \code{q} has the relevant
+permission, whereas the target program fails because \code{q} does not have the permission.
 %
 \begin{figure}[t]
 \center
@@ -104,7 +103,10 @@ q = (int *) a;
 \caption{Arithmetic optimization example I}\label{fig:intptrcast:formal-semantics:arith1}
 \end{figure}
 %
-See \Cref{sec:intptrcast:compiler-verification:examples} for how to verify this optimization in our hybrid model.
+
+Notice that this optimization is sound in our model.  See
+\Cref{sec:intptrcast:compiler-verification:examples} for how to verify it in our model.
+
 
 \subsection{Which Blocks are Concretized?}
 \label{sec:intptrcast:formal-semantics:cast}
@@ -176,8 +178,8 @@ bar();
 \end{figure}
 
 
-This optimization is sound in our hybrid model, which makes concrete blocks whose addresses are cast
-to integers, even if the cast integers are not used in any operation.  See
+Notice that this optimization is sound in our hybrid model, because it makes concrete all the blocks
+whose addresses are cast to integers, even if the cast integers are not used in any operation.  See
 \Cref{sec:intptrcast:compiler-verification:examples} for how to verify this example in our model.
 Furthermore, our model allows most of the optimizations in practice that would be performed in the
 minimally-concrete model presented above (see \Cref{sec:intptrcast:formal-semantics:drawbacks} for
@@ -264,15 +266,6 @@ Thus, you lose the ownership over the block and cannot justify the constant prop
    % optimization is not used in all real-world compilers (it is
    % performed by \code{clang -O2} and higher, but not by \code{gcc
    %   -O2} or higher).
-
-
-\subsection{Fix to the GCC bug}
-
-According to our model, the GCC bug presented in \Cref{fig:introduction:bug} is due to too
-aggressive alias analysis that concludes \code{p} is not a valid pointer.  In the presence of casts
-between pointers and integers, casting a pure integer to a pointer may results in a valid pointer to
-a concrete block.  Actually, \code{p} is alised with \code{\&x} and thus the constant propagation
-optimization should not kick in for the example.
 
 
 \subsection{Operations on Pointers}
@@ -863,6 +856,31 @@ of memory cells.
 %% same syntax to serve as both a high-level intermediate language with
 %% the hybrid memory model, and a low-level intermediate language
 %% in which all memory locations are concrete addresses.
+
+
+
+\section{Fix to the LLVM and GCC miscompilation Bugs}
+\label{sec:intptrcast:fix}
+
+According to our model, the LLVM bug presented in \Cref{fig:introduction:bug} is due to the first
+and the fourth optimizations:\footnote{Our proposal coincides with the consensus in the bug tracker:
+  \url{https://bugs.llvm.org/show_bug.cgi?id=34548}.}
+\begin{enumerate}
+\item[1.] The compiler should not replace the integer comparison \code{pi != yi} at line \code{4}
+  with the pointer comparison \code{\&x != y+1}, because comparing integers is always safe but
+  comparing pointers with different origins invokes undefined behavior.
+\item[4.] The compiler should not replace \code{(int*)pi} at line \code{13} with \code{y+1}, because
+  \code{y+1} is out of range.
+\end{enumerate}
+
+On the other hand, the GCC bug presented in \Cref{fig:intptrcast-introduction:bug} is due to the too
+aggressive alias analysis:
+\begin{enumerate}
+\item[2.] The compiler should not conclude that \code{p} is an invalid pointer.  In the presence of
+  casts between pointers and integers, casting a pure integer to a pointer may results in a valid
+  pointer to a concrete block.  Actually, \code{p} is alised with \code{\&x} and thus the constant
+  propagation optimization should not kick in.
+\end{enumerate}
 
 
 %%% Local Variables:

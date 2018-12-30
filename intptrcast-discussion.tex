@@ -15,7 +15,7 @@ All optimization examples presented in the paper are performed by Clang
 results can be found in the project webpage.
 
 
-\subsection{Related Work on Formal Semantics}
+\subsection{Related Work}
 
 \paragraph{Formal Memory Models}
 There have been numerous efforts to formalize C semantics, both from
@@ -279,9 +279,9 @@ void foo(int *p) {
 \subsection{Impact}
 
 In the course of doing this research, we discovered the GCC bug presented in
-\Cref{fig:introduction:bug}.  With this bug, we persuaded compiler writers that $(1)$ it is subtle
-to define the semantics of casts between pointers and integers, and $(2)$ it is safe to turn off
-some alias analyses that are too aggressive to peacefully coexist with other optimizations.
+\Cref{fig:intptrcast-introduction:bug}.  With this bug, we persuaded compiler writers that $(1)$ it
+is subtle to define the semantics of casts between pointers and integers, and $(2)$ it is safe to
+turn off some alias analyses that are too aggressive to peacefully coexist with other optimizations.
 
 Our idea to give semantics to more programs involving pointer operations---namely, using concrete
 and logical blocks at the same time---has subsequently been refined by follow-up papers by other

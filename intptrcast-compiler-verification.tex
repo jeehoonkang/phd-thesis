@@ -1,4 +1,4 @@
-\section{Compiler Verification}
+\section{Compiler Verification Techniques and Examples}
 \label{sec:intptrcast:compiler-verification}
 
 In this section, we present a compiler verification technique for proving semantic preservation
@@ -59,16 +59,18 @@ performed.
 % To handle this, we also observes \emph{partial behaviors}, possibly before discarding behavior due
 % to running out of memory:
 
-Though our treatment of out of memory---as well as that of all the other existing formal
-semantics---is not entirely satisfactory.  Firstly, our semantics may not justify those
-optimizations that reduce memory consumption instead of increasing it, such as register promotion
-and dead allocation elimination.  Furthermore, the ISO C18 standard says that \code{malloc} returns
-zero in case of out of memory~\cite[\S7.22.3p1]{c18}, instead of allowing no behaviors.  The ISO C18
-standard semantics, however, is also unsatisfactory in that it does not justify dead allocation
-eliminations, \eg{} if a dead malloc is eliminated, then the source may have more allocated blocks
-than the target has and thus a subsequent allocation may return zero in the source but return a
-valid pointer in the target.  For these reasons, we leave defining a more proper semantics of out of
-memory as a future work.
+We have to admit that our treatment of out of memory---as well as that of all the other existing
+formal semantics---is not entirely satisfactory.  Firstly, our semantics may not justify those
+optimizations that reduce (concrete) memory consumption instead of increasing it, such as dead cast
+elimination.\footnote{Notice that register promotion and dead allocation elimination does not reduce
+  concrete memory consumption in our hybrid model because they remove purely logical memory blocks.}
+Furthermore, the ISO C18 standard says that \code{malloc} returns zero in case of out of
+memory~\cite[\S7.22.3p1]{c18}, instead of allowing no behaviors.\footnote{The ISO C18 standard
+  semantics, however, is also unsatisfactory in that it does not justify dead allocation
+  eliminations, \eg{} if a dead malloc is eliminated, then the source may have more allocated blocks
+  than the target has and thus a subsequent allocation may return zero in the source but return a
+  valid pointer in the target.}  We leave defining a more proper semantics of out of memory as a
+future work.
 
 
 \subsection{Running Example \& Informal Verification}
