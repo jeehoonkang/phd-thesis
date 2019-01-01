@@ -3,14 +3,14 @@
 
 The C programming language is used as the \emph{lingua franca} for systems programming, mainly due
 to its three notable advantages: \emph{low-level features}, \emph{portability}, and
-\emph{performance}.  C provides low-level features that offer precise control over hardware such as
-pointer manipulation, shared-memory concurrency, and asynchronous interrupt.  At the same time, C is
-portable in that C programs can be compiled and then executed in most of the existing hardware.
-Furthermore, C provides decent performance: a program written in C are usually outperforming
-equivalent programs written in other languages---even including carefully hand-written assembly
-programs---when they are performing exactly the same task.  These advantages for decades have
-attracted system programmers, and as a result, a giant ecosystem was built around the C programming
-language.
+\emph{performance}.  C provides low-level features that offer programmers precise control over
+hardware such as pointer manipulation, shared-memory concurrency, and asynchronous interrupt.  At
+the same time, C is portable in that C programs can be compiled and then executed in most of the
+existing hardware.  Furthermore, C provides decent performance: a program written in C are usually
+outperforming equivalent programs written in other languages---even including carefully hand-written
+assembly programs---when they are performing exactly the same task.  These advantages for decades
+have attracted system programmers, and as a result, a giant ecosystem was built around the C
+programming language.
 
 C provides low-level features and portability---seemingly conflicting properties---at the same time
 because it is a balanced abstraction over various hardware assembly languages.  If C were exposing
@@ -106,12 +106,12 @@ void g() {
 \noindent Here, the function \code{g()} tries to \emph{guess} the address of \code{a} by exploiting
 the fact that stack usually grows downwards with a fixed offset: it first declares a variable
 \code{anchor} and guesses that \code{a} is located 10 words later than than \code{anchor} is.  While
-extremely dangerous, the guess sometimes happens to be correct, invalidating the compiler's
-reasoning that \code{a} is accessible only within the function \code{f()}.  If it is the case, when
-linked with \code{g()}, the original \code{f()} will print the evil value 666; on the other hand,
-the optimized \code{f()} will print the expected value 42.\footnote{We got these results by
-  separately compiling \code{f()} and \code{g()} and then linking them using GCC 8.2.1 with compile
-  option \code{-fno-stack-protector} in an x86-64 machine running Linux 4.20.}
+extremely dangerous and thus discouraged, the guess sometimes happens to be correct, invalidating
+the compiler's reasoning that \code{a} is accessible only within the function \code{f()}.  If it is
+the case, when linked with \code{g()}, the original \code{f()} will print the evil value 666; on the
+other hand, the optimized \code{f()} will print the expected value 42.\footnote{We got these results
+  by separately compiling \code{f()} and \code{g()} and then linking them using GCC 8.2.1 with
+  compile option \code{-fno-stack-protector} in an x86-64 machine running Linux 4.20.}
 
 To rescue the soundness of constant propagation, the ISO C18 standard~\cite{c18} blames \code{g()}
 for violating the rule of the C programming language by marking it as invoking \emph{undefined
@@ -120,20 +120,19 @@ for violating the rule of the C programming language by marking it as invoking \
 \code{anchor}'s allocation~\cite[\S6.5.6p8]{c18}.  (Roughly speaking, all the pointers derived from
 \code{anchor} \emph{shall} point to \code{anchor}; otherwise, the behavior is undefined.)  Now an
 instance of undefined behavior allows compilers to do anything it chooses, from arbitrarily changing
-the code to even making ``demons fly out of your nose''~\cite{nasal-demons}, justifying the constant
-propagation optimization.\footnote{Notice that undefined behavior is not necessary for higher-level
-  languages---such as Java, C\#, OCaml, Haskell---to justify compiler optimizations thanks to their
-  lack of low-level features.  For example, constant propagation is immediately justified in Haskell
-  without resorting to undefined behavior thanks to its lack of raw pointer.}
+the code and thereby justifying the constant propagation optimization to even making ``demons fly
+out of your nose''~\cite{nasal-demons}.\footnote{Notice that undefined behavior is not necessary for
+  higher-level languages---such as Java, C\#, OCaml, Haskell---to justify compiler optimizations
+  thanks to their lack of low-level features.  For example, constant propagation is immediately
+  justified in Haskell without resorting to undefined behavior thanks to its lack of raw pointer.}
 
 Notice that C intentionally loses the ability to manipulate pointers in an unrestricted way---\eg{}
 deriving the address of \code{a} from that of \code{anchor}---in order to justify the constant
 propagation optimization.  This is beneficial because the performance improvement offered by
-compiler optimizations outweights the ability to precisely control over hardware in poorly written
-programs offered by low-level features.  Indeed, it is dangerous and thus discouraged to manipulate
-pointers in such a way to guess the address of \code{a}.  As a result, pointers in C should have a
-richer structure than those in assembly languages that have the same representation as integer
-values of the appropriate width and simply index into a single flat array representing memory.
+compiler optimizations outweights the cost of the restriction on the low-level feature for poorly
+written programs.  As a result, pointers in C should have a richer structure than those in assembly
+languages that have the same representation as integer values of the appropriate width and simply
+index into a single flat array representing memory.
 
 Such a practice of taming low-level features for supporting compiler optimizations is actually quite
 common in the design of the C programming language: mainstream compilers are performing aggressive
@@ -151,13 +150,13 @@ languages \emph{and} compiler optimizations.
 \label{sec:introduction:problem}
 
 Unfortunately, despite many years of research and industrial efforts~\cite{c18}, it has proven very
-difficult to adequately support both compiler optimizations and some of the low-level features
-crucially used in systems programming, such as unrestricted manipulation of pointer values,
-relaxed-memory concurrency, and separate compilation.  On the one hand, C should support the
-sophisticated and yet effective optimizations performed by mainstream compilers.  On the other hand,
-C should also support the common usage patterns of those low-level features.  To the best of our
-knowledge, none of the existing proposals for the C programming language semantics succeeded in
-adequately supporting standard compiler optimizations and those low-level features at the same time.
+difficult to adequately balance the conflicting criteria on low-level features and compiler
+optimizations in the design of the C programming language.  On the one hand, C should support the
+common usage patterns of the low-level features crucially used in systems programming, such as
+manipulation of pointer values, relaxed-memory concurrency, and separate compilation.  On the other
+hand, C should also support the sophisticated and yet effective optimizations performed by
+mainstream compilers, such as register promotion, constant propagation, and dead code elimination.
+
 
 % occasionally defeating the intention of programmers to precisely control over hardware.
 
@@ -194,7 +193,11 @@ adequately supporting standard compiler optimizations and those low-level featur
 % behavior.
 
 
-\paragraph{Prior Art}
+\paragraph{Prior Work}
+
+To the best of our knowledge, none of the existing proposals for C semantics sufficiently support
+both low-level features and compiler optimizations at the same time.  As a consequence, the meaning
+of C programs that use use low-level features is often unclear.
 
 The ISO C standard, even after a series of revisions including C89, C99, C11, and C18, still has
 quite unclear specification for some of the low-level features as of this writing.  First, ISO
@@ -202,32 +205,33 @@ C18~\cite{c18} informally describes the C programming language in English prose,
 ambiguous and confusing.  The problem has only worsened by the fact that the description contains
 many ad-hoc exceptions including 203 cases of undefined behavior~\cite[J.2]{c18}.  Second, ISO C18
 intentionally leaves the precise meaning of some of the low-level features undefined.  For example,
-while cast between integers and pointers is an essential feature for applications such as operating
-system kernels and language runtimes, it semantics is not properly defined in ISO C18.
+the semantics of cast between integers and pointers is not properly defined in ISO C18, while it is
+essential for applications such as operating system kernels and language runtimes.
 
-Accordingly, there have been numerous efforts to formally capture the subtleties of the ISO C
-standard by giving an alternative language definition~\cite{compcert, vellvm, k-c, norrish,
-  krebbers}.  However, all these projects lack support for various low-level features.
+Accordingly, there have been numerous efforts to capture the subtleties of the ISO C standard by
+giving an alternative formal language
+definition~\cite{leroy:compcert,vellvm,ellison2012executable,norrish1998c,krebbers}.  However, all
+these projects---while supporting a significant subset of ISO C99 or LLVM IR---lack support for
+various low-level features.
 
-As a consequence, many systems programming communities, \eg{} the Linux kernel developers, use their
-own \emph{dialect} of C that is closer to assembly languages and supports more low-level features
-and less compiler optimizations than the standard.  The dialects, however, are often informally
+As a result, many systems programming communities, \eg{} the Linux kernel developers, use their own
+\emph{dialect} of C that is closer to assembly languages and supports more low-level features and
+less compiler optimizations than the standard.  The dialects, however, are often informally
 described as the set of turned-on compiler optimizations (\eg{} ``\code{gcc -O2}''), whose meaning
-is unstable and changing.
+is unclear and unstable.
 
 
 \paragraph{Problem}
 
-The unclear specification of ISO C18 causes difficulties to both programmers and compiler writers.
-For programmers, it is difficult to expect how compiled programs will behave---especially when they
-use low-level features---because compiler optimizations often introduce surprising non-local changes
-and difficult-to-find bugs in program behavior~\cite{wang2013towards,yang2011finding}.  As a result,
-mainstream compilers are typically unused for safety-critical systems or used with only few compiler
-optimizations turned on, significantly increasing verification cost and degrading performance of
-safety-critical systems.  One the other hand, for compiler writers, it is difficult to figure out
-whether an optimization is sound or not.  Even worse, sometimes a combination of
-optimizations---while each and every one of them seems legit---results in miscompilation bugs, for
-which it is unclear how to fix.
+The unclear meaning of C programs causes difficulties to both programmers and compiler writers.  For
+programmers, it is difficult to expect how compiled programs will behave because compilers may
+surprisingly perform optimizations that introduce non-local changes and difficult-to-find bugs in
+program behavior~\cite{wang2013towards,yang2011finding}.  As a result, mainstream compilers are
+typically unused for safety-critical systems or used with only few compiler optimizations turned on,
+significantly increasing verification cost and degrading performance of safety-critical systems.
+One the other hand, for compiler writers, it is difficult to figure out whether an optimization is
+sound or not.  Even worse, sometimes a combination of optimizations---while each and every one of
+them seems legit---results in miscompilation bugs, for which it is unclear how to fix.
 
 % in particular, those bugs are not effectively found and fix by testing due to unclear specification.
 
@@ -333,45 +337,45 @@ open in the bug tracker as of this writing.
 
 \subsection{Reconciling Low-Level Features and Compiler Optimizations}
 
-\paragraph{Formal Semantics}
+In this dissertation, we develop \emph{formal semantics} for three crucial low-level features that
+$(1)$ supports their common usage patterns and $(2)$ validates standard compiler optimizations at
+the same time.  Developing formal semantics requires thorough understanding of both low-level
+features and compiler optimizations, as formal semantics should resolve the conflict between them.
 
-In order to address the difficulties caused by the unclear specification of compiler optimizations,
-we
+Formal semantics addresses the difficulties caused by the unclear specification of C programs.
+Formal semantics is a mathematically clear definition of program behaviors, as opposed to informal
+and often ambiguous and confusing English prose as in the ISO C18 standard.
+
+% For instance, formal semantics should point out which optimization(s) is to blame in the
+% miscompilation bug above.
+
+% formally \emph{understand} and \emph{verify} optimizations as follows:
+
+% In this dissertation, we push forward this research direction---namely, understanding and verifying
+% compiler optimizations via formal semantics and soundness proof---to also account for three
+% low-level features 
 
 
-researchers have proposed to formally \emph{understand} and \emph{verify} optimizations as follows:
+
+\textbf{Verifying optimizations by proving their soundness}~\cite{compcert,vellvm}: To achieve
+higher level of reliability for compiler optimizations, researchers verified optimizations with a
+\emph{machine-checked} soundness proof, which formally guarantees that the optimizations preserve
+the semantics of source programs and do not introduce any bugs.  The absence of miscompilation bugs
+enables verified optimizations to be used even for safety-critical systems with confidence.
 
 
-In this dissertation, we push forward this research direction---namely, understanding and verifying
-compiler optimizations via formal semantics and soundness proof---to also account for three
-low-level features that are crucially used in systems programming and yet were beyond the reach of
-the prior work.  Specifically, we design formal semantics for \emph{relaxed-memory concurrency}
+
+Specifically, we design formal semantics for \emph{relaxed-memory concurrency}
 (\Cref{chap:relaxed}), \emph{separate compilation and linking} (\Cref{chap:sepcomp}), and \emph{cast
   between integers and pointers} (\Cref{chap:intptrcast}), and prove the soundness of major compiler
 optimizations in the presence of those features.  To establish confidence in our contributions, we
 have formalized most of the key results in the Coq theorem prover~\cite{coq}.  The formalization is
 available online~\cite{kang-phd-thesis-web}.
 
+that are crucially used in systems programming and standard compiler optimizations. and yet were
+beyond the reach of the prior work.
 
 
-\begin{itemize}
-\item \textbf{Understanding optimizations by designing formal
-    semantics}~\cite{norrish1998c,leroy:compcert,ellison2012executable}: Formal semantics is a
-  mathematically clear definition of program behaviors, as opposed to informal and often ambiguous
-  and confusing English prose as in the ISO C18 standard.  Designing formal semantics requires
-  thorough understanding of compiler optimizations, as formal semantics should adequately strike the
-  balance between control and performance: it should allow programmers to precisely control over the
-  hardware; and at the same time, it should inform compiler writers which optimizations are sound.
-  For instance, formal semantics should point out which optimization(s) is to blame in the
-  miscompilation bug above.
-
-\item \textbf{Verifying optimizations by proving their soundness}~\cite{compcert,vellvm}: To achieve
-  higher level of reliability for compiler optimizations, researchers verified optimizations with a
-  \emph{machine-checked} soundness proof, which formally guarantees that the optimizations preserve
-  the semantics of source programs and do not introduce any bugs.  The absence of miscompilation
-  bugs enables verified optimizations to be used even for safety-critical systems with confidence.
-
-\end{itemize}
 
 % Accordingly, there have been numerous efforts to capture the subtleties of the C standard
 % formally, either by giving an alternative language definition or a conforming implementation.
@@ -422,12 +426,15 @@ type checker, and an SSA-aware register promotion algorithm that is simplified f
 % safety-critical embedded systems.
 
 However, these projects make unrealistic simplifying assumptions on C semantics and compilers,
-skating over the complexity of the real-world practice of systems programming.  First, CompCert and
-Vellvm---while supporting a significant subset of C99 and LLVM IR, respectively---lack support for
-various low-level features that are crucially used in systems programming.  Second, they only
-perform quite straightforward optimizations that are way less sophisticated than those in mainstream
-compilers.  In short, CompCert and Vellvm provide less control over hardware and lower performance
-than mainstream compilers.
+skating over the complexity of the real-world practice of systems programming.
+
+% First, CompCert and Vellvm---while supporting a significant subset of C99 and LLVM IR,
+% respectively---lack support for various low-level features that are crucially used in systems
+% programming.
+
+Second, they only perform quite straightforward optimizations that are way less sophisticated than
+those in mainstream compilers.  In short, CompCert and Vellvm provide less control over hardware and
+lower performance than mainstream compilers.
 
 % and support only limited use cases of compilers, \eg{} they did not verify linking.
 
