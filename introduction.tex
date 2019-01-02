@@ -153,7 +153,8 @@ Unfortunately, despite many years of research and industrial efforts~\cite{c18},
 difficult to adequately balance the conflicting criteria for low-level features and compiler
 optimizations in the design of the C programming language.  On the one hand, C should support the
 common usage patterns of the low-level features in systems programming, such as relaxed-memory
-concurrency, separate compilation, and cast between integers and pointers.  On the other hand, C
+concurrency, separate compilation, and cast between integers and pointers.  In addition, programmers
+should be able to reason about programs that use the low-level features.  On the other hand, C
 should also support the sophisticated and yet effective optimizations performed by mainstream
 compilers, such as register promotion, constant propagation, and dead code elimination.  To the best
 of our knowledge, none of the existing proposals for C semantics sufficiently support both low-level
@@ -207,7 +208,7 @@ essential for applications such as operating system kernels and language runtime
 
 Accordingly, there have been numerous efforts to capture the subtleties of the ISO C standard by
 giving an alternative formal language
-definition~\cite{leroy:compcert,vellvm,ellison2012executable,norrish1998c,krebbers}.  However, all
+definition~\cite{leroy:compcert,vellvm:popl12,ellison2012executable,norrish1998c,krebbers}.  However, all
 these projects---while supporting a significant subset of ISO C99 or LLVM IR---make unrealistic
 simplifying assumptions on C semantics and lack support for various low-level features.
 % skating over the complexity of the real-world practice of systems programming.
@@ -345,8 +346,8 @@ In this dissertation, we resolve the conflict between some of the low-level feat
 in systems programming and major compiler optimizations.  Specifically, we \emph{develop formal
   semantics} of \emph{relaxed-memory concurrency} (\Cref{chap:relaxed}), \emph{separate compilation}
 (\Cref{chap:sepcomp}), and \emph{cast between integers and pointers} (\Cref{chap:intptrcast}) that
-$(1)$ supports their common usage patterns in systems programming and $(2)$ provably validates major
-compiler optimizations at the same time.
+$(1)$ supports their common usage patterns and reasoning principles, and $(2)$ provably validates
+major compiler optimizations at the same time.
 
 % Developing such a formal semantics requires thorough understanding of the low-level features and
 % compiler optimizations because, as we have seen in \Cref{sec:introduction:problem}, it should
@@ -354,12 +355,12 @@ compiler optimizations at the same time.
 
 % and yet were beyond the reach of the prior work.
 
-Such a formal semantics is beneficial to both programmers and compiler writers.  Since formal
-semantics is a mathematically clear definition of program behaviors, it makes possible for
-programmers to expect how compiled programs will behave regardless of which optimizations are
-performed by compilers.  On the other hand, compiler writers can figure out whether an optimization
-is sound or not using formal semantics as the criteria.  In particular, with formal semantics, we
-can point out which optimization(s) is to blame in the miscompilation bug above.
+Our formal semantics is beneficial to both programmers and compiler writers.  Since formal semantics
+is a mathematically clear definition of program behaviors, it makes possible for programmers to
+expect how compiled programs will behave regardless of which optimizations are performed by
+compilers.  On the other hand, compiler writers can figure out whether an optimization is sound or
+not using formal semantics as the criteria.  In particular, with formal semantics, we can point out
+which optimization(s) is to blame in the miscompilation bug above.
 
 To establish confidence in our formal semantics, we \emph{prove the soundness of compiler
   optimizations} in the presence of the low-level features.  The soundness proof guarantees that
@@ -409,12 +410,13 @@ requires a thread-local certification that it will be possible to execute the pr
 the absence of the promise.
 
 Our semantics draws interest from both industry and academia.  Our semantics not only serves as a
-guide to C/C++ relaxed-memory concurrency~\cite{blog,niko} but also influences the discussion on the
-standard semantics for C/C++ and compiler IRs (private communication in mailing lists).
-\cite{viktor-logic} developed reasoning principles for our semantics, and \cite{viktor-compilation}
-validated compilation schemes for our semantics to various architectures such as ARMv7, ARMv8,
-RISC-V, and Power.  Furthermore, the idea of promises and certification is also used to model the
-relaxed-memory concurrency in ARMv8 and RISC-V~\cite{promising-armv8-riscv}.
+guide to C/C++ relaxed-memory concurrency~\cite{kang-synch-patterns,niko-promising-semantics} but
+also influences the discussion on the standard semantics for C/C++ and compiler IRs (private
+communication in mailing lists).  Svendsen~\etal{} developed reasoning principles for our
+semantics~\cite{promising-logic}, and Podkopaev~\etal{} validated compilation schemes for our
+semantics to various architectures such as ARMv7, ARMv8, RISC-V, and Power~\cite{imm-compilation}.
+Furthermore, the idea of promises and certification is also used to model the relaxed-memory
+concurrency in ARMv8 and RISC-V~\cite{promising-armv8-riscv}.
 
 This chapter draws heavily on the work and writing in the following paper:
 
@@ -433,8 +435,7 @@ compilation.  Recently, a number of sophisticated techniques have been proposed 
 flexible, compositional notions of compiler correctness, but these approaches tend to be quite
 heavyweight compared to the simple ``closed simulations'' used in verifying whole-program
 compilation.  Applying such techniques to a compiler like CompCert, as Stewart \etal{} have
-done~\cite{compositional-compcert}, involves major changes and extensions to its original
-verification.
+done~\cite{stewart+:popl2015}, involves major changes and extensions to its original verification.
 
 In this chapter, we show that if we aim somewhat lower---to prove correctness of separate
 compilation, but only for a single compiler---we can drastically simplify the proof effort.  Toward

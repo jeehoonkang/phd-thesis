@@ -67,16 +67,16 @@ find a memory model that satisfies the following properties:
 % model are the following:
 \vspace{-.5ex}
 \begin{itemize}
-\item The model should be \emph{implementable}, \ie it should validate
-  common compiler optimizations, as well as standard compilation
-  schemes to the major modern architectures.  To be implementable, it
-  must justify many kinds of instruction reordering and merging.\\[-2.5ex]
 \item The model should support \emph{high-level reasoning} principles
   that programmers and compiler analyses depend on.  At a bare
   minimum, it should validate simple invariant-based verification, and
   should provide some ``DRF'' guarantees~\cite{Adve:1990}, ensuring that
   programmers who employ sufficient synchronization need not understand
   the full complexities of relaxed-memory semantics.\\[-2.5ex]
+\item The model should be \emph{implementable}, \ie it should validate
+  common compiler optimizations, as well as standard compilation
+  schemes to the major modern architectures.  To be implementable, it
+  must justify many kinds of instruction reordering and merging.\\[-2.5ex]
 \item The model should ideally \emph{avoid relying on undefined
     behavior} to define the semantics of racy programs.  This is a
   prerequisite for applicability to type-safe languages like Java, in

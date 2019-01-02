@@ -52,7 +52,7 @@ by construction.
 In the subsequent subsections, we discuss several issues that arose during the design of our hybrid
 model and justify our solutions to the issues.
 
-\subsection{Why Hybrid?}
+\subsection{Combining Logical and Concrete Blocks}
 \label{sec:intptrcast:formal-semantics:hybrid}
 
 %\todo{Give a forward reference to related work with the APLAS paper.
@@ -108,7 +108,7 @@ Notice that this optimization is sound in our model.  See
 \Cref{sec:intptrcast:compiler-verification:examples} for how to verify it in our model.
 
 
-\subsection{Which Blocks are Concretized?}
+\subsection{Choosing Concrete Blocks}
 \label{sec:intptrcast:formal-semantics:cast}
 
 As discussed in \Cref{sec:background:memory}, using concrete addresses for memory locations provides
@@ -186,7 +186,7 @@ minimally-concrete model presented above (see \Cref{sec:intptrcast:formal-semant
 details).
 
 
-\subsection{When Concrete Addresses are Assigned to Blocks?}
+\subsection{Assigning Concrete Addresses}
 \label{sec:intptrcast:formal-semantics:ownership}
 
 Once we know which blocks will need concrete addresses, we need to

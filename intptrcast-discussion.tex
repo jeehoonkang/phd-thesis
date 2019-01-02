@@ -292,14 +292,14 @@ proposals to the LLVM compiler and ISO C standard.
 % operations.
 
 We intend to use this model for compiler verification tasks, extending the range of common
-optimizations that can be verified.  Ultimately, we would like to generalize
-Crellvm~\cite{crellvm}---the credible compilation framework for LLVM---to support casts between
-pointers and integers.  We would also like to integrate our model with CompCert and use it to
-justify new CompCert optimizations.  We believe that our ideas are readily applicable to
-CompCert(TSO) and related projects like Vellvm~\cite{vellvm:popl12,vellvm:pldi13} because our memory
-model and notion of memory invariant are technically very close to CompCert's.  (Vellvm also uses
-CompCert's memory model.)  Essentially, all that would have to change in the proofs are the cases
-handling pointer to integer casts.
+optimizations that can be verified.  Ultimately, we would like to generalize Crellvm~\cite{crellvm},
+which is a credible compilation framework for LLVM, to support casts between pointers and integers.
+We would also like to integrate our model with CompCert and use it to justify new CompCert
+optimizations.  We believe that our ideas are readily applicable to CompCert(TSO) and related
+projects like Vellvm~\cite{vellvm:popl12,vellvm:pldi13} because our memory model and notion of
+memory invariant are technically very close to CompCert's.  (Vellvm also uses CompCert's memory
+model.)  Essentially, all that would have to change in the proofs are the cases handling pointer to
+integer casts.
 
 % all commonly-used features of C.
 

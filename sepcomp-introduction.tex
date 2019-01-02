@@ -216,8 +216,9 @@ single \emph{module} $M$ in terms of a ``contextual'' correctness statement abou
 when linked with arbitrary other modules to form a complete program.  The latter has the advantage
 of being a statement about closed (whole) programs, and as such, we can prove it using the kind of
 simple, closed-simulation-style proofs employed in traditional verifications of whole-program
-compilation.  This in turn enables us to significantly reuse existing compiler proofs.  We believe
-the lightweight nature of our techniques---and the consequent ease of adapting existing
+compilation, as far as the compiler's transformations and optimizations satisfy what we call
+\emph{monotonicity}.  This in turn enables us to significantly reuse existing compiler proofs.  We
+believe the lightweight nature of our techniques---and the consequent ease of adapting existing
 verifications to use them---will make them a highly attractive option for compiler verifiers.
 
 We demonstrate the effectiveness of our techniques by applying them to CompCert 2.4.  In less than

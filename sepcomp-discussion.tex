@@ -12,7 +12,7 @@
 % We need to handle local name space in the def of syntatic linking.
 % Since there are several ways to define it, we leave it to Xavier.
 
-\subsection{Related Work on Compositional Compiler Correctness}
+\subsection{Related Work}
 
 \paragraph{Compositional CompCert}
 
@@ -78,7 +78,7 @@ propagation, and inlining).  Second, due to its use of interaction
 semantics, Compositional CompCert employs a bespoke ``semantic''
 notion of linking (even for linking assembly files), which has not yet
 been related to the standard notion of syntactic linking (see
-\Cref{sec:adaptconstprop}) that we employ in our
+\Cref{sec:sepcomp:constprop}) that we employ in our
 verification.  Syntactic linking corresponds much more closely to the
 physical linking of machine code implemented by the \code{gcc} linker
 that CompCert uses by default.  Proving this is outside the scope of

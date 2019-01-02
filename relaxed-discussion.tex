@@ -117,7 +117,7 @@ liveness guarantees, whatever these are. No?}
 \paragraph{Reasoning Principle}
 
 The program logic presented in \Cref{sec:invariant} only establishes the very basic sanity of our
-memory model.  Svendsen~\etal{promising-separation-logic} propopsed a separation logic for our
+memory model.  Svendsen~\etal{}~\cite{promising-logic} propopsed a separation logic for our
 semantics that is capable of proving the absence of out-of-thin-air behaviors for various litmus
 tests.  Developing reasoning principles for our semantics that is capable of verifying concurrent
 data structures and algorithms, is a direction for future work.
@@ -125,10 +125,10 @@ data structures and algorithms, is a direction for future work.
 
 \paragraph{Promising Semantics for Hardware Concurrency}
 
-Using the main idea of our semantics---namely views and promises, Pulte~\etal{} proposed the
-promising semantics for ARMv8/RISC-V which is a simpler and faster operational concurrency semantics
-than the existing models for those architectures~\cite{promising-arm}.  Developing the promising
-semantics for other architectures is left for future work.
+Using the main idea of our semantics, namely views and promises,
+Pulte~\etal{}~\cite{promising-armv8-riscv} proposed the promising semantics for ARMv8/RISC-V which
+is a simpler and faster operational concurrency semantics than the existing models for those
+architectures.  Developing the promising semantics for other architectures is left for future work.
 
 
 \paragraph{Simulation and Model Checking}
@@ -136,9 +136,9 @@ semantics for other architectures is left for future work.
 The high degree of nondeterminism in relaxed-memory concurrency makes it hard to exhaustively
 explore all possible behaviors of a given program.  In an ongoing work, we are developing efficient
 methods and tools for this purpose by leveraging the idea of views and promises to tame the
-nondeterminism.  In particular, Pulte~\etal{} developed an efficient model checker for ARMv8/RISC-V,
-and using this model checker, we verified realistic concurrent data structures such as Michael-Scott
-queue and Chase-Lev deque~\cite{promising-arm}.
+nondeterminism.  In particular, Pulte~\etal{}~\cite{promising-armv8-riscv} developed an efficient
+model checker for ARMv8/RISC-V, and using this model checker, they verified realistic concurrent
+data structures such as Michael-Scott queue and Chase-Lev deque.
 
 %% Based on our
 %% understanding of ARMv8 architecture~\cite{}, we believe that our model is

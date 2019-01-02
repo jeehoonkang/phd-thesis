@@ -19,11 +19,11 @@ interest from the avionics industry~\cite{TODO}, and recently, it is certified f
 nuclear power plant~\cite{compcert-nuclear}.  It has also served as a fundamental building block in
 academic work on end-to-end verified software~\cite{TODO}.
 
-We first explain CompCert's correctness statement, as well as its simulation verification technique
-(\Cref{sec:background:correctness}).  To flesh out the details on formal semantics and compiler
-verification, we use RTL---one of CompCert's internal representations---and constant
-propagation---one of CompCert's optimizations---as a running example.  Specifically, We first review
-CompCert's memory model that is specifically designed to verify compiler optimizations
+In this section, we first explain CompCert's correctness statement, as well as its simulation
+verification technique (\Cref{sec:background:correctness}).  To flesh out the details on formal
+semantics and compiler verification, we use RTL---one of CompCert's internal representations---and
+constant propagation---one of CompCert's optimizations---as a running example.  Specifically, We
+first review CompCert's memory model that is specifically designed to verify compiler optimizations
 (\Cref{sec:background:memory}).  Then we explain the RTL language on which constant propagation and
 most of the other optimizations are performed in the CompCert's compilation pipeline
 (\Cref{sec:background:rtl}), and how constant propagation works and how CompCert verifies it
