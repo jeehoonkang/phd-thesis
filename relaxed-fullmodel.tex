@@ -691,8 +691,6 @@ where $x\in\Loc$, $v\in\Val$, $f,t\in\Time$, and $\mrel\in \View$,
 such that $f<t$ or $f=t=\ts{0}$, and $\mrel.\lrw(x) = t$ or $\mrel = \bot$.
 We denote by $m.\lloc$, $m.\lval$, $m.\lfrom$, $m.\lto$, and $m.\lmrel$ the components of $m$.
 
-\figfull
-
 \paragraph{Memory}
 A \emph{memory} is a (nonempty) pairwise disjoint finite set of messages
 (see \Cref{sec:updates} for def.\ of disjointness).
@@ -726,6 +724,8 @@ $\mem'\in\{\mem\insertadd m,\mem \insertsplit m,\mem \insertupdate m\}$
 for some message $m$, and $\mem'$ is closed.
 We say that $\mem'$ is a \emph{future memory} of $\mem$ w.r.t. a memory $\lprom$,
 if $\lprom \subseteq \mem'$ and  $\mem \astep{}^* \mem'$.
+
+\figfull
 
 \paragraph{Threads}
 A \emph{thread view} is a triple $\tcom=\tup{\cur,\acq,\rel}$,
