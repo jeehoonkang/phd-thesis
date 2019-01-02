@@ -1,4 +1,4 @@
-\section{Future and Follow-up Work}\label{sec:discussion}
+\section{Follow-up and Future Work}\label{sec:discussion}
 
 % there are a number of interesting issues remaining for future work
 
@@ -15,9 +15,9 @@ accesses is left for future work (see \Cref{sec:promising}).
 
 Podkopaev~\etal{} established the correctness of compilation of our model to Power, ARMv7, and
 RISC-V, as well as to ARMv8 using a sub-optimal compilation scheme for read-modify-update
-instructions~\cite{imm}.  In fact, the optimal one used by mainstream compilers is unsound for our
-semantics due to the fact that ARMv8's read-modify-update instructions perform ``global''
-optimizations, which is beyond the reach of our semantics as we will explain shortly.
+instructions~\cite{imm-compilation}.  In fact, the optimal one used by mainstream compilers is
+unsound for our semantics due to the fact that ARMv8's read-modify-update instructions perform
+``global'' optimizations, which is beyond the reach of our semantics as we will explain shortly.
 
 % Establishing the correctness of the optimal compilation scheme to ARMv8 is left for future work.
 
@@ -71,7 +71,7 @@ all do not allow sequentialization.
 }
 
 Furthermore, thrad-local certification also renders unsound the optimal compilation scheme to ARMv8.
-Consider the following example~\cite[Example 3.10]{imm}:
+Consider the following example~\cite[Example 3.10]{imm-compilation}:
 
 $$\inarrIId{
 a:=x; \comment{1} \\

@@ -130,6 +130,70 @@ year="2018",
   howpublished = {\url{https://sf.snu.ac.kr/promising-arm-riscv/}},
 }
                   
+@article{intptrcast-oopsla,
+  author    = {Juneyoung Lee and
+               Chung{-}Kil Hur and
+               Ralf Jung and
+               Zhengyang Liu and
+               John Regehr and
+               Nuno P. Lopes},
+  title     = {Reconciling high-level optimizations and low-level code in {LLVM}},
+  journal   = {{PACMPL}},
+  volume    = {2},
+  number    = {{OOPSLA}},
+  year      = {2018},
+}
+                  
+@article{intptrcast-popl,
+  author    = {Kayvan Memarian and
+               Victor B. F. Gomes and
+               Brooks Davis and
+               Stephen Kell and
+               Alexander Richardson and
+               Robert N. M. Watson and
+               Peter Sewell},
+  title     = {Exploring C Semantics and Pointer Provenance},
+  journal   = {{PACMPL}},
+  volume    = {3},
+  number    = {{POPL}},
+  year      = {2019},
+}
+
+
+
+@inproceedings{compcert-avionics,
+  author = {Ricardo {Bedin França} and Denis Favre-Felix and Xavier Leroy
+            and Marc Pantel and Jean Souyris},
+  title = {Towards Optimizing Certified Compilation in Flight Control Software},
+  booktitle = {Workshop on Predictability and Performance in Embedded Systems (PPES 2011)},
+  pages = {59--68},
+  series = {OpenAccess Series in Informatics},
+  volume = 18,
+  publisher = {Dagstuhl Publishing},
+  year = {2011},
+  url = {http://hal.archives-ouvertes.fr/inria-00551370/},
+  urlpublisher = {http://dx.doi.org/10.4230/OASIcs.PPES.2011.59},
+  xtopic = {compcert},
+  abstract = {
+This work presents a preliminary evaluation of the use of the CompCert formally specified and verified  optimizing compiler for the development of level A critical flight control software. First, the motivation for choosing CompCert is presented, as well as the requirements and constraints for safety-critical avionics software. The main point is to allow optimized code generation by relying on the formal proof of correctness instead of the current un-optimized generation required to produce assembly code structurally similar to the algorithmic language (and even the initial models) source code. The evaluation of its performance (measured using WCET) is presented and the results are compared to those obtained with the currently used compiler. Finally, the paper discusses verification and certification issues that are raised when one seeks to use CompCert for the development of such critical software. }
+}
+                  
+@inproceedings{compcert-nuclear,
+  author = {Daniel Kästner and
+            Ulrich Wünsche and
+            Jörg Barrho and 
+            Marc Schlickling and
+            Bernhard Schommer and
+            Michael Schmidt and
+            Christian Ferdinand and
+            Xavier Leroy and
+            Sandrine Blazy},
+  title = {{CompCert}: Practical experience on integrating and qualifying
+           a formally verified optimizing compiler},
+  booktitle = {ERTS 2018: Embedded Real Time Software and Systems},
+  year = 2018,
+}
+                  
 @inproceedings{FlurEtAl2017,
   author = {Flur, S. and Sarkar, S. and Pulte, C. and Nienhuis, K. and Maranget, L. and Gray, K. E. and Sezgin, A. and Batty, M. and Sewell, P.},
   OPTauthor = {Flur, Shaked and Sarkar, Susmit and Pulte, Christopher and Nienhuis, Kyndylan and Maranget, Luc and Gray, Kathryn E. and Sezgin, Ali and Batty, Mark and Sewell, Peter},
@@ -596,7 +660,7 @@ year="2018",
 
 % relaxed-memory concurrency
 
-@inproceedings{repairing-sc,
+@inproceedings{rc11,
  author = {Lahav, Ori and Vafeiadis, Viktor and Kang, Jeehoon and Hur, Chung-Kil and Dreyer, Derek},
  title = {Repairing Sequential Consistency in C/C++11},
  series = {PLDI 2017},

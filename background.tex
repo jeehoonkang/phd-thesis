@@ -15,9 +15,9 @@ analyses and verifications performed on its input carry over soundly to its mach
 CompCert is realistic in the sense that it ``could realistically be used in the context of
 production of critical software''.  It compiles a significant subset of ISO C99 down to several
 architectures, and it performs a number of common and useful optimizations.  It received significant
-interest from the avionics industry~\cite{TODO}, and recently, it is certified for being used for
-nuclear power plant~\cite{compcert-nuclear}.  It has also served as a fundamental building block in
-academic work on end-to-end verified software~\cite{TODO}.
+interest from the avionics industry~\cite{compcert-avionics,avionics}, and recently, it is certified
+for being used for nuclear power plant~\cite{compcert-nuclear}.  It has also served as a fundamental
+building block in academic work on end-to-end verified software~\cite{appel:plcc}.
 
 In this section, we first explain CompCert's correctness statement, as well as its simulation
 verification technique (\Cref{sec:background:correctness}).  To flesh out the details on formal
@@ -29,7 +29,7 @@ most of the other optimizations are performed in the CompCert's compilation pipe
 (\Cref{sec:background:rtl}), and how constant propagation works and how CompCert verifies it
 (\Cref{sec:background:constprop}).  Throughout this section, we keep the presentation semi-formal,
 abstracting away unnecessary detail to get across the main ideas.  For more details, we refer the
-reader to \cite{compcert, compcert-memory-model}.
+reader to \cite{compcert, Leroy-Appel-Blazy-Stewart-memory-v2}.
 
 
 \subsection{Compiler Correctness}
@@ -584,10 +584,10 @@ at each node $n$ of the function's CFG, if the analysis has determined that a va
 then the use of that variable is replaced by the constant it holds, and the instruction is suitably simplified.
 
 For example, the algorithms works for the constant propagation example presented in
-\Cref{sec:introduction:context} as follows (albeit presented for a different language).  First, the
-analysis result for \code{x} is the constant number $42$ after line 10, and it continues to be $42$
-after line 20 because the address of \code{x} is not leaked to the external function.  Then based on
-this analysis result, CompCert replaces \code{x} with $42$ at line 30.
+\Cref{sec:introduction} as follows (albeit presented for a different language).  First, the analysis
+result for \code{x} is the constant number $42$ after line 10, and it continues to be $42$ after
+line 20 because the address of \code{x} is not leaked to the external function.  Then based on this
+analysis result, CompCert replaces \code{x} with $42$ at line 30.
 
 As a more interesting example, 
 \Cref{fig:const-prop-example} shows the effect of constant propagation applied to a simple program.
