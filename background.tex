@@ -2,22 +2,22 @@
 \label{sec:background}
 
 Before delving into the main contributions, we briefly review the technical background on formal
-semantics and compiler verification that informs the rest of this dissertation, using CompCert as
-the learning material.  The technical ideas and results presented in this section apply not only to
-CompCert but also to other compilers as well.
+semantics and compiler verification that informs the rest of this dissertation, using the CompCert C
+compiler~\cite{compcert} as the learning material.  The technical ideas and results presented in
+this section apply not only to CompCert but also to other formal semantics and compiler verification
+projects as well.
 
-A landmark in this research direction is the CompCert C compiler~\cite{compcert}, which was
-initiated by Xavier Leroy over ten years ago and then grows as the first realistic verified
-compiler.  CompCert is verified in the sense that it ``is accompanied by a machine-checked proof of
-a semantic preservation property: the generated machine code behaves as prescribed by the semantics
-of the source program.''  As such, CompCert guarantees that program analyses and verifications
-performed on its input carry over soundly to its machine-level output.  CompCert is realistic in the
-sense that it ``could realistically be used in the context of production of critical software''.  It
-compiles a significant subset of ISO C99 down to several architectures, and it performs a number of
-common and useful optimizations.  It received significant interest from the avionics
-industry~\cite{TODO}, and recently, it is certified for being used for nuclear power
-plant~\cite{compcert-nuclear}.  It has also served as a fundamental building block in academic work
-on end-to-end verified software~\cite{TODO}.
+The CompCert project was initiated by Xavier Leroy over ten years ago and then grows as the first
+realistic verified compiler.  CompCert is verified in the sense that it ``is accompanied by a
+machine-checked proof of a semantic preservation property: the generated machine code behaves as
+prescribed by the semantics of the source program.''  As such, CompCert guarantees that program
+analyses and verifications performed on its input carry over soundly to its machine-level output.
+CompCert is realistic in the sense that it ``could realistically be used in the context of
+production of critical software''.  It compiles a significant subset of ISO C99 down to several
+architectures, and it performs a number of common and useful optimizations.  It received significant
+interest from the avionics industry~\cite{TODO}, and recently, it is certified for being used for
+nuclear power plant~\cite{compcert-nuclear}.  It has also served as a fundamental building block in
+academic work on end-to-end verified software~\cite{TODO}.
 
 We first explain CompCert's correctness statement, as well as its simulation verification technique
 (\Cref{sec:background:correctness}).  To flesh out the details on formal semantics and compiler

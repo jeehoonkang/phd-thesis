@@ -129,15 +129,15 @@ out of your nose''~\cite{nasal-demons}.\footnote{Notice that undefined behavior 
 Notice that C intentionally loses the ability to manipulate pointers in an unrestricted way---\eg{}
 deriving the address of \code{a} from that of \code{anchor}---in order to justify the constant
 propagation optimization.  This is beneficial because the performance improvement offered by
-compiler optimizations outweights the cost of the restriction on the low-level feature for poorly
-written programs.  As a result, pointers in C should have a richer structure than those in assembly
-languages that have the same representation as integer values of the appropriate width and simply
-index into a single flat array representing memory.
+compiler optimizations outweights the cost of the restriction on the low-level feature for
+unidiomatic programs.  As a result, pointers in C should have a richer structure than those in
+assembly languages that have the same representation as integer values of the appropriate width and
+simply index into a single flat array representing memory.
 
 Such a practice of taming low-level features for supporting compiler optimizations is actually quite
 common in the design of the C programming language: mainstream compilers are performing aggressive
-optimizations that may change the behaviors of programs that use low-level features in unusual ways.
-As a result, C programs may have different meaning than the exactly same programs written in
+optimizations that may change the behaviors of programs that use low-level features in unidiomatic
+ways.  As a result, C programs may have different meaning than the exactly same programs written in
 assembly languages (modulo syntactic differences).  In other words, C is no longer just a thin
 wrapper around assembly languages but it should rather be an abstraction over both assembly
 languages \emph{and} compiler optimizations.
@@ -152,7 +152,7 @@ languages \emph{and} compiler optimizations.
 Unfortunately, despite many years of research and industrial efforts~\cite{c18}, it has proven very
 difficult to adequately balance the conflicting criteria for low-level features and compiler
 optimizations in the design of the C programming language.  On the one hand, C should support the
-common usage patterns of the low-level features used in systems programming, such as relaxed-memory
+common usage patterns of the low-level features in systems programming, such as relaxed-memory
 concurrency, separate compilation, and cast between integers and pointers.  On the other hand, C
 should also support the sophisticated and yet effective optimizations performed by mainstream
 compilers, such as register promotion, constant propagation, and dead code elimination.  To the best
@@ -342,11 +342,11 @@ open in the bug tracker as of this writing.
 \subsection{Reconciling Low-Level Features with Compiler Optimizations}
 
 In this dissertation, we resolve the conflict between some of the low-level features crucially used
-in systems programming and major compiler optimizations.  Specifically, we \textbf{develop formal
+in systems programming and major compiler optimizations.  Specifically, we \emph{develop formal
   semantics} of \emph{relaxed-memory concurrency} (\Cref{chap:relaxed}), \emph{separate compilation}
 (\Cref{chap:sepcomp}), and \emph{cast between integers and pointers} (\Cref{chap:intptrcast}) that
-$(1)$ supports their common usage patterns and $(2)$ provably validates major compiler optimizations
-at the same time.
+$(1)$ supports their common usage patterns in systems programming and $(2)$ provably validates major
+compiler optimizations at the same time.
 
 % Developing such a formal semantics requires thorough understanding of the low-level features and
 % compiler optimizations because, as we have seen in \Cref{sec:introduction:problem}, it should
@@ -361,90 +361,25 @@ performed by compilers.  On the other hand, compiler writers can figure out whet
 is sound or not using formal semantics as the criteria.  In particular, with formal semantics, we
 can point out which optimization(s) is to blame in the miscompilation bug above.
 
-To establish confidence in our formal semantics, we \textbf{prove the soundness of compiler
+To establish confidence in our formal semantics, we \emph{prove the soundness of compiler
   optimizations} in the presence of the low-level features.  The soundness proof guarantees that
 they preserve the semantics of source programs and do not introduce any bugs.  The absence of
 miscompilation bugs ensures higher level of reliability and thus enables optimizations to be used
 even for safety-critical systems with confidence.  We have formalized all the soundness proofs
 reported in this dissertation in the Coq theorem prover~\cite{coq}, which \emph{automatically and
-  rigorously checks} the validity of the soundness proofs.
+  rigorously checks} the validity of the soundness proofs.  The formalization is available
+online~\cite{kang-phd-thesis-web}.
 
-In addition to the soundness proofs, most of the key results of this dissertation are also
-formalized in Coq.  The formalization is available online~\cite{kang-phd-thesis-web}.
-
-% formally \emph{understand} and \emph{verify} optimizations as follows:
-
-% In this dissertation, we push forward this research direction---namely, understanding and
-% verifying compiler optimizations via formal semantics and soundness proof---to also account for
-% three low-level features
-
-% Accordingly, there have been numerous efforts to capture the subtleties of the C standard
-% formally, either by giving an alternative language definition or a conforming implementation.
-
-% \paragraph{Prior Art}
-
-% Over ten years ago, Xavier Leroy initiated the CompCert
-% project~\cite{compcert:CACM,leroy:compcert}, a landmark effort that
-% resulted in the first \emph{realistic verified compiler}.  The
-% CompCert compiler~\cite{compcert-website} is \emph{realistic} in the
-% sense that it ``could realistically be used in the context of
-% production of critical software''.  In particular, it compiles a
-% significant subset of the C language down to assembly, and it performs
-% a number of common and useful optimizations.  It is \emph{verified} in
-% the sense that it ``is accompanied by a machine-checked proof [in Coq]
-% of a semantic preservation property: the generated machine code
-% behaves as prescribed by the semantics of the source program.''  As
-% such, CompCert guarantees that program analyses and verifications
-% performed on its input carry over soundly to its machine-level output.
-% It has served as a fundamental building block in academic work on
-% end-to-end verified software~\cite{appel:plcc}, as well as receiving
-% significant interest from the avionics industry~\cite{avionics}.
-% % http://projects.laas.fr/IFSE/FMF/J3/slides/P05_Jean_Souyiris.pdf
-% % XXX: Any other projects that depend on CompCert besides Appel's
-% % XXX: Verified Software Toolchain or Airbus?
-
-% In the same spirit as CompCert, Vellvm~\cite{vellvm} by Steve Zdancewic and his collaborators
-% formalizes a significant subset of the LLVM intermediate representation (IR) and verifies
-% interesting compiler transformations and optimizations performed at the IR level.  Most notably,
-% Vellvm formalizes the static single assignment form (SSA), including a dominance analysis, an SSA
-% type checker, and an SSA-aware register promotion algorithm that is simplified from the
-% \code{mem2reg} pass in LLVM.
-
-% Because of these simplifications, they are currently suitable only for a niche market such as
-% safety-critical embedded systems.
-
-% First, CompCert and Vellvm---while supporting a significant subset of C99 and LLVM IR,
-% respectively---lack support for various low-level features that are crucially used in systems
-% programming.
-
-% Second, they only perform quite straightforward optimizations that are way less sophisticated than
-% those in mainstream compilers.  In short, CompCert and Vellvm provide less control over hardware and
-% lower performance than mainstream compilers.
-
-% and support only limited use cases of compilers, \eg{} they did not verify linking.
+% In addition to the soundness proofs, most of the key results of this dissertation are also
+% formalized in Coq.  
 
 
-\subsection{Organization}
+\paragraph*{}
 
-The rest of this chapter provides the technical background on formal semantics and compiler
-verification that informs the rest of this dissertation (\Cref{sec:background}).
-\Cref{chap:relaxed,chap:sepcomp,chap:intptrcast} present the main contributions of this
-dissertation, which are formal semantics and compiler verification for relaxed-memory concurrency
-(\Cref{chap:relaxed}), separate compilation (\Cref{chap:sepcomp}), and cast between integers and
-pointers (\Cref{chap:intptrcast}).  This dissertation concludes with \Cref{chap:epilogue}, which
-summarizes the main contributions, the impacts, and future research directions
-(\Cref{sec:conclusion}).
-
-In the rest of this section, we will explain our main contributions in more details.
-
-% However, it is difficult to design a formal semantics for these features that justifies
-% optimizations for compilers and supports reasoning principles for programmers because of their
-% inherent complexity.  due to subtle pointer aliasing rules~\cite{krebbers2013aliasing}, reliance
-% on implementation-specific behavior, the treatment of pointers to uninitialized memory, and
-% hardware/compiler optimizations.
-% We propose the first such formal semantics that satisfies both compilers and programmers at the same
-% time.  Based on our work, revisions to the ISO C standard and mainstream compilers such as GCC and
-% LLVM are being prepared.
+To summarize our contributions, \textbf{we develop formal semantics and verify compiler
+  optimizations} for relaxed-memory concurrency (\Cref{chap:relaxed}), separate compilation
+(\Cref{chap:sepcomp}), and cast between integers and pointers (\Cref{chap:intptrcast}).  In the rest
+of this section, we will explain our main contributions in more details.
 
 
 \paragraph{\Cref{chap:relaxed}: Relaxed-Memory Concurrency}
@@ -555,6 +490,80 @@ This chapter draws heavily on the work and writing in the following paper:
 \noindent {\small \cite{intptrcast} \textbf{Jeehoon Kang}, Chung-Kil Hur, William Mansky, Dmitri Garbuzov,
   Steve Zdancewic, Viktor Vafeiadis.  \emph{A Formal C Memory Model Supporting Integer-Pointer
     Casts}.  \textbf{PLDI 2015}.}
+
+
+\paragraph{Organization}
+
+The rest of this chapter provides the technical background on formal semantics and compiler
+verification that informs the rest of this dissertation (\Cref{sec:background}).
+\Cref{chap:relaxed,chap:sepcomp,chap:intptrcast} present the main contributions of this
+dissertation.  This dissertation concludes with \Cref{chap:epilogue}, which summarizes the main
+contributions, the impacts, and future research directions (\Cref{sec:conclusion}).
+
+
+% formally \emph{understand} and \emph{verify} optimizations as follows:
+
+% In this dissertation, we push forward this research direction---namely, understanding and
+% verifying compiler optimizations via formal semantics and soundness proof---to also account for
+% three low-level features
+
+% Accordingly, there have been numerous efforts to capture the subtleties of the C standard
+% formally, either by giving an alternative language definition or a conforming implementation.
+
+% \paragraph{Prior Art}
+
+% Over ten years ago, Xavier Leroy initiated the CompCert
+% project~\cite{compcert:CACM,leroy:compcert}, a landmark effort that
+% resulted in the first \emph{realistic verified compiler}.  The
+% CompCert compiler~\cite{compcert-website} is \emph{realistic} in the
+% sense that it ``could realistically be used in the context of
+% production of critical software''.  In particular, it compiles a
+% significant subset of the C language down to assembly, and it performs
+% a number of common and useful optimizations.  It is \emph{verified} in
+% the sense that it ``is accompanied by a machine-checked proof [in Coq]
+% of a semantic preservation property: the generated machine code
+% behaves as prescribed by the semantics of the source program.''  As
+% such, CompCert guarantees that program analyses and verifications
+% performed on its input carry over soundly to its machine-level output.
+% It has served as a fundamental building block in academic work on
+% end-to-end verified software~\cite{appel:plcc}, as well as receiving
+% significant interest from the avionics industry~\cite{avionics}.
+% % http://projects.laas.fr/IFSE/FMF/J3/slides/P05_Jean_Souyiris.pdf
+% % XXX: Any other projects that depend on CompCert besides Appel's
+% % XXX: Verified Software Toolchain or Airbus?
+
+% In the same spirit as CompCert, Vellvm~\cite{vellvm} by Steve Zdancewic and his collaborators
+% formalizes a significant subset of the LLVM intermediate representation (IR) and verifies
+% interesting compiler transformations and optimizations performed at the IR level.  Most notably,
+% Vellvm formalizes the static single assignment form (SSA), including a dominance analysis, an SSA
+% type checker, and an SSA-aware register promotion algorithm that is simplified from the
+% \code{mem2reg} pass in LLVM.
+
+% Because of these simplifications, they are currently suitable only for a niche market such as
+% safety-critical embedded systems.
+
+% First, CompCert and Vellvm---while supporting a significant subset of C99 and LLVM IR,
+% respectively---lack support for various low-level features that are crucially used in systems
+% programming.
+
+% Second, they only perform quite straightforward optimizations that are way less sophisticated than
+% those in mainstream compilers.  In short, CompCert and Vellvm provide less control over hardware and
+% lower performance than mainstream compilers.
+
+% and support only limited use cases of compilers, \eg{} they did not verify linking.
+
+
+
+% However, it is difficult to design a formal semantics for these features that justifies
+% optimizations for compilers and supports reasoning principles for programmers because of their
+% inherent complexity.  due to subtle pointer aliasing rules~\cite{krebbers2013aliasing}, reliance
+% on implementation-specific behavior, the treatment of pointers to uninitialized memory, and
+% hardware/compiler optimizations.
+% We propose the first such formal semantics that satisfies both compilers and programmers at the same
+% time.  Based on our work, revisions to the ISO C standard and mainstream compilers such as GCC and
+% LLVM are being prepared.
+
+
 
 % \paragraph{Other Papers}
 
