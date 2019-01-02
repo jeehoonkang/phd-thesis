@@ -8,9 +8,9 @@ hardware such as pointer manipulation, shared-memory concurrency, and asynchrono
 the same time, C is portable in that C programs can be compiled and then executed in most of the
 existing hardware.  Furthermore, C provides decent performance: a program written in C are usually
 outperforming equivalent programs written in other languages---even including carefully hand-written
-assembly programs---when they are performing exactly the same task.  These advantages for decades
-have attracted system programmers, and as a result, a giant ecosystem was built around the C
-programming language.
+assembly programs---when they perform exactly the same task.  These advantages for decades have
+attracted system programmers, and as a result, a giant ecosystem was built around the C programming
+language.
 
 C provides low-level features and portability---seemingly conflicting properties---at the same time
 because it is a balanced abstraction over various hardware assembly languages.  If C were exposing
@@ -135,7 +135,7 @@ assembly languages that have the same representation as integer values of the ap
 simply index into a single flat array representing memory.
 
 Such a practice of taming low-level features for supporting compiler optimizations is actually quite
-common in the design of the C programming language: mainstream compilers are performing aggressive
+common in the design of the C programming language: mainstream compilers perform aggressive
 optimizations that may change the behaviors of programs that use low-level features in unidiomatic
 ways.  As a result, C programs may have different meaning than the exactly same programs written in
 assembly languages (modulo syntactic differences).  In other words, C is no longer just a thin
