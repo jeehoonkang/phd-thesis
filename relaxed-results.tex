@@ -402,9 +402,6 @@ Then, the behaviors of $\prog$ according to the full machine
 coincide with those according to the $\bstep{\ra}$-machine.
 \end{theorem}
 
-We observe that promise re-certification is necessary for the proofs of \Cref{thm:drfpf,thm:drfra}:
-in \cite{kang-phd-thesis-web} we show a counterexample in the absence of promise re-certification.
-
 To state a more standard DRF theorem, 
 we assume programs are \emph{well-locked}:
 (1) locations are partitioned into \emph{normal} and \emph{lock} locations, and
@@ -437,6 +434,466 @@ the initial state of a well-locked program $\prog$ is race-free on normal locati
 Then, the behaviors of $\prog$ according to the full machine coincide with those
 according to the $\bstep{\sco}$-machine.
 \end{theorem}
+
+
+\jeehoon{Organization}
+
+\paragraph{Necessity of Re-certification}
+
+We observe that promise re-certification is necessary for \Cref{thm:drfpf,thm:drfra} to hold, as
+shown in the following example:
+\[
+\inarrIII{ w_{\relw}:=1; }
+         { a:=y_{\acqr}; \\
+           \kw{if}~(a == 1)~\{ \\
+           ~~b:=z; \\
+           ~~\kw{if}~(b == 1)~\{ \\
+           ~~~~x:=1; \\
+           ~~\} \\
+           \}
+         }
+         { a:=w_{\acqr}; \\
+           \kw{if}~(a == 1)~\{ \\
+           ~~z:=1; \\
+           \kw{else}~\{ \\
+           ~~y_{\relw}:=1; \\
+           \} \\
+           b:=x; \comment{1} \\
+           \kw{if}~(b == 1)~\{ \\
+           ~~z:=1; \\
+           \}
+         }
+\]
+
+\noindent This behavior contradicts both of \Cref{thm:drfpf,thm:drfra}, and yet it is allowed in the
+absence of promise re-certification.  Consider the following execution.  First, Thread 1 writes $w=1$
+and Thread 3 promises to write $z=1$.  Now Thread 3 reads $w=0$, after which it can no longer
+certify to write the promised value $z=1$.  Then Thread 3 writes $y=1$, Thread 2 reads $y=1$ and
+$z=1$, Thread 2 writes $x=1$, Thread 3 reads $x=1$, and then Thread 3 fulfills the promise to write
+$z=1$.
+
+
+\paragraph{Proof of \Cref{thm:drfra}}
+
+\newcommand{\ME}{\textrm{ME}}
+\newcommand{\AccMode}{\mathrm{AM}}
+\newcommand{\mesilent}{\mathtt{silent}}
+\newcommand{\meread}{\mathtt{read}}
+\newcommand{\mewrite}{\mathtt{write}}
+\newcommand{\meupdate}{\mathtt{update}}
+\newcommand{\mefence}{\mathtt{fence}}
+\newcommand{\mesyscall}{\mathtt{syscall}}
+\newcommand{\mcths}{\mathtt{ths}}
+\newcommand{\mcgsc}{\mathtt{gsc}}
+\newcommand{\mcmem}{\mathtt{mem}}
+\newcommand{\twomsg}[2]{\tup{#1\text{\small@}#2}}
+
+\noindent
+We define the set of memory events $\alpha\in\ME$ as follows:
+\[
+\begin{array}{@{}c@{~}l@{}}
+%% \alpha \in \ME 
+ & \setof{\mesilent} \\
+\cup& \setof{\meread(o,x,t) \suchthat o\in\AccMode ,x\in\Loc,t\in\Time } \\
+\cup& \setof{\mewrite(o,x,t) \suchthat o\in\AccMode,x\in\Loc,t\in\Time} \\
+\cup& \setof{\meupdate(o_\lr,o_\lw,x,t_\lr,t_\lw) \suchthat o_\lr,o_\lw\in\AccMode,x\in\Loc,t_\lr,t_\lw\in\Time } \\
+\cup& \setof{\mefence(T) \suchthat T \in \setofz{\acqo,\relo,\sco} } \\
+\cup& \setof{\mesyscall(v) \suchthat v \in ... } \\
+\end{array}
+\]
+where $\AccMode = \setofz{\pln,\rlx,\ra}$. %\sco
+
+We call the following events \emph{globally synchronizing}:
+\[
+\begin{array}{@{}c@{~}l@{}}
+%\cup& \setof{\mewrite(o,x,t) \suchthat o = \sco} \\
+%\cup& \setof{\meupdate(o_\lr,o_\lw,x,t_\lr,t_\lw) \suchthat o_\lw = \sco} \\
+%\cup
+& \setof{\mefence(\sco) } \\
+\cup& \setof{\mesyscall(v) \suchthat v \in ... } \\
+\end{array}
+\]
+
+Then we annotate promise-free and release-acquire steps with 
+the executed thread ids and memory events, denoted $\bstep{}_{(i,\alpha)}$ and $\bstep{\ra}_{(i,\alpha)}$.
+
+First, we prove two key lemmas for $\bstep{\ra}$: one for removing an
+intermediate step, and another for reordering adjacent steps.
+\begin{lemma}[Step removal]
+\label{lem:drf-key-remove}
+Suppose we have a release-acquire execution 
+\[\mconf \bstep{\ra}_{(i_1,\alpha_1)} \mconf_1 \bstep{\ra}_{(i_2,\alpha_2)}
+\cdots \bstep{\ra}_{(i_n,\alpha_n)} \mconf_n \]
+such that
+\[
+\forall k \ge 2.~ \mconf_k.\mcths(i_k).\lview  \not\geq \mconf_1.\mcths(i_1).\lview ~.
+\]
+Then we have $i_k \neq i_1$ for all $k \ge 2$ and the following execution
+\[
+\mconf \bstep{\ra}_{(i_2,\alpha_2)} \mconf'_2 \bstep{\ra}_{(i_3,\alpha_3)}
+\cdots \bstep{\ra}_{(i_n,\alpha_n)} \mconf'_n
+\]
+for some machine states $\mconf'_k$ satisfying
+\[
+\forall k\ge 2.~\forall i \neq i_1.~ \mconf'_k.\mcths(i).\lstate = \mconf_k.\mcths(i).\lstate~.
+\]
+\end{lemma}
+\begin{proof}
+There are only two cases where the first step with
+$(i_1,\alpha_1)$ affects a subsequent step with $(i_k,\alpha_k)$:
+either $(i)$ the latter reads what the former wrote; or $(ii)$ the
+former globally synchronizes.  In case $(i)$, the view
+$\mconf_k.\mcths(i_k).\lview$ becomes as high as the view
+$\mconf_1.\mcths(i_1).\lview$ because the read and write are
+$\ra$-synchronized. This is impossible because it conflicts with the
+assumption.  In case $(ii)$, the effect is limited: $\mconf'_k$ is the
+same as $\mconf_k$ except the effect of the event $\alpha_1$.  More
+specifically, $\mconf_k$'s memory may contain an extra message
+produced by $\alpha_1$ and the threads other than $i_1$ in $\mconf'_k$
+are the same as those in $\mconf_k$ except that every view in the
+former may be less than the corresponding view in the latter.  By
+monotonicity, $\mconf'_k$ has more behaviors than $\mconf_k$ and thus
+we can construct such an execution.
+\end{proof}
+
+\begin{lemma}[Step reorder]
+\label{lem:drf-key-reorder}
+Suppose we have a release-acquire execution 
+\[\mconf \bstep{\ra}_{(i_1,\alpha_1)} \mconf_1 \bstep{\ra}_{(i_2,\alpha_2)} \mconf_2 \]
+such that one of $\alpha_1$ and $\alpha_2$ is not globally synchronizing and
+\[
+\mconf_1.\mcths(i_1).\lview \not\leq \mconf_2.\mcths(i_2).\lview ~.
+\]
+Then we have $i_1 \neq i_2$ and $\mconf_1'$ satisfying
+\[
+\mconf \bstep{\ra}_{(i_2,\alpha_2)} \mconf'_1 \bstep{\ra}_{(i_1,\alpha_1)} \mconf_2 ~.
+\]
+\end{lemma}
+\begin{proof}
+Basically a similar argument as in the previous lemma applies here:
+$(i)$ $\alpha_2$ should not read $\alpha_1$; and $(ii)$ the earlier
+step with $\alpha_2$ does not affect the later step with
+$\alpha_1$ since $\alpha_1$ or $\alpha_2$ is not globally synchronizing.
+\end{proof}
+
+Now we prove DRF-RA.
+Let $\bstep{\ra}$ be identical to $\bstep{}$ in \cref{thm:drfpf}, except that
+$(i)$ $\rlx$ and $\pln$ accesses in program transitions are interpreted as if they are all $\ra$-accesses, and
+$(ii)$ a machine step consists only of one thread step.
+Note that the second condition does not affect the semantics, since a machine state without promises is vacuously consistent.
+% (that is, \textsc{read-helper} are \textsc{write-helper} are invoked with $\max\{o,\ra\}$ instead of $o$).
+
+\begin{proof}[Proof of DRF-RA (\cref{thm:drfra})]
+  It suffices to show that $(i)$ the existence of a $\rlx$-race in the
+  $\bstep{}$-machine implies that in the $\bstep{\ra}$-machine, and
+  $(ii)$ the behavior in the $\bstep{\ra}$-machine and that in the
+  $\bstep{}$-machine coincide if $\prog$ is $\rlx$-race-free in the
+  $\bstep{\ra}$-machine.  Then \cref{thm:drfpf} concludes the proof.
+
+  We prove both $(i)$ and $(ii)$ by a single simulation argument.  We
+  say an $\bstep{\ra}$-execution
+\[\mconf'_0 \bstep{\ra}_{(i_1,\alpha_1)} \mconf'_1 \bstep{\ra}_{(i_2,\alpha_2)}
+\cdots \bstep{\ra}_{(i_n,\alpha_n)} \mconf'_n \]
+simulates a $\bstep{}$-execution
+\[\mconf_0 \bstep{}_{(i_1,\alpha_1)} \mconf_1 \bstep{}_{(i_2,\alpha_2)}
+\cdots \bstep{}_{(i_n,\alpha_n)} \mconf_n ~,\]
+if the following conditions hold:
+\begin{enumerate}
+\item $\forall k, j.~\mconf_k.\mcths(j).\lstate = \mconf'_k.\mcths(j).\lstate~;$
+\item $\forall k, j.~\mconf_k.\mcths(j).\lview.\lcur = \mconf'_k.\mcths(j).\lview.\lcur~;$
+\item $\forall k, j.~\mconf_k.\mcths(j).\lview.\lacq = \mconf'_k.\mcths(j).\lview.\lacq~;$
+\item $\forall k.~\mconf_k.\mcgsc = \mconf'_k.\mcgsc~;$ and
+\item $\forall k.~\mconf_k.\mcmem$ and $\mconf'_k.\mcmem$ have the
+  same messages, except that the released view of a message in the
+  $\bstep{\ra}$-execution may be higher than that of the corresponding
+  message in the $\bstep{}$-execution.
+\end{enumerate}
+This simulation proves $(i)$, as a $\rlx$-race in $\mconf_k$ in the
+$\bstep{}$-execution is also a $\rlx$-race in $\mconf'_k$ in the
+$\bstep{\ra}$-machine, thanks to the condition 1.  It also proves
+$(ii)$ by the adequacy of the simulation relation.
+
+Now we prove the simulation.  Consider a $\bstep{}$-step:
+\[\mconf_n \bstep{}_{(i_{n+1},\alpha_{n+1})} \mconf_{n+1}~, \]
+and we will find a corresponding $\bstep{\ra}$-step that preserves the
+simulation relation:
+\[\mconf'_n \bstep{\ra}_{(i_{n+1},\alpha_{n+1})} \mconf'_{n+1}~. \]
+Thanks to the simulation relation, there exists $\mconf'_{n+1}$ such
+that $\mconf'_n \bstep{\ra}_{(i_{n+1},\alpha_{n+1})} \mconf'_{n+1}$.
+If $\alpha_{n+1}$ is not reading (\ie neither a read nor an update
+event), it is immediate from the semantics that the simulation
+relation is preserved.  Now suppose $\alpha_{n+1}$ is reading
+$\twomsg{x}{t}$ with the access mode $o_r$, and let $k$ be such an
+index that $\alpha_k$ is writing $\twomsg{x}{t}$ with the access mode
+$o_w$, and $R$ (and $R_\ra$) be the released view of $\twomsg{x}{t}$ in
+the $\bstep{}$-execution (and $\bstep{\ra}$-execution, respectively).
+
+Now we proceed by a case analysis:
+\begin{description}
+\item [Case $o_w, o_r \sqsupseteq \ra$.]\ 
+
+  Note that the current \& acquire views of
+  $\mconf_{n+1}.\mcths(i_{n+1})$ and $\mconf'_{n+1}.\mcths(i_{n+1})$
+  may diverge only due to the discrepancy of the $\twomsg{x}{t}$'s
+  released views ($R$ and $R_\ra$), and the read's access mode ($o_r$
+  for the $\bstep{}$-machine, and $o_r \sqcup \ra$ for the
+  $\bstep{\ra}$-machine).  A similar argument applies to the other
+  machine state components in the simulation relation.  Hence it
+  suffices to show that $R=R_\ra$ and $o_r = o_r \sqcup \ra$, which
+  come clearly from the assumption: in particular we have
+  $R = \mconf_{k}.\mcths(i_{k}).\lview.\lcur =
+  \mconf'_{k}.\mcths(i_{k}).\lview.\lcur = R_\ra$ thanks to
+  $o_w \sqsupseteq \ra$.
+
+\item [Case
+  $\mconf'_{k}.\mcths(i_k).\lview.\lcur \leq
+  \mconf'_{n}.\mcths(i_n).\lview.\lcur$.]\ 
+
+  Since the released view
+  $R_\ra = \mconf'_{k}.\mcths(i_k).\lview.\lcur$ of $\twomsg{x}{t}$ is
+  already incorporated in the current view, a similar argument also
+  applies here.
+
+\item [Otherwise.]\ 
+
+  In this case, we construct a $\rlx$-race in the
+  $\bstep{\ra}$-execution by repeatedly applying the step-removing
+  \cref{lem:drf-key-remove} to the execution:
+\[\mconf'_{k-1} \bstep{\ra}_{(i_k,\alpha_k)} \mconf'_{k} \bstep{\ra}_{(i_{k+1},\alpha_{k+1})}
+  \cdots \bstep{\ra}_{(i_n,\alpha_n)} \mconf'_n~, \] so that $i_k$
+(attempting to write to $x$ with $o_w$) and $i_{n+1}$ (attempting to
+read from $x$ with $o_r$) race in a reachable machine state.
+
+Let $j \in [k,n)$ be the last such an index that
+$\mconf'_{j}.\mcths(i_j).\lview.\lcur$
+$\not\leq \mconf'_{n}.\mcths(i_n).\lview.\lcur$.  By
+\cref{lem:drf-key-remove} there exists an $\bstep{\ra}$-execution:
+\[
+\mconf'_{j-1} \bstep{\ra}_{(i_{j+1},\alpha_{j+1})} \mconf''_{j+1}
+\cdots \bstep{\ra}_{(i_n,\alpha_n)} \mconf''_n~,
+\]
+% \[
+% \mconf'_{j-1} \bstep{\ra}_{(i_{j+1},\alpha_{j+1})} \mconf''_{j+1} \bstep{\ra}_{(i_{j+2},\alpha_{j+2})}
+% \cdots \bstep{\ra}_{(i_n,\alpha_n)} \mconf''_n~,
+% \]
+such that
+$\mconf''_n.\mcths(i_{n+1}).\lstate = \mconf'_n.\mcths(i_{n+1}).\lstate$.  By
+repetition, we have an $\bstep{\ra}$-execution:
+\[
+  \mconf'_{k-1} \bstep{\ra}_{(i_{l},\alpha_{l})} \mconf'''_{l}
+  \bstep{\ra}_{(i_{u},\alpha_{u})} \cdots
+  \bstep{\ra}_{(i_n,\alpha_n)} \mconf'''_n~,
+\]
+such that
+$\mconf'''_n.\mcths(i_{n+1}).\lstate =
+\mconf'_n.\mcths(i_{n+1}).\lstate$ and $i_k$ is not executed at all
+from $\mconf'_{k-1}$ to $\mconf'''_n$.  Hence
+$\mconf'''_n.\mcths(i_k).\lstate = \mconf'_{k-1}.\mcths(i_k).\lstate$,
+thus $i_k$ and $i_{n+1}$ race in $\mconf'''_n$.  
+\end{description}
+\end{proof}
+
+
+\paragraph{Proof of \Cref{thm:drflock}}
+
+In this section, we assume that we do not have $\sco$-operations.
+
+To state a DRF theorem on properly locked programs, we classify
+locations into normal locations and \emph{lock locations} and suppose
+lock locations are accessed only by the acquire and release operations, as
+defined as follows:
+$$\inparaII{
+acquire(l)\ \{ \\
+\quad \while{!\cas{l}{0}{1}{\acqr\relw}}{\skipc;} \\
+\}
+}{
+release(l)\ \{ \\
+\quad l_{\relw} := 0; \\
+\}
+}
+$$
+
+Furthermore, we say a machine state $\mconf$
+is \emph{properly locked}, if:
+\begin{enumerate}
+\item If two different threads can take a step
+  accessing the same location, then both accesses are reads, or the
+  location is a lock location; and
+\item If a thread can release a lock, say $l$, then the value
+  of $l$ in $\mconf$'s memory is $1$.
+\end{enumerate}
+
+\begin{theorem}[DRF-LOCK]
+\label{thm:drflock'}
+Let $\bstep{\sco}$ denote the steps of the interleaving machine.
+Suppose that every machine state that is $\bstep{\sco}$-reachable from
+the initial state of a program $\prog$ is properly locked.  Then, the
+behaviors of $\prog$ according to the full machine coincide with those
+according to the $\bstep{\sco}$-machine.
+\end{theorem}
+\begin{proof}
+
+We say that an $\bstep{\ra}$-execution is \emph{interleaving} if any
+reading step reads from the message with the greatest timestamp and
+any writing step writes a message with a timestamp greater than any
+existing message's timestamp.
+%% except for a failed CAS of a lock acquire operation.
+It is obvious that the $\bstep{\sco}$-machine is equivalent to the
+interleaving $\bstep{\ra}$-machine (which we simply call the
+interleaving machine), and thus we identify them.
+%% modulo the failed attempts to acquire a lock.  
+%% Thus we identify the interleaving $\bstep{\ra}$-executions with
+%% the interleaving execution.
+%% Thus it suffices to show the DRF theorem for the interleaving
+%% machine.
+
+First of all, for any $\bstep{\ra}$-execution $E$ (\ie a finite or
+infinite sequence of $\bstep{\ra}$-steps), it is easy to see that
+removing all failed acquire steps from the execution still yields a
+valid $\bstep{\ra}$-execution $E'$ with the same behavior (\ie the
+same sequence of system calls). Furthermore, if $E$ is a finite
+execution leading to a $\ra$-racy machine state, then so is $E'$.  We
+will simply say $\bstep{\nf\ra}$-executions for $\bstep{\ra}$-executions
+with no failed acquire steps.
+
+From this observation and \cref{thm:drfra}, we can easily see that
+it suffices to prove that $(i)$ the existence of a $\ra$-race in an
+$\bstep{\nf\ra}$-execution of $\prog$ implies a violation of proper
+locking in an interleaving execution of $\prog$; and $(ii)$ the
+$\bstep{\nf\ra}$-behaviors of $\prog$ coincide with its interleaving
+behaviors if $\prog$ is properly locked in all interleaving executions.
+
+We prove both $(i)$ and $(ii)$ by a single simulation argument.  We
+say an interleaving execution
+\[\mconf'_0 \bstep{\ra}_{(i'_1,\alpha'_1)} \mconf'_1 \bstep{\ra}_{(i'_2,\alpha'_2)}
+  \cdots \bstep{\ra}_{(i'_n,\alpha'_n)} \mconf'_n \] simulates an
+$\bstep{\nf\ra}$-execution
+\[\mconf_0 \bstep{\ra}_{(i_1,\alpha_1)} \mconf_1 \bstep{\ra}_{(i_2,\alpha_2)}
+  \cdots \bstep{\ra}_{(i_n,\alpha_n)} \mconf_n ~,\] if the following
+conditions hold:
+\begin{enumerate}
+\item $(i'_1,\alpha'_1),\ldots,(i'_n,\alpha'_n)$ is a reordering of
+  $(i_1,\alpha_1),\ldots,(i_n,\alpha_n)$ such that the order of
+%% globally synchronizing events, including 
+  system calls is preserved; and
+\item $\mconf_0  = \mconf'_0$ and $\mconf'_n = \mconf_n$. 
+%% and
+%% \item For all $i$ and lock location $l$, $l$ is well-formed in $\mconf'_i.\mcmem~.$
+\end{enumerate}
+
+%% Here, we say a lock location $l$
+%% is \emph{well-formed} in a memory $m$ if:
+%% \begin{enumerate}
+%% \item For every message $\updmsg{l}{v}{f}{t}$ in $m(l)$, $v$ is either $0$ or $1$;
+%% \item For any adjacent messages $\updmsg{l}{v_1}{f_1}{t_1}$ and $\updmsg{l}{v_2}{f_2}{t_2}$ in $m(l)$, 
+%% if $v_1=0$, we have $v_2=1$ and $f_2=t_1$; otherwise, we have $v_2=0$.
+
+%%  and
+%% \item For adjacent messages $\updmsg{l}{1}{f_1}{t_1}$
+%%   and $\updmsg{l}{v_2}{f_2}{t_2}$ in $m(l)$, $v_2=0$ and 
+%% \end{enumerate}
+
+If we prove that given any $\bstep{\nf\ra}$-execution of length $n$
+there exists a simulating interleaving execution, then we are done as
+follows.  Given any (possibly infinite) $\bstep{\nf\ra}$-execution and
+any number of steps $n$, we can find an interleaving execution of
+length $n$ leading to the same machine state with the same sequence of
+observable events (\ie system calls). Thus, any arbitrarily long
+observation on an $\bstep{\nf\ra}$-execution cannot be distinguished
+from that on an interleaving execution. Also, if there is any
+$\bstep{\nf\ra}$-execution leading to a $\ra$-racy machine state, we
+can find a simulating interleaving execution to an improperly locked
+machine state by the simulation argument.
+
+Now it suffices to prove the simulation theorem by induction on the
+length $n$.  The base case is trivial. For an induction step, let's
+assume that we have a simulating execution of length $n$, given as in
+the above definition of simulation. Suppose we have a step $\mconf_n
+\bstep{\nf\ra}_{i_{n+1},\alpha_{n+1}} \mconf_{n+1}$.  Then we need to
+find a simulating interleaving execution of length $n+1$ that starts
+from $\mconf_0$ and ending in $\mconf_{n+1}$. If the event
+$\alpha_{n+1}$ is neither a read, a write, nor an update, then the
+execution $\mconf'_0 \ldots \mconf'_n \bstep{\ra}_{(i_{n+1},)}
+\mconf_{n+1}$ is interleaving, so we are done.
+
+Thus suppose that $\alpha_{n+1}$ is accessing (\ie a read, a write, or
+an update event on) a location $x$ and does not satisfy the
+interleaving condition (\ie does not read the latest message nor
+writes with a greatest timestamp).
+%% , and $\alpha_{n+1}$ is not a failed CAS of a lock location
+By definition of the interleaving
+condition, we can find an event writing to $x$ whose timestamp is
+bigger than that of the event $\alpha_{n+1}$. Let's write $\alpha_k$
+and $t_k$ for the first such event (\ie with the smallest index $k$)
+and its timestamp.
+
+Now, by exactly the same argument as in \cref{thm:drfra}, we can
+remove all steps $\mconf_j$ such that $k \le j\le n$ and
+$\mconf_j.\mcths(i_j).\lview \ge \mconf_k.\mcths(i_k).\lview$.  Then
+we have a race between $\alpha_k$ and $\alpha_{n+1}$.  The resulting
+execution is also interleaving because removing a step from an
+interleaving execution always results in an interleaving execution.
+Thus, by the proper locking assumption, it follows that
+$\alpha_k$ and $\alpha_{n+1}$ are accessing the same lock location.
+
+Now we will construct an interleaving execution from $\mconf_0$ to
+$\mconf_{n+1}$ that simulates the given execution. For this, we
+repeatedly apply the step-reordering using
+\cref{lem:drf-key-reorder} as follows. First, we find the first
+event, say $\alpha_j$, such that $k \le j \le n+1$ and
+$\mconf_j.\mcths(i_j).\lview.\lcur.\lrw(x) < t_k$.  Then we can move
+down the event to just before $\alpha_{k}$ using
+\cref{lem:drf-key-reorder}.  We repeat this process until we move
+$\alpha_{n+1}$ down to just before $\alpha_k$.  This is possible
+because we have ${\mconf_{n+1}.\mcths(i_{n+1}).\lview.\lcur.\lrw(x) <
+  t_k}$. Also note that this process does not reorder system calls
+because we assume that system calls synchronize on lock
+locations (\ie making the view on lock locations to be up-to date).
+
+Finally we will show that such a reordering does not break the
+interleaving condition for all existing events and furthermore make
+$\alpha_{n+1}$ to satisfy the interleaving condition.  The latter
+holds trivially by construction because $\alpha_k$ was the first event
+with respect to which $\alpha_{n+1}$ violates the interleaving
+condition. The former holds as follows. In order to break the
+interleaving condition, we need to reorder two events $\alpha,\beta$
+to $\beta,\alpha$ such that they are accessing the same location and
+at least one of them is writing. During the reordering process,
+suppose we meet such a reordering for the first time.  Then, the
+execution before the reordering is interleaving because we are about
+to break the condition for the first time.  Since $\alpha$ and $\beta$
+are racing on the same location, they both have to be lock operations
+(\ie successful acquire or release). By the proper locking assumption,
+we have only two possibilities: $\alpha$ is a release and $\beta$ is an
+acquire; or $\alpha$ is an acquire and $\beta$ is a release.  The
+former case is a contradiction because $\beta$ reads what $\alpha$
+writes due to the interleaving condition, which makes $\beta$'s view
+as high as $\alpha$'s. The latter is a contradiction too because after
+reordering the execution up to $\beta$ is still interleaving but the
+machine state before $\beta$ is not properly locked. Thus we can
+conclude that the reorderings do not break the interleaving condition.
+
+%% First, we have that $\alpha_k$ is a release because otherwise it
+%% contradicts the fact that $M_{n}$ is well-formed and $\alpha_k$ is the
+%% first event whose timestamp is bigger than $\alpha_{n+1}$'s.
+
+%% Also, $\alpha_{n+1}$ should
+%% not be releasing.  If so, $\alpha_{n+1}$ is filling a gap between
+%%  $\alpha_k$ and the writing event to $x$ just before $\alpha_k$ in
+%% the timestamp order, and by well-formedness its value should be $0$.
+%% It contradicts with the assumption that $\mconf'_n$ is properly
+%% locked.
+
+%% Now suppose that $x$ is a lock location, and $\alpha_{n+1}$ is
+%% acquiring it.  Since it is not a failed CAS of a lock location,
+%% $\alpha_{n+1}$ should be a successful CAS.  However it contradicts
+%% with the well-formedness assumption because for a CAS to be
+%% successful, its message should be the last one in the memory.
+
+
+\end{proof}
+
+
 
 %\begin{theorem}[DRF-SC]
 %\label{thm:drfsc}
