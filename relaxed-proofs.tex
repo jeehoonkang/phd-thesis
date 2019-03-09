@@ -2,14 +2,24 @@
 \label{sec:relaxed:proofs}
 
 In this section, we present notable proofs of the results presented in \Cref{sec:results}.  We first
-explain our proof technique for proving the soundness of transformations in the presence of
-certification (\Cref{sec:relaxed:proofs:simulation}).  Then we present the proofs of DRF-RA
+present our simulation relations for proving the soundness of transformations
+(\Cref{sec:relaxed:proofs:simulation}).  Then we present the proofs of DRF-RA
 (\Cref{sec:relaxed:proofs:drfra}) and DRF-LOCK (\Cref{sec:relaxed:proofs:drflock}), which are the
 only theorems not formalized in Coq.
 
 
-\subsection{Simulation Proof in the Presence of Certification}
+\subsection{Simulation Relations}
 \label{sec:relaxed:proofs:simulation}
+
+% \item Our relations ensure thread-locality, thus allowing us to define a simulation relation on
+%   thread configurations, which (as we prove) can be composed into a simulation relation on full
+%   machine states.
+
+% \item Additionally, for thread configurations, our relations let us ignore the certification
+%   processes and just focus on thread steps in the source and the target.
+
+% \item Furthermore, we prove the adequacy of thread-local simulation up-to context, or in other
+%   words, we can prove simulations between code fragments and compose them.
 
 \jeehoon{todo}
 
