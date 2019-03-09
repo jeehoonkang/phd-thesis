@@ -2,7 +2,7 @@
 \label{sec:relaxed:proofs}
 
 In this section, we present notable proofs of the results presented in \Cref{sec:results}.  We first
-present our simulation relations for proving the soundness of transformations
+present our thread-local simulation relations for proving the soundness of transformations
 (\Cref{sec:relaxed:proofs:simulation}).  Then we present the proofs of DRF-RA
 (\Cref{sec:relaxed:proofs:drfra}) and DRF-LOCK (\Cref{sec:relaxed:proofs:drflock}), which are the
 only theorems not formalized in Coq.
@@ -11,32 +11,49 @@ only theorems not formalized in Coq.
 \subsection{Thread-Local Simulation Relations}
 \label{sec:relaxed:proofs:simulation}
 
-As discussed in \Cref{sec:transformations}, our thread-local simulation relations involve
-assume-guarantee reasoning of the memory and consideration of certification.  Now we discuss each
-point in more details and present the simulation's definition.
+As discussed in \Cref{sec:transformations}, our thread-local simulation relation is based on novel
+ideas for reasoning about the shared memory and certification.  Now we discuss each point in more
+details and present the simulation's definition.
 
 
 \paragraph{Standard Simulation Relations}
 
 Recall that, as discussed in \Cref{sec:background:correctness}, a relation $R$ over source and
-target machine states is a simulation if, for any source and target states $\mconf_0$ and
+target machine states is a (machine) simulation if, for any source and target states $\mconf_0$ and
 $\mconf'_0$ related by $R$, the following holds:
-\begin{itemize}
-\item (Step) For all $\mconf'_1$, if $\mconf'_0 \astep{} \mconf'_1$, then there exists $\mconf_1$
-  such that $\mconf_0 \astep{}^* \mconf_1$ and $R$ relates $\mconf_1$ and $\mconf'_1$; and
-\item (Terminal) If $\mconf'_1$ is terminal, then there exists $\mconf_1$ such that
+\begin{description}
+\item[\textsc{(Step)}] For all $\mconf'_1$, if $\mconf'_0 \astep{} \mconf'_1$, then there exists
+  $\mconf_1$ such that $\mconf_0 \astep{}^* \mconf_1$ and $R$ relates $\mconf_1$ and $\mconf'_1$;
+  and
+\item[\textsc{(Terminal)}] If $\mconf'_0$ is terminal, then there exists $\mconf_1$ such that
   $\mconf_0 \astep{}^* \mconf_1$ and $\mconf_1$ is terminal.
-\end{itemize}
+\end{description}
 %
-Here, we intentionally ignored events for presentational purposes.  Recall also that if two states
-are simulated, then the behavior of the target state is a subset of that of the source state.
+Here, we intentionally omitted events in the definition of simulation relations for presentational
+purposes.  The discussion in this section applies also to simulation relations with events.  Also
+recall that if two states are simulated, then the behavior of the target state is a subset of that
+of the source state.
 
 
-\paragraph{Shared Resources}
+\paragraph{Reasoning about Shared Resources}
 
-The key observation is
-that in a thread's point of view, we can abstractly characterize the effect of the other threads to
-the shared resources as follows:
+Now we are about to ``localize'' the definition of simulation relations to a thread configurations.
+Our goal is proving compositionality of thread-local simulation: if $\tup{\gts,\gsco,\mem}$ and
+$\tup{\gts',\gsco',\mem'}$ are source and target machine states, and for each $i$, there exists a
+thread-local simulation relation $R_i$ that relates $\tup{\gts(i),\gsco,\mem}$ and
+$\tup{\gts'(i),\gsco',\mem'}$, then there exists a machine simulation relation $\mathcal{R}$ that
+relates $\tup{\gts,\gsco,\mem}$ and $\tup{\gts',\gsco',\mem'}$.
+
+A naive attempt to define thread-local simulation would be directly translating machine simulation
+relation to thread configurations.  However, it does not satisfy compositionality because, in a
+thread's point of view, the other threads may change the shared resources, \ie{} the memory and the
+global SC timemap.  For example, for machine states $\tup{\gts,\gsco,\mem}$ and
+$\tup{\gts',\gsco',\mem'}$, if $\gts(1)$ and $\gts'(1)$ take steps, the shared resources $\gsco$,
+$\mem$, $\gsco'$, and $\mem'$ are changed and thus $\gts(2)$ and $\gts'(2)$ may no longer be
+thread-locally simulated.
+
+Our key observation is that in a thread's point of view, the effect of the other threads to the
+shared resources can be abstractly characterized as follows:
 \begin{itemize}
 \item \jeehoon{todo: describe sim memory}
 \item \jeehoon{todo: describe sim sc}
@@ -44,19 +61,32 @@ the shared resources as follows:
 %
 \noindent Thus in proving thread-local simulations, we can \emph{assume} that the effect of the
 other threads are constrained by the above conditions; on the other hand, we should \emph{guarantee}
-that the thread in our concern also satisfies the above conditions.  This assume-guarantee reasoning
-principle enables us to easily reason about thread-local optimizations.
-
-Now we precisely define the above conditions and propose a thread-local simulation relation.
-\jeehoon{todo: define sim memory sc thread precisely}
-
-\begin{itemize}
-\item (Step) \jeehoon{todo}.
-\item (Terminal) \jeehoon{todo}.
-\end{itemize}
+that the thread in our concern also satisfies the above conditions.  Concretely, we revise our
+thread-local simulation relation as follows: \jeehoon{todo}.
 
 
-\paragraph{Certification}
+It is worth noting that 
+
+
+
+
+a relation $R$ over source and target thread configurations is a \emph{thread-local} simulation if,
+for any source and target thread configurations $\tup{\lts_0,\gsco_0,\mem_0}$ and
+$\tup{\lts'_0,\gsco'_0,\mem'_0}$ related by $R$, the following holds:
+\begin{description}
+\item[\textsc{(Step)}] For all $\tup{\lts'_1,\gsco'_1,\mem'_1}$, if
+  $\tup{\lts'_0,\gsco'_0,\mem'_0} \astep{} \tup{\lts'_1,\gsco'_1,\mem'_1}$, then there exists
+  $\tup{\lts_1,\gsco_1,\mem_1}$ such that
+  $\tup{\lts_0,\gsco_0,\mem_0} \astep{}^* \tup{\lts_1,\gsco_1,\mem_1}$ and $R$ relates
+  $\tup{\lts_1,\gsco_1,\mem_1}$ and $\tup{\lts'_1,\gsco'_1,\mem'_1}$; and
+\item[\textsc{(Terminal)}] If $\tup{\lts'_0,\gsco'_0,\mem'_0}$ is terminal, then there exists
+  $\tup{\lts_1,\gsco_1,\mem_1}$ such that
+  $\tup{\lts_0,\gsco_0,\mem_0} \astep{}^* \tup{\lts_1,\gsco_1,\mem_1}$ and
+  $\tup{\lts_1,\gsco_1,\mem_1}$ is terminal.
+\end{description}
+
+
+\paragraph{Reasoning about Certification}
 
 The above relation, however, ignores certification and thereby fails to imply a machine-level
 simulation.  Recall that for each machine step, the resulting thread configuration should be
