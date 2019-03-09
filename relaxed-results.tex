@@ -148,21 +148,16 @@ In contrast, eliminating relaxed or acquire reads is not generally sound because
 \paragraph{Proof Technique}
 
 Our proof of these results employs the well-known approach of simulation relations between the
-target and the source programs.  Our simulation relations are fairly standard, except that:
-%
-\begin{itemize}
-\item Our relations ensure thread-locality, thus allowing us to define a simulation relation on
-  thread configurations, which (as we prove) can be composed into a simulation relation on full
-  machine states.
+target and the source programs.  We prove the adequacy of simulation up-to context, or in other
+words, we can prove simulations between code fragments and compose them.  Our definitions are fairly
+standard, except that they ensure thread-locality, thus allowing us to define a simulation relation
+on thread configurations, which (as we prove) can be composed into a simulation relation on full
+machine states.  Thread-local simulation involves assume-guarantee reasoning of the memory and
+consideration of certification, which we will discuss in more details in
+\Cref{sec:relaxed:proofs:simulation}.
 
-\item Additionally, for thread configurations, our relations let us ignore the certification
-  processes and just focus on thread steps in the source and the target.
-
-\item Furthermore, we prove the adequacy of thread-local simulation up-to context, or in other
-  words, we can prove simulations between code fragments and compose them.
-\end{itemize}
-%
-\noindent For more technical details, we refer the reader to \Cref{sec:relaxed:proofs:simulation}.
+% Additionally, for thread configurations, our relations let us ignore the certification processes and
+% just focus on thread steps in the source and the target.
 
 
 

@@ -11,17 +11,73 @@ only theorems not formalized in Coq.
 \subsection{Simulation Relations}
 \label{sec:relaxed:proofs:simulation}
 
-% \item Our relations ensure thread-locality, thus allowing us to define a simulation relation on
-%   thread configurations, which (as we prove) can be composed into a simulation relation on full
-%   machine states.
+As discussed in \Cref{sec:transformations}, our simulation relations are unique in that it ensures
+thread-locality.  Now we discuss each point in more details.
 
-% \item Additionally, for thread configurations, our relations let us ignore the certification
-%   processes and just focus on thread steps in the source and the target.
+\paragraph{Standard Simulation Relations}
 
-% \item Furthermore, we prove the adequacy of thread-local simulation up-to context, or in other
-%   words, we can prove simulations between code fragments and compose them.
+But before delving into the details, we first present standard simulation relations.  A relation $R$
+over source and target states is a \emph{simulation} if, for any source and target machine state
+$\mconf_0$ and $\mconf'_0$ related by $R$, the following holds:
+\begin{itemize}
+\item (Step) For all $\mconf'_1$, if $\mconf'_0 \astep{} \mconf'_1$, then there exists $\mconf_1$
+  such that $\mconf_0 \astep{}^* \mconf_1$, and $R$ relates $\mconf_1$ and $\mconf'_1$; and
+\item (Terminal) If $\mconf'_1$ is terminal, then there exists $\mconf_1$ such that
+  $\mconf_0 \astep{}^* \mconf_1$ and $\mconf_1$ is terminal.
+\end{itemize}
+%
+Here, we intentionally ignored events for presentational purposes.  It is well-known that if two
+states are simulated, then the behavior of the target state is a subset of that of the source state.
 
-\jeehoon{todo}
+
+
+\paragraph{Thread-Local Simulation}
+
+It is difficult to directly use the standard simulation relations for proving compiler optimizations
+for multi-threaded programs because optimizations are usually performed for each thread, while
+simulation relations are defined over full machine states in which the other threads may affect the
+shared resources (\ie{} the memory and the global SC timemap) at any time.
+
+To address this difficulty, we define thread-local simulations on thread configurations, and prove
+that they can be composed into a simulation relation on full machine states.  The key observation is
+that in a thread's point of view, we can abstractly characterize the effect of the other threads to
+the shared resources as follows:
+\begin{itemize}
+\item \jeehoon{todo: describe sim memory}
+\item \jeehoon{todo: describe sim sc}
+\end{itemize}
+%
+\noindent Thus in proving thread-local simulations, we can \emph{assume} that the effect of the
+other threads are constrained by the above conditions; on the other hand, we should \emph{guarantee}
+that the thread in our concern also satisfies the above conditions.  This assume-guarantee reasoning
+principle enables us to easily reason about thread-local optimizations.
+
+Now we precisely define the above conditions and propose a thread-local simulation relation.
+\jeehoon{todo: define sim memory sc thread precisely}
+
+\begin{itemize}
+\item (Step) \jeehoon{todo}.
+\item (Terminal) \jeehoon{todo}.
+\end{itemize}
+
+
+\paragraph{Simulation of Certification}
+
+The above relation, however, ignores certification and thereby fails to imply a machine-level
+simulation.  Recall that for each machine step, the resulting thread configuration should be
+consistent.  But the above simulation relation does not necessarily mean the source thread
+configuration steps to a consistent configuration even if the corresponding target thread
+configuration steps to a consistent one.
+
+To address this problem, we additionally require the following conditions, in addition to the (Step)
+and (Terminal) conditions, for thread-local simulation relations:
+%
+\begin{itemize}
+\item (Future) \jeehoon{todo}.
+\item (No promises) \jeehoon{todo}.
+\end{itemize}
+%
+\noindent \jeehoon{todo: explain why it works.}
 
 
 
