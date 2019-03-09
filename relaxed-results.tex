@@ -3,13 +3,13 @@
 
 In this section, we outline a number of important results we have
 proven to hold of our ``promising'' model.
-
+%
 % \ori{we say too much ``our model''; should we give it a name?
 % The ``promise model''?}
-
-All the results of this section \textbf{are fully validated in Coq}
-except for % \Cref{sec:compilation_POWER} and
-\Cref{thm:drfra,thm:drflock}, for which we provide proofs in \Cref{sec:relaxed:proofs}.
+%
+All the results of this section \textbf{are fully validated in Coq} except
+for % \Cref{sec:compilation_POWER} and
+\Cref{thm:drfra,thm:drflock}, for which we provide hand-written proofs in \Cref{sec:relaxed:proofs}.
 The {Coq} development is available at~\cite{kang-phd-thesis-web}.
 
 \subsection{Compiler Transformations}
@@ -153,7 +153,11 @@ can be composed into a simulation relation on full machine states.
 Additionally, for thread configurations, we prove the adequacy of simulation up-to context,
 which lets us ignore the certification processes in the source and the target, 
 and just provide simulations between simple ``code snippets''.
-For more details, we refer the reader to \Cref{sec:relaxed:proofs}.
+
+In proving simulations, the main technical challenge lies in certification.  Roughly speaking, we
+have to show that a source state is certified if its corresponding target state is certified.  But
+how to ensure this property, which involves multiple execution steps, with simulation, which
+involves only single steps?  We will present our solution in \Cref{sec:relaxed:proofs:simulation}.
 
 
 
