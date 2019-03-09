@@ -1,8 +1,8 @@
 \section{Results}
 \label{sec:results}
 
-In this section, we outline a number of important results we have
-proven to hold of our ``promising'' model.
+In this section, we outline a number of important results we have proven to hold of our
+``promising'' model.
 %
 % \ori{we say too much ``our model''; should we give it a name?
 % The ``promise model''?}
@@ -152,9 +152,20 @@ target and the source programs.  We prove the adequacy of simulation up-to conte
 words, we can prove simulations between code fragments and compose them.  Our definitions are fairly
 standard, except that they ensure thread-locality, thus allowing us to define a simulation relation
 on thread configurations, which (as we prove) can be composed into a simulation relation on full
-machine states.  Thread-local simulation involves assume-guarantee reasoning of the memory and
-consideration of certification, which we will discuss in more details in
+machine states.  The thread-locality is crucially used in proving the soundness of transformations
+because they are performed not for a full machine but for a single thread.  Our thread-local
+simulation relation is based on novel ideas for reasoning about certification and the interference
+of the other threads.  For more details, we refer the reader to
 \Cref{sec:relaxed:proofs:simulation}.
+
+% it is difficult to employ the standard simulation relations presented in
+% \Cref{sec:background:correctness} for proving compiler optimizations because optimizations are
+% usually performed for each thread, while simulation relations are defined over full machine states
+% in which the other threads may affect the shared resources (\ie{} the memory and the global SC
+% timemap) at any time.  To address this difficulty, we define thread-local simulations on thread
+% configurations, and prove that they can be composed into a simulation relation on full machine
+% states.
+
 
 % Additionally, for thread configurations, our relations let us ignore the certification processes and
 % just focus on thread steps in the source and the target.
