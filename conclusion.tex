@@ -47,16 +47,33 @@ verification technique was adopted in CompCert.
 
 However, by Meyer's standard, where real success is ``changing the way the IT industry develops
 software'', ``the story told in this article is one of glaring, unremitted and probably definitive
-failure''~\cite{bertrand-meyer}.  CompCert is changing the way safety-critical softare is
+failure''~\cite{bertrand-meyer}.  CompCert is changing the way safety-critical software is
 developed~\cite{compcert-avionics,compcert-nuclear}.  In the similar spirit, we would like our
-semantics to help system programmers, thereby changing the way systems are developed.  To this end,
-we would like to pursue the following directions for future work.
+semantics to help system programmers, thereby changing the way systems are developed in general.  To
+this end, we would like to pursue the following directions for future work.
 
-\jeehoon{conclusion: future work}
+\begin{itemize}
 
-- relevance
-- tools (bug-finder, verifier, logic, ...)
-- standardization
+\item \emph{Refining Semantics}: Our semantics, as well as all the other C formal semantics, does
+  not capture all the real-world practices of low-level features and compiler optimizations.  While
+  it is impossible to do so, it is crucial to capture at least widely used patterns and
+  performance-critical optimizations.  Otherwise, industrial developers will not approve our
+  semantics and consider it a ``toy'' language.  In order to do so, we need to clearly understand
+  each low-level feature's motivation and use cases.
+
+\item \emph{Standardizing Semantics}: Developing a semantics should take into account a lot of
+  stakeholders, and thus discussion on the semantics can easily diverge to too many proposals.  For
+  mainstream languages like C, C++, and LLVM IR, standardization process is introduced to help the
+  discussion to converge to a consensus.  We should also propose our semantics to the
+  standardization process, thereby exchanging informed opinions on the semantics.
+
+\item \emph{Developing Tools}: It is unlikely that semantics alone improves the life of industrial
+  developers, because semantics is a theoretical artifact while developers need practical tools that
+  help them to design and implement programs, and catch and prevent bugs.  Thus it is crucial to
+  develop such tools---including model checkers, static analyzers, and program logics---based on
+  semantics and metatheory.
+
+\end{itemize}
 
 
 
