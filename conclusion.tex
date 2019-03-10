@@ -1,19 +1,64 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-\subsection{Contributions}
+\paragraph{Genesis}
 
-\jeehoon{conclusion: contributions}
+The genesis of this dissertation traces back to 2014, when my supervisor Prof. Chung-Kil Hur ran a
+seminar on CompCert~\cite{compcert}.  CompCert is exciting because it demonstrated formal semantics
+and compiler verification research scale up to real-world applications.  One day, he asked what are
+the concrete addresses of global variables in CompCert C, and I answered ``I don't know.''  So we
+read CompCert code together, and realized that CompCert C does not assign concrete addresses to
+global variables because it does not support cast between integers and pointers.  Then we started to
+develop a formal semantics of the feature, which ended up being my first first-author
+paper~\cite{intptrcast}.
+
+It was exciting to advance the state-of-the-art of C formal semantics, and it naturally became my
+dissertation topic.  I focused on low-level features because they are difficult to capture in a
+formal semantics due to the conflict among many ``stakeholders.''  To understand them, I began to
+read C/C++ standards, Linux kernel and LLVM mailing lists, and even architecture ISA manuals which I
+didn't expect to do so at the beginning of my graduate school life.
 
 
-\subsection{Impact}
 
-\jeehoon{conclusion: impact}
+\paragraph{Contributions}
+
+As a result, we developed formal semantics of three low-level features of C crucially used in
+systems programming, namely relaxed-memory concurrency, separate compilation, and cast between
+integers and pointers.  Our semantics adequately balances the conflicting desiderata of programmers,
+compilers, and hardware in that it $(1)$ supports the features' common usage patterns and reasoning
+principles for programmers, and $(2)$ provably validates major compiler optimizations at the same
+time.  To establish confidence in our formal semantics, we have formalized most of our key results
+in Coq.
 
 
-\subsection{Future Research Directions}
+\paragraph{Impact}
 
-\jeehoon{conclusion: future research directions}
+Our formal semantics had concrete impacts on both academia and industry.  In academia, we and others
+published follow-up papers that $(1)$ refine our semantics to account for more usage patterns and
+compiler optimizations, $(2)$ provide more evidences that show our semantics serves programmers,
+compilers, and hardware well, or $(3)$ apply the key idea of our semantics to other languages.  In
+industry, $(1)$ we discovered bugs and proposed fixes to bugs in GCC, LLVM, and CompCert, $(2)$ we
+provided informed opinions to the discussion on C/C++ and LLVM IR language standards, and $(3)$ our
+verification technique was adopted in CompCert.
+
+
+
+\paragraph{Future Work}
+
+However, by Meyer's standard, where real success is ``changing the way the IT industry develops
+software'', ``the story told in this article is one of glaring, unremitted and probably definitive
+failure''~\cite{bertrand-meyer}.  CompCert is changing the way safety-critical softare is
+developed~\cite{compcert-avionics,compcert-nuclear}.  In the similar spirit, we would like our
+semantics to help system programmers, thereby changing the way systems are developed.  To this end,
+we would like to pursue the following directions for future work.
+
+\jeehoon{conclusion: future work}
+
+- relevance
+- tools (bug-finder, verifier, logic, ...)
+- standardization
+
+
 
 % As future work, by further pursuing the research agenda for the formalization of real-world practice
 % of C semantics and compilers, we aim to provide clear, theoretically-informed, and

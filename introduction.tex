@@ -1,16 +1,15 @@
 \section{Introduction}
 \label{sec:introduction}
 
-The C programming language is used as the \emph{lingua franca} for systems programming, mainly due
-to its three notable advantages: \emph{low-level features}, \emph{portability}, and
-\emph{performance}.  C provides low-level features that offer programmers precise control over
-hardware such as pointer manipulation, shared-memory concurrency, and asynchronous interrupt.  At
-the same time, C is portable in that C programs can be compiled and then executed in most of the
-existing hardware.  Furthermore, C provides decent performance: a program written in C are usually
-outperforming equivalent programs written in other languages---even including carefully hand-written
-assembly programs---when they perform exactly the same task.  These advantages for decades have
-attracted system programmers, and as a result, a giant ecosystem was built around the C programming
-language.
+The C programming language is the \emph{lingua franca} for systems programming, mainly due to its
+three notable advantages: \emph{low-level features}, \emph{portability}, and \emph{performance}.  C
+provides low-level features that offer programmers precise control over hardware such as pointer
+manipulation, shared-memory concurrency, and asynchronous interrupt.  At the same time, C is
+portable in that C programs can be compiled and then executed in most of the existing hardware.
+Furthermore, C provides decent performance: a program written in C are usually outperforming
+equivalent programs written in other languages---even including carefully hand-written assembly
+programs---when they perform exactly the same task.  These advantages for decades have attracted
+system programmers, and as a result, a giant ecosystem was built around the C programming language.
 
 C provides low-level features and portability---seemingly conflicting properties---at the same time
 because it is a balanced abstraction over various hardware assembly languages.  If C were exposing
@@ -149,7 +148,7 @@ languages \emph{and} compiler optimizations.
 \subsection{Conflict between Low-Level Features and Compiler Optimizations}
 \label{sec:introduction:problem}
 
-Unfortunately, despite many years of research and industrial efforts~\cite{c18}, it has proven very
+Unfortunately, despite many years of academic and industrial efforts~\cite{c18}, it has proven very
 difficult to adequately balance the conflicting criteria for low-level features and compiler
 optimizations in the design of the C programming language.  On the one hand, C should support the
 common usage patterns of the low-level features in systems programming, such as relaxed-memory
@@ -343,11 +342,11 @@ open in the bug tracker as of this writing.
 \subsection{Reconciling Low-Level Features with Compiler Optimizations}
 
 In this dissertation, we resolve the conflict between some of the low-level features crucially used
-in systems programming and major compiler optimizations.  Specifically, we \emph{develop formal
-  semantics} of \emph{relaxed-memory concurrency} (\Cref{chap:relaxed}), \emph{separate compilation}
-(\Cref{chap:sepcomp}), and \emph{cast between integers and pointers} (\Cref{chap:intptrcast}) that
-$(1)$ supports their common usage patterns and reasoning principles, and $(2)$ provably validates
-major compiler optimizations at the same time.
+in systems programming and major compiler optimizations.  Specifically, we \textbf{develop formal
+  semantics} of \textbf{relaxed-memory concurrency} (\Cref{chap:relaxed}), \textbf{separate
+  compilation} (\Cref{chap:sepcomp}), and \textbf{cast between integers and pointers}
+(\Cref{chap:intptrcast}) that $(1)$ supports their common usage patterns and reasoning principles,
+and $(2)$ provably validates major compiler optimizations at the same time.
 
 % Developing such a formal semantics requires thorough understanding of the low-level features and
 % compiler optimizations because, as we have seen in \Cref{sec:introduction:problem}, it should
@@ -362,13 +361,13 @@ compilers.  On the other hand, compiler writers can figure out whether an optimi
 not using formal semantics as the criteria.  In particular, with formal semantics, we can point out
 which optimization(s) is to blame in the miscompilation bug above.
 
-To establish confidence in our formal semantics, we \emph{prove the soundness of compiler
-  optimizations} in the presence of the low-level features.  The soundness proof guarantees that
-they preserve the semantics of source programs and do not introduce any bugs.  The absence of
-miscompilation bugs ensures higher level of reliability and thus enables optimizations to be used
-even for safety-critical systems with confidence.  We have formalized all the soundness proofs
-reported in this dissertation in the Coq theorem prover~\cite{coq}, which \emph{automatically and
-  rigorously checks} the validity of the soundness proofs.  The formalization is available
+To establish confidence in our formal semantics, we prove the soundness of compiler optimizations in
+the presence of the low-level features.  The soundness proof guarantees that they preserve the
+semantics of source programs and do not introduce any bugs.  The absence of miscompilation bugs
+ensures higher level of reliability and thus enables optimizations to be used even for
+safety-critical systems with confidence.  \textbf{We have formalized all the soundness proofs
+  reported in this dissertation in the Coq theorem prover}~\cite{coq}, which automatically and
+rigorously checks the validity of the soundness proofs.  The formalization is available
 online~\cite{kang-phd-thesis-web}.
 
 % In addition to the soundness proofs, most of the key results of this dissertation are also
@@ -377,10 +376,9 @@ online~\cite{kang-phd-thesis-web}.
 
 \paragraph*{}
 
-To summarize our contributions, \textbf{we develop formal semantics and verify compiler
-  optimizations} for relaxed-memory concurrency (\Cref{chap:relaxed}), separate compilation
-(\Cref{chap:sepcomp}), and cast between integers and pointers (\Cref{chap:intptrcast}).  In the rest
-of this section, we will explain our main contributions in more details.
+In the rest of this section, we will briefly describe our main contributions, namely developing
+formal semantics of three low-level features of C.
+
 
 
 \paragraph{\Cref{chap:relaxed}: Relaxed-Memory Concurrency}
@@ -498,8 +496,8 @@ This chapter draws heavily on the work and writing in the following paper:
 The rest of this chapter provides the technical background on formal semantics and compiler
 verification that informs the rest of this dissertation (\Cref{sec:background}).
 \Cref{chap:relaxed,chap:sepcomp,chap:intptrcast} present the main contributions of this
-dissertation.  This dissertation concludes with \Cref{chap:epilogue}, which summarizes the main
-contributions, the impacts, and future research directions (\Cref{sec:conclusion}).
+dissertation.  This dissertation concludes with \Cref{chap:epilogue}, which summarizes its
+contributions, impacts, and future work (\Cref{sec:conclusion}).
 
 
 % formally \emph{understand} and \emph{verify} optimizations as follows:
