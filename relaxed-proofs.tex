@@ -12,32 +12,33 @@ only theorems not formalized in Coq.
 \label{sec:relaxed:proofs:simulation}
 
 As discussed in \Cref{sec:transformations}, our thread-local simulation relation is based on novel
-ideas for reasoning about the shared memory and consistency.  Now we discuss each point in more
+ideas for reasoning about the shared resources and consistency.  Now we discuss each point in more
 details and present the simulation's definition.
 
 
 \paragraph{Machine Simulation Relation}
 
-Recall from \Cref{sec:background:correctness} that a relation $R$ over source and target machine
+But before delving into the details, we first review simulation relations.  Recall from
+\Cref{sec:background:correctness} that a relation $\mathcal{R}$ over source and target machine
 states is a (machine) simulation if, for any source and target states $\mconf_0$ and $\mconf'_0$
-related by $R$, the following holds:
+related by $\mathcal{R}$, the following holds:
 \begin{description}
 \item[\textsc{(Step)}] For all $\mconf'_1$, if $\mconf'_0 \astep{} \mconf'_1$, then there exists
-  $\mconf_1$ such that $\mconf_0 \astep{}^* \mconf_1$ and $R$ relates $\mconf_1$ and $\mconf'_1$;
-  and
+  $\mconf_1$ such that $\mconf_0 \astep{}^* \mconf_1$ and $\mathcal{R}$ relates $\mconf_1$ and
+  $\mconf'_1$; and
 \item[\textsc{(Terminal)}] If $\mconf'_0$ is terminal, then there exists $\mconf_1$ such that
   $\mconf_0 \astep{}^* \mconf_1$ and $\mconf_1$ is terminal.
 \end{description}
 %
 Here, we intentionally omitted events in the definition of simulation relation for presentational
-purposes.  The discussion in this section applies also to simulation relations with events.  Also
+purposes, but the discussion in this section applies also to simulation relations with events.  Also
 recall that if two states are simulated, then the behavior of the target state is a subset of that
 of the source state.
 
 
 \paragraph{Reasoning about Shared Resources}
 
-Now we are about to ``localize'' the definition of simulation relation to a thread configurations.
+Now we are about to ``localize'' the definition of simulation relation to thread configurations.
 Our goal is proving compositionality of thread-local simulation: if $\tup{\gts,\gsco,\mem}$ and
 $\tup{\gts',\gsco',\mem'}$ are source and target machine states, and for each $i$, there exists a
 thread-local simulation relation $R_i$ that relates $\tup{\gts(i),\gsco,\mem}$ and
@@ -46,24 +47,71 @@ relates $\tup{\gts,\gsco,\mem}$ and $\tup{\gts',\gsco',\mem'}$.
 
 A naive attempt to define thread-local simulation would be directly translating machine simulation
 relation to thread configurations.  However, it does not satisfy compositionality because, in a
-thread's point of view, the other threads may change the shared resources, \ie{} the memory and the
-global SC timemap, at any time.  For example, for machine states $\tup{\gts,\gsco,\mem}$ and
-$\tup{\gts',\gsco',\mem'}$, if $\gts(1)$ and $\gts'(1)$ take steps, the shared resources $\gsco$,
-$\mem$, $\gsco'$, and $\mem'$ are changed and thus $\gts(2)$ and $\gts'(2)$ may no longer be
+thread's point of view, the other threads may change the shared resources at any time.  For example,
+for machine states $\tup{\gts_0,\gsco_0,\mem_0}$ and $\tup{\gts'_0,\gsco'_0,\mem'_0}$, if
+$\gts_0(1)$ and $\gts'_0(1)$ take steps, the shared resources $\gsco_0$, $\mem_0$, $\gsco'_0$, and
+$\mem'_0$ may be changed, say to $\gsco_1$, $\mem_1$, $\gsco'_1$, and $\mem'_1$, and thus
+$\tup{\gts_0(2),\gsco_1,\mem_1}$ and $\tup{\gts'_0(2),\gsco'_1,\mem'_1}$ are no longer
 thread-locally simulated.
 
-Thus in the definition of thread-local simulation, we need to take into account the effect of the
-other threads to the shared resources.  Our key observation is that the effect of the other threads
-can be abstractly characterized as follows:
-\begin{itemize}
-\item \jeehoon{todo: describe sim memory}
-\item \jeehoon{todo: describe sim sc}
-\end{itemize}
+Thus in the definition of thread-local simulation, we need to take into account the effect---or the
+interference---of the other threads to the shared resources at any time.  Our key observation is
+that the interference of the other threads can be abstractly characterized as follows.  Suppose
+$\tup{\lts_0,\gsco_0,\mem_0}$ and $\tup{\lts'_0,\gsco'_0,\mem'_0}$ are the source and target thread
+configurations in our concern, and the other threads changed the source and target shared resources
+to $\tup{\gsco_1,\mem_1}$ and $\tup{\gsco'_1,\mem'_1}$.  Then the following holds:
+
+\begin{description}
+\item[\textsc{(Intrf-Future)}] $\tup{\gsco_1,\mem_1}$ is a future shared resource of
+  $\tup{\gsco_0,\mem_0}$ w.r.t. $\lts_0.\lprmem$, or in other words, $\gsco_1 \sqsupseteq \gsco_0$
+  and $\mem_1$ is a future memory of $\mem_0$ w.r.t. $\lts_0.\lprmem$.  Similarly,
+  $\tup{\gsco'_1,\mem'_1}$ is a future shared resource of $\tup{\gsco'_0,\mem'_0}$
+  w.r.t. $\lts'_0.\lprmem$;
+\item[\textsc{(Intrf-SC)}] If $\gsco_0 \sqsubseteq \gsco'_0$, then $\gsco_1 \sqsubseteq \gsco'_1$;
+  and
+\item[\textsc{(Intrf-Memory)}] If $\mem_0 \sim \mem'_0$, then $\mem_1 \sim \mem'_1$.  Here, by
+  $M \sim M'$ we mean $(1)$ for each location, the timestamps covered by the messages in $M$
+  coincides with those covered by the messages in $M'$; and $(2)$ for each message
+  $\msg{x}{v}{f'}{t}{\mrel'}$ in $M'$, there exists a message $\msg{x}{v}{f}{t}{\mrel}$ in $M$ such
+  that $\mrel \sqsubseteq \mrel'$.
+\end{description}
 %
-\noindent Thus in proving thread-local simulations, we can \emph{assume} that the effect of the
-other threads are constrained by the above conditions; on the other hand, we should \emph{guarantee}
-that the thread in our concern also satisfies the above conditions.  Concretely, we revise our
-thread-local simulation relation as follows: \jeehoon{todo}.
+\noindent From now on, we write $\tup{\gsco,\mem} \sim \tup{\gsco',\mem'}$ to mean
+$\gsco \sqsubseteq \gsco'$ and $\mem \sim \mem'$ for simplicity.
+
+Now in proving thread-local simulations, we \emph{assume} that the interference of the other threads
+are constrained by the above conditions; on the other hand, we also \emph{guarantee} that the thread
+in our concern also satisfies the above conditions.  Concretely, we revise our thread-local
+simulation relation as follows.  A relation $R$ over source and target thread configurations is a
+thread-local simulation if:
+
+\begin{align*}
+  \forall \tup{\lts_0,\gsco_0,\mem_0}, \tup{\lts'_0,\gsco'_0,\mem'_0}.~ & R~\tup{\lts_0,\gsco_0,\mem_0}~\tup{\lts'_0,\gsco'_0,\mem'_0} \implies \\
+  \forall \tup{\gsco_1,\mem_1}, \tup{\gsco'_1,\mem'_1}.~ & \tup{\gsco_0,\mem_0} \sim \tup{\gsco'_0,\mem'_0} \land \tup{\gsco_1,\mem_1} \sim \tup{\gsco'_1,\mem'_1} ~ \land \\
+                                                                        & \mbox{$\tup{\gsco_1,\mem_1}$ is a future of $\tup{\gsco_0,\mem_0}$ w.r.t. $\lts_0$} ~ \land \\
+                                                                        & \mbox{$\tup{\gsco'_1,\mem'_1}$ is a future of $\tup{\gsco'_0,\mem'_0}$ w.r.t. $\lts'_0$} \implies
+\end{align*}
+\begin{center}
+  \begin{minipage}{0.9\textwidth}
+    \begin{description}
+    \item[\textsc{(Step)}] For any $\tup{\lts'_2,\gsco'_2,\mem'_2}$, if
+      $\tup{\lts'_0,\gsco'_1,\mem'_1} \astep{} \tup{\lts'_2,\gsco'_2,\mem'_2}$, then there exists
+      $\tup{\lts_2,\gsco_2,\mem_2}$ such that
+      $\tup{\lts_0,\gsco_1,\mem_1} \astep{}^* \tup{\lts_2,\gsco_2,\mem_2}$, $R$ relates
+      $\tup{\lts_2,\gsco_2,\mem_2}$ and $\tup{\lts'_2,\gsco'_2,\mem'_2}$, and
+      $\tup{\gsco_2,\mem_2} \sim \tup{\gsco'_2,\mem'_2}$; and
+    \item[\textsc{(Terminal)}] If $\tup{\lts'_0,\gsco'_1,\mem'_1}$ is terminal, then there exists
+      $\tup{\lts_2,\gsco_2,\mem_2}$ such that
+      $\tup{\lts_0,\gsco_1,\mem_1} \astep{}^* \tup{\lts_2,\gsco_2,\mem_2}$,
+      $\tup{\lts_2,\gsco_2,\mem_2}$ is terminal, and
+      $\tup{\gsco_2,\mem_2} \sim \tup{\gsco'_1,\mem'_1}$; and $\cdots$
+    \end{description}
+  \end{minipage}
+\end{center}
+%
+Notice that it differs from the machine simulation relation, except for types, in that $(1)$ we
+should prove simulation after all legit interference of the other threads (lines 2-4), and $(2)$ we
+should prove the thread's modification to the shared resources is legit (lines 7 and 10).
 
 It is worth noting that the above conditions on the shared resources resemble memory invariants in
 (sequential) compiler verification literature, \eg{} memory extensions and injections in
@@ -73,49 +121,43 @@ purpose, namely reasoning about the effect of unknown others, but they differ in
 
 
 
-\paragraph{\jeehoon{WIP}}
-
-a relation $R$ over source and target thread configurations is a \emph{thread-local} simulation if,
-for any source and target thread configurations $\tup{\lts_0,\gsco_0,\mem_0}$ and
-$\tup{\lts'_0,\gsco'_0,\mem'_0}$ related by $R$, the following holds:
-\begin{description}
-\item[\textsc{(Step)}] For all $\tup{\lts'_1,\gsco'_1,\mem'_1}$, if
-  $\tup{\lts'_0,\gsco'_0,\mem'_0} \astep{} \tup{\lts'_1,\gsco'_1,\mem'_1}$, then there exists
-  $\tup{\lts_1,\gsco_1,\mem_1}$ such that
-  $\tup{\lts_0,\gsco_0,\mem_0} \astep{}^* \tup{\lts_1,\gsco_1,\mem_1}$ and $R$ relates
-  $\tup{\lts_1,\gsco_1,\mem_1}$ and $\tup{\lts'_1,\gsco'_1,\mem'_1}$; and
-\item[\textsc{(Terminal)}] If $\tup{\lts'_0,\gsco'_0,\mem'_0}$ is terminal, then there exists
-  $\tup{\lts_1,\gsco_1,\mem_1}$ such that
-  $\tup{\lts_0,\gsco_0,\mem_0} \astep{}^* \tup{\lts_1,\gsco_1,\mem_1}$ and
-  $\tup{\lts_1,\gsco_1,\mem_1}$ is terminal.
-\end{description}
-
 
 \paragraph{Reasoning about Consistency}
 
 The above definition still does not satisfy compositionality because it fails to simulate
 consistency.  Recall that for each machine step, the resulting thread configuration should be
 consistent.  The above simulation relation does not necessarily mean the source thread configuration
-steps to a consistent configuration even if the corresponding target thread configuration steps to a
+steps to a consistent one even if the corresponding target thread configuration steps to a
 consistent one.
 
-To address this problem, we additionally require the following conditions, in addition to the
-\textsc{(Step)} and \textsc{(Terminal)} conditions above, for thread-local simulation:
+To address this problem, we require the following conditions, in addition to the
+\textbf{\textsc{(Step)}} and \textbf{\textsc{(Terminal)}} conditions above, for thread-local
+simulation:
 %
-\begin{itemize}
-\item \textsc{(Future)} \jeehoon{todo}.
-\item \textsc{(No promises)} \jeehoon{todo}.
-\end{itemize}
+\begin{center}
+  \begin{minipage}{0.9\textwidth}
+    \begin{description}
+    \item[\textsc{(Future)}] For any shared resource $\tup{\gsco_2,\mem_2}$ that is a future of
+      $\tup{\gsco_1,\mem_1}$ w.r.t. $\lts_0.\lprmem$, there exists a shared resource
+      $\tup{\gsco'_2,\mem'_2}$ that is a future of $\tup{\gsco'_1,\mem'_1}$ w.r.t. $\lts'_0.\lprmem$
+      such that $R$ relates $\tup{\lts_0,\gsco_2,\mem_2}$ and $\tup{\lts'_0,\gsco'_2,\mem'_2}$; and
+    \item[\textsc{(No promises)}] If $\lts'_0.\lprmem = \emptyset$, then there exists
+      $\tup{\lts_2,\gsco_2,\mem_2}$ such that
+      $\tup{\lts_0,\gsco_1,\mem_1} \astep{}^* \tup{\lts_2,\gsco_2,\mem_2}$ and
+      $\lts_2.\lprmem = \emptyset$.
+    \end{description}
+  \end{minipage}
+\end{center}
 %
 \noindent Provided that the above conditions hold, consistency is also simulated as follows.
 Suppose that a thread-local simulation $R$ relates source and target thread configurations
 $\tup{\lts_0,\gsco_0,\mem_0}$ and $\tup{\lts'_0,\gsco'_0,\mem'_0}$, and the target configuration is
 consistent.  Now we prove $\tup{\lts_0,\gsco_0,\mem_0}$ is also consistent.  For any future shared
-resources $\gsco_1,\mem_1$ of $\gsco_0,\mem_0$, by \textsc{(Future)}, there exist $\gsco'_1,\mem'_1$
-such that they are a future of $\gsco'_0,\mem'_0$ and $R$ relates $\tup{\lts_0,\gsco_1,\mem_1}$ and
-$\tup{\lts'_0,\gsco'_1,\mem'_1}$.  Since $\tup{\lts'_0,\gsco'_0,\mem'_0}$ is consistent, there
-exists $\tup{\lts'_2,\gsco'_2,\mem'_2}$ such that
-$\tup{\lts'_0,\gsco'_1,\mem'_1} \astep{}^* \tup{\lts'_2,\gsco'_2,\mem'_2}$ and $\lts'_2$ has no
+resources $\gsco_1,\mem_1$ of $\gsco_0,\mem_0$ w.r.t. $\lts_0.\lprmem$, by \textsc{(Future)}, there
+exist $\gsco'_1,\mem'_1$ such that they are a future of $\gsco'_0,\mem'_0$ w.r.t. $\lts'_0.\lprmem$
+and $R$ relates $\tup{\lts_0,\gsco_1,\mem_1}$ and $\tup{\lts'_0,\gsco'_1,\mem'_1}$.  Since
+$\tup{\lts'_0,\gsco'_0,\mem'_0}$ is consistent, there exists $\tup{\lts'_2,\gsco'_2,\mem'_2}$ such
+that $\tup{\lts'_0,\gsco'_1,\mem'_1} \astep{}^* \tup{\lts'_2,\gsco'_2,\mem'_2}$ and $\lts'_2$ has no
 promises.  By \textsc{(Step)}, there exists $\tup{\lts_2,\gsco_2,\mem_2}$ such that
 $\tup{\lts_0,\gsco_1,\mem_1} \astep{}^* \tup{\lts_2,\gsco_2,\mem_2}$ and $R$ relates
 $\tup{\lts_2,\gsco_2,\mem_2}$ and $\tup{\lts'_2,\gsco'_2,\mem'_2}$.  By \textsc{(No promises)},
@@ -124,7 +166,7 @@ $\tup{\lts_2,\gsco_2,\mem_2} \astep{}^* \tup{\lts_3,\gsco_3,\mem_3}$ and $\lts_3
 Thus $\tup{\lts_0,\gsco_0,\mem_0}$ is consistent.
 
 After taking into account the effect of the other threads to the shared resources and consistency,
-we can prove thread-local simulation's compositionality.
+we can prove thread-local simulation's compositionality by coinduction.
 
 
 

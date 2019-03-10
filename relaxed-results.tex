@@ -154,8 +154,9 @@ standard, except that they ensure thread-locality, thus allowing us to define a 
 on thread configurations, which (as we prove) can be composed into a simulation relation on full
 machine states.  The thread-locality is crucially used in proving the soundness of transformations
 because they are performed not for a full machine but for a single thread.  Our thread-local
-simulation relation is based on novel ideas for reasoning about the shared memory and consistency.
-For more details, we refer the reader to \Cref{sec:relaxed:proofs:simulation}.
+simulation relation is based on novel ideas for reasoning about the shared resources (\ie{} the SC
+timemap and the memory) and consistency.  For more details, we refer the reader to
+\Cref{sec:relaxed:proofs:simulation}.
 
 % it is difficult to employ the standard simulation relations presented in
 % \Cref{sec:background:correctness} for proving compiler optimizations because optimizations are
