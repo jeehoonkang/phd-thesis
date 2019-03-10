@@ -127,6 +127,20 @@ but are prohibitively expensive on weaker architectures, such as Power and ARM,
 because enforcing TSO on those machines requires essentially as many fences as enforcing SC.
 In a similar line of work, Lahav~\etal~\cite{sra} introduced a strengthening of the release/acquire fragment of the C/C++ memory model, which they called SRA, together with an operational semantics for SRA\@.
 Compiling SRA to Power and ARM is cheaper than TSO, but still requires some fences before or after every shared variable access, and may thus not be suitable for performance-critical code.
+%
+Dolan~\etal{}~\cite{DBLP:conf/pldi/DolanSM18} and Ou~\etal{}~\cite{DBLP:journals/pacmpl/OuD18}
+proposed C/C++, OCaml, and Java memory models that specifically forbid read-write reordering, and
+proposed their compilation schemes to TSO, ARM, and Power that insert less more fences than SRA.
+They reported the performance overhead of fences is none for TSO and within 3\% on average for ARM
+and Power architectures.  However, more comprehensive performance study is necessary to draw a solid
+conclusion.
+
+Boehm advocated stronger models without read-write reorderings because they break modularity and
+useful reasoning principles for programmers~\cite{boehm-oota}.  Notwithstanding his criticism, we
+think it is unclear whether forbidding read-write reorderings altogether is adequately striking the
+trade-off between simplicity and performance.  To find a sweet spot, we are developing reasoning
+principles and tools for programmers in the presence of read-write reorderings.  See
+\Cref{sec:discussion} for more details.
 
 Another approach is to simply allow OOTA behaviors.
 This was the approach taken by Batty~\etal's formalization of C/C++~\cite{Batty:2011}, and by the OpenCL model~\cite{opencl-model},

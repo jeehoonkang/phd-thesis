@@ -18,9 +18,9 @@ details and present the simulation's definition.
 
 \paragraph{Machine Simulation Relation}
 
-Recall that, as discussed in \Cref{sec:background:correctness}, a relation $R$ over source and
-target machine states is a (machine) simulation if, for any source and target states $\mconf_0$ and
-$\mconf'_0$ related by $R$, the following holds:
+Recall from \Cref{sec:background:correctness} that a relation $R$ over source and target machine
+states is a (machine) simulation if, for any source and target states $\mconf_0$ and $\mconf'_0$
+related by $R$, the following holds:
 \begin{description}
 \item[\textsc{(Step)}] For all $\mconf'_1$, if $\mconf'_0 \astep{} \mconf'_1$, then there exists
   $\mconf_1$ such that $\mconf_0 \astep{}^* \mconf_1$ and $R$ relates $\mconf_1$ and $\mconf'_1$;
